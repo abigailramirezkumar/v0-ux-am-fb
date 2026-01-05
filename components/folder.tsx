@@ -38,6 +38,7 @@ export interface FolderData {
 interface FolderProps {
   folder: FolderData
   level?: number
+  index?: number // Added index prop for zebra striping
   onSelect?: (folderId: string, selected: boolean) => void
   onSelectItem?: (itemId: string, selected: boolean) => void
   onDoubleClick?: (folderId: string) => void
@@ -57,6 +58,7 @@ interface FolderProps {
 export function Folder({
   folder,
   level = 0,
+  index = 0, // Default to 0
   onSelect,
   onSelectItem,
   onDoubleClick,
@@ -84,10 +86,9 @@ export function Folder({
   const hasChildren = (folder.children && folder.children.length > 0) || (folder.items && folder.items.length > 0)
   const isImported = importedFolders.has(folder.id)
 
-  const hasChildItems = folder.items && folder.items.length > 0
-  const hasChildFolders = folder.children && folder.children.length > 0
-
   const totalItemCount = (folder.children?.length || 0) + (folder.items?.length || 0)
+
+  const isAlternate = index % 2 === 1
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(folder.id, checked)
@@ -139,23 +140,23 @@ export function Folder({
   const folderRow = (
     <div
       className={cn(
-        `flex items-center ${spacing.py} cursor-pointer transition-colors border-b border-border border-dashed`,
+        `flex items-center ${spacing.py} cursor-pointer transition-colors`,
         isSelected && !isHovered && "bg-[#0273e3]",
         isSelected && isHovered && "bg-[#0273e3]",
         !isSelected && isHovered && "bg-muted",
-        !isSelected && !isHovered && "bg-background",
+        !isSelected && !isHovered && isAlternate && "bg-muted/20",
+        !isSelected && !isHovered && !isAlternate && "bg-background",
       )}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={cn("flex items-center flex-1 pr-4 pl-4", spacing.gap)}
-        style={{ marginLeft: `${indentMargin}px` }}
-      >
-        {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+      <div className="flex items-center flex-1 pl-4" style={{ marginLeft: `${indentMargin}px` }}>
+        <div className="flex-shrink-0 w-6">
+          {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+        </div>
 
-        <div className="flex items-center justify-center flex-shrink-0 w-5 h-5">
+        <div className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0">
           {isHovered && hasChildren ? (
             isExpanded ? (
               <ChevronDownIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
@@ -169,7 +170,7 @@ export function Folder({
           )}
         </div>
 
-        <div className="flex-1 flex items-center gap-2 min-w-0">
+        <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
           {isRenaming ? (
             <Input
               value={renameName}
@@ -198,27 +199,17 @@ export function Folder({
           )}
         </div>
 
-        {isExpanded && hasChildItems ? (
-          <>
-            <div className="w-32 flex-shrink-0 ml-3">
-              <span className={cn("text-sm font-bold", isSelected ? "text-white/70" : "text-muted-foreground")}>
-                Modified
-              </span>
-            </div>
-            <div className="w-24 flex-shrink-0 ml-3">
-              <span className={cn("text-sm font-bold", isSelected ? "text-white/70" : "text-muted-foreground")}>
-                Type
-              </span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="w-32 flex-shrink-0 ml-3" />
-            <div className="w-24 flex-shrink-0 ml-3" />
-          </>
-        )}
+        <div className="w-32 flex-shrink-0 ml-3">
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+            {folder.dateModified || "—"}
+          </span>
+        </div>
 
-        <div className="w-8 flex-shrink-0 flex items-center justify-center">
+        <div className="w-24 flex-shrink-0 ml-3">
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
+        </div>
+
+        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
           {isImported ? (
             <Button
               variant="outline"
@@ -334,11 +325,12 @@ export function Folder({
 
       {isExpanded && hasChildren && (
         <div>
-          {folder.children?.map((child) => (
+          {folder.children?.map((child, i) => (
             <Folder
               key={child.id}
               folder={child}
               level={level + 1}
+              index={i} // Pass index for zebra striping
               onSelect={onSelect}
               onSelectItem={onSelectItem}
               onDoubleClick={onDoubleClick}
@@ -356,7 +348,7 @@ export function Folder({
             />
           ))}
 
-          {folder.items?.map((item) => (
+          {folder.items?.map((item, i) => (
             <LibraryItem
               key={item.id}
               item={{
@@ -364,6 +356,7 @@ export function Folder({
                 thumbnailUrl: item.thumbnailUrl || "/football-field.png",
               }}
               level={level + 1}
+              index={i + (folder.children?.length || 0)} // Continue index sequence after folders
               onSelect={onSelectItem}
               selectedItems={selectedItems}
               importedItems={importedItems}

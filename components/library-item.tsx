@@ -20,6 +20,7 @@ export interface LibraryItemData {
 interface LibraryItemProps {
   item: LibraryItemData
   level?: number
+  index?: number
   onSelect?: (itemId: string, selected: boolean) => void
   selectedItems?: Set<string>
   importedItems?: Set<string>
@@ -40,6 +41,7 @@ const formatItemType = (type: string): string => {
 export function LibraryItem({
   item,
   level = 0,
+  index = 0,
   onSelect,
   selectedItems = new Set(),
   importedItems = new Set(),
@@ -51,6 +53,8 @@ export function LibraryItem({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
+
+  const isAlternate = index % 2 === 1
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(item.id, checked)
@@ -68,23 +72,25 @@ export function LibraryItem({
   return (
     <div
       className={cn(
-        `flex items-center ${spacing.py} cursor-pointer transition-colors border-b border-border border-dashed`,
+        `flex items-center ${spacing.py} cursor-pointer transition-colors`,
         isSelected && !isHovered && "bg-[#0273e3]",
         isSelected && isHovered && "bg-[#0273e3]",
         !isSelected && isHovered && "bg-muted",
-        !isSelected && !isHovered && "bg-background",
+        !isSelected && !isHovered && isAlternate && "bg-muted/20",
+        !isSelected && !isHovered && !isAlternate && "bg-background",
       )}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div
-        className={cn("flex items-center flex-1 pr-4 pl-4", spacing.gap)}
-        style={{ marginLeft: `${indentMargin}px` }}
-      >
-        {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+      <div className="flex items-center flex-1 pl-4" style={{ marginLeft: `${indentMargin}px` }}>
+        {/* Checkbox - fixed width */}
+        <div className="flex-shrink-0 w-6">
+          {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+        </div>
 
-        <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9">
+        {/* Icon/Thumbnail - fixed width */}
+        <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
           {isHovered && item.type === "video" ? (
             <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
           ) : item.thumbnailUrl ? (
@@ -94,24 +100,28 @@ export function LibraryItem({
           )}
         </div>
 
-        <div className="flex-1 flex items-center gap-2 min-w-0">
+        {/* Name - flexible */}
+        <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
           <span className={cn("text-sm font-medium", isSelected ? "text-white" : "text-foreground")}>{item.name}</span>
           {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
         </div>
 
+        {/* Modified column - fixed width */}
         <div className="w-32 flex-shrink-0 ml-3">
           <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
             {item.dateModified || "—"}
           </span>
         </div>
 
+        {/* Type column - fixed width */}
         <div className="w-24 flex-shrink-0 ml-3">
           <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
             {formatItemType(item.type)}
           </span>
         </div>
 
-        <div className="w-8 flex-shrink-0 flex items-center justify-center">
+        {/* Actions - fixed width */}
+        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
           {isImported ? (
             <Button
               variant="ghost"

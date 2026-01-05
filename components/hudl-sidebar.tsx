@@ -9,7 +9,6 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { useCatapultImportContext } from "@/lib/catapult-import-context"
-import { useLibraryVersion } from "@/lib/library-version-context"
 import {
   Sidebar,
   SidebarContent,
@@ -37,7 +36,6 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme, resolvedTheme } = useTheme()
   const { activeVersion, setActiveVersion } = useCatapultImportContext()
-  const { libraryVersion, setLibraryVersion } = useLibraryVersion()
   const { state } = useSidebar()
   const pathname = usePathname()
 
@@ -176,42 +174,6 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${activeVersion === "v3" ? "bg-blue-600" : "bg-muted"}`} />
                     Version 3
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-
-          {/* Library Version nav item */}
-          <SidebarMenuItem>
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="justify-between">
-                  <div className="flex items-center gap-3">
-                    <Icon name="folder" className="w-5 h-5 flex-shrink-0" />
-                    <span>Library Version</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-56">
-                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Select Version</div>
-                <DropdownMenuItem
-                  onClick={() => setLibraryVersion("v1")}
-                  className={libraryVersion === "v1" ? "bg-accent" : ""}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${libraryVersion === "v1" ? "bg-blue-600" : "bg-muted"}`} />
-                    Version 1 - Row Columns
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setLibraryVersion("v2")}
-                  className={libraryVersion === "v2" ? "bg-accent" : ""}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${libraryVersion === "v2" ? "bg-blue-600" : "bg-muted"}`} />
-                    Version 2 - Fixed Columns
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>

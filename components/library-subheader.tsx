@@ -57,76 +57,106 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
   const { density, setDensity } = useDensity()
 
   return (
-    <div className="flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 pb-1">
+    <>
       {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button
-          onClick={() => onNavigate(null)}
-          className="hover:text-foreground transition-colors flex items-center"
-          aria-label="Go to library root"
-        >
-          <LibraryIcon className="w-3 h-3" />
-        </button>
+      <div className="sticky top-0 z-10 flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 pb-1">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <button
+            onClick={() => onNavigate(null)}
+            className="hover:text-foreground transition-colors flex items-center"
+            aria-label="Go to library root"
+          >
+            <LibraryIcon className="w-3 h-3" />
+          </button>
 
-        {breadcrumbs.map((crumb, index) => (
-          <div key={crumb.id} className="flex items-center gap-2">
-            <span>/</span>
-            <button
-              onClick={() => onNavigate(crumb.id)}
-              className={`hover:text-foreground transition-colors text-foreground ${
-                index === breadcrumbs.length - 1 ? "font-semibold" : ""
-              }`}
-            >
-              {crumb.name}
-            </button>
-          </div>
-        ))}
+          {breadcrumbs.map((crumb, index) => (
+            <div key={crumb.id} className="flex items-center gap-2">
+              <span>/</span>
+              <button
+                onClick={() => onNavigate(crumb.id)}
+                className={`hover:text-foreground transition-colors text-foreground ${
+                  index === breadcrumbs.length - 1 ? "font-semibold" : ""
+                }`}
+              >
+                {crumb.name}
+              </button>
+            </div>
+          ))}
 
-        {/* Trailing slash */}
-        <span>/</span>
+          <span>/</span>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Add content">
+                <Icon name="add" className="w-5 h-5 text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onCreateFolder}>
+                <Icon name="folder" className="w-4 h-4 mr-2" />
+                New Folder
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
+                <Icon name="settings" className="w-5 h-5 text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={density}
+                    onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
+                  >
+                    <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem disabled>Settings coming soon</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Add content">
-              <Icon name="add" className="w-5 h-5 text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onCreateFolder}>
-              <Icon name="folder" className="w-4 h-4 mr-2" />
-              New Folder
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Fixed Column Headers */}
+      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border">
+        {/* Left padding to match rows */}
+        <div className="flex-shrink-0 pl-4" />
 
-        {/* Library Settings Button */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
-              <Icon name="settings" className="w-5 h-5 text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {/* Density submenu */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  value={density}
-                  onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
-                >
-                  <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Checkbox area - fixed width */}
+        <div className="flex-shrink-0 w-6" />
+
+        {/* Icon area - fixed width to match library item thumbnails */}
+        <div className="flex-shrink-0 w-9 ml-0" />
+
+        {/* Name column - flexible */}
+        <div className="flex-1 min-w-0 ml-0 mr-0">
+          <span className="text-sm font-bold text-muted-foreground">Name</span>
+        </div>
+
+        {/* Modified column - fixed width */}
+        <div className="w-32 flex-shrink-0 ml-3">
+          <span className="text-sm font-bold text-muted-foreground">Modified</span>
+        </div>
+
+        {/* Type column - fixed width */}
+        <div className="w-24 flex-shrink-0 ml-3 mr-[-16px]">
+          <span className="text-sm font-bold text-muted-foreground">Type</span>
+        </div>
+
+        {/* Actions area - fixed width */}
+        <div className="w-8 flex-shrink-0 ml-3 mr-4" />
       </div>
-    </div>
+    </>
   )
 }

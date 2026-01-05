@@ -3,11 +3,7 @@
 import { useState } from "react"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
-import { LibrarySubheaderV2 } from "@/components/library-subheader-v2"
 import { Folder, type FolderData } from "@/components/folder"
-import { FolderV2 } from "@/components/folder-v2"
-import { LibraryItem } from "@/components/library-item"
-import { useLibraryVersion } from "@/lib/library-version-context"
 import {
   Dialog,
   DialogContent,
@@ -541,7 +537,6 @@ const testFolders: FolderData[] = [
 ]
 
 export default function LibraryPage() {
-  const { libraryVersion } = useLibraryVersion()
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [teamFolders, setTeamFolders] = useState<FolderData[]>(testFolders)
   const [myFolders, setMyFolders] = useState<FolderData[]>([])
@@ -944,93 +939,46 @@ export default function LibraryPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="px-4">
+      <div className="px-4 pt-2">
         <LibraryHeader onImportComplete={handleImportComplete} />
 
-        {libraryVersion === "v1" ? (
-          <LibrarySubheader breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />
-        ) : (
-          <LibrarySubheaderV2 breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />
-        )}
+        <LibrarySubheader breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {libraryVersion === "v1" ? (
+        {currentFolderId === null ? (
           <>
-            {currentFolderId === null ? (
-              <>
-                {sortedFolders.map((folder) => (
-                  <Folder
-                    key={folder.id}
-                    folder={folder}
-                    onSelect={handleSelectFolder}
-                    onSelectItem={handleSelectItem}
-                    onDoubleClick={handleFolderDoubleClick}
-                    selectedFolders={selectedFolders}
-                    selectedItems={selectedItems}
-                    expandedFolders={expandedFolders}
-                    onToggleExpand={handleToggleExpand}
-                    importedFolders={importedFolders}
-                    importedItems={importedItems}
-                    onUpdateImported={handleUpdateImported}
-                    onRename={handleRenameFolder}
-                    onDelete={handleDeleteFolderStart}
-                    onSortFolder={handleSortFolder}
-                    folderSortOptions={folderSortOptions}
-                  />
-                ))}
-              </>
-            ) : (
-              <>
-                {sortedFolders.map((folder) => (
-                  <div key={folder.id}>
-                    {folder.children?.map((child) => (
-                      <Folder
-                        key={child.id}
-                        folder={child}
-                        onSelect={handleSelectFolder}
-                        onSelectItem={handleSelectItem}
-                        onDoubleClick={handleFolderDoubleClick}
-                        selectedFolders={selectedFolders}
-                        selectedItems={selectedItems}
-                        expandedFolders={expandedFolders}
-                        onToggleExpand={handleToggleExpand}
-                        importedFolders={importedFolders}
-                        importedItems={importedItems}
-                        onUpdateImported={handleUpdateImported}
-                        onRename={handleRenameFolder}
-                        onDelete={handleDeleteFolderStart}
-                        onSortFolder={handleSortFolder}
-                        folderSortOptions={folderSortOptions}
-                      />
-                    ))}
-                    {folder.items?.map((item) => (
-                      <LibraryItem
-                        key={item.id}
-                        item={{
-                          ...item,
-                          thumbnailUrl: item.thumbnailUrl || "/football-field.png",
-                        }}
-                        level={0}
-                        onSelect={handleSelectItem}
-                        selectedItems={selectedItems}
-                        importedItems={importedItems}
-                        onUpdateImported={handleUpdateImported}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </>
-            )}
+            {sortedFolders.map((folder, index) => (
+              <Folder
+                key={folder.id}
+                folder={folder}
+                index={index}
+                onSelect={handleSelectFolder}
+                onSelectItem={handleSelectItem}
+                onDoubleClick={handleFolderDoubleClick}
+                selectedFolders={selectedFolders}
+                selectedItems={selectedItems}
+                expandedFolders={expandedFolders}
+                onToggleExpand={handleToggleExpand}
+                importedFolders={importedFolders}
+                importedItems={importedItems}
+                onUpdateImported={handleUpdateImported}
+                onRename={handleRenameFolder}
+                onDelete={handleDeleteFolderStart}
+                onSortFolder={handleSortFolder}
+                folderSortOptions={folderSortOptions}
+              />
+            ))}
           </>
         ) : (
           <>
-            {currentFolderId === null ? (
-              <>
-                {sortedFolders.map((folder) => (
-                  <FolderV2
-                    key={folder.id}
-                    folder={folder}
+            {sortedFolders.map((folder) => (
+              <div key={folder.id}>
+                {folder.children?.map((child, index) => (
+                  <Folder
+                    key={child.id}
+                    folder={child}
+                    index={index}
                     onSelect={handleSelectFolder}
                     onSelectItem={handleSelectItem}
                     onDoubleClick={handleFolderDoubleClick}
@@ -1047,49 +995,8 @@ export default function LibraryPage() {
                     folderSortOptions={folderSortOptions}
                   />
                 ))}
-              </>
-            ) : (
-              <>
-                {sortedFolders.map((folder) => (
-                  <div key={folder.id}>
-                    {folder.children?.map((child) => (
-                      <FolderV2
-                        key={child.id}
-                        folder={child}
-                        onSelect={handleSelectFolder}
-                        onSelectItem={handleSelectItem}
-                        onDoubleClick={handleFolderDoubleClick}
-                        selectedFolders={selectedFolders}
-                        selectedItems={selectedItems}
-                        expandedFolders={expandedFolders}
-                        onToggleExpand={handleToggleExpand}
-                        importedFolders={importedFolders}
-                        importedItems={importedItems}
-                        onUpdateImported={handleUpdateImported}
-                        onRename={handleRenameFolder}
-                        onDelete={handleDeleteFolderStart}
-                        onSortFolder={handleSortFolder}
-                        folderSortOptions={folderSortOptions}
-                      />
-                    ))}
-                    {folder.items?.map((item) => (
-                      <LibraryItem
-                        key={item.id}
-                        item={{
-                          ...item,
-                          thumbnailUrl: item.thumbnailUrl || "/football-field.png",
-                        }}
-                        level={0}
-                        onSelect={handleSelectItem}
-                        selectedItems={selectedItems}
-                        importedItems={importedItems}
-                        onUpdateImported={handleUpdateImported}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </>
-            )}
+              </div>
+            ))}
           </>
         )}
       </div>

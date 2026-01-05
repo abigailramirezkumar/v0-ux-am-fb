@@ -8,7 +8,6 @@ import { Analytics } from "@vercel/analytics/react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CatapultImportProvider } from "@/lib/catapult-import-context"
-import { LibraryVersionProvider } from "@/lib/library-version-context"
 import { DensityProvider } from "@/lib/density-context"
 
 export default function ClientLayout({
@@ -21,32 +20,30 @@ export default function ClientLayout({
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <CatapultImportProvider>
-        <LibraryVersionProvider>
-          <DensityProvider>
-            <SidebarProvider defaultOpen={true}>
-              <div className="h-screen w-full flex bg-background">
-                <HudlSidebar />
+        <DensityProvider>
+          <SidebarProvider defaultOpen={true}>
+            <div className="h-screen w-full flex bg-background">
+              <HudlSidebar />
 
-                <SidebarInset className="flex-1 flex flex-col">
-                  <Header
-                    title="Component Library"
-                    searchValue={searchValue}
-                    onSearchChange={setSearchValue}
-                    searchPlaceholder="Search components..."
-                    onFilterClick={() => console.log("Filter clicked")}
-                    onShareClick={() => console.log("Share clicked")}
-                    onDownloadClick={() => console.log("Download clicked")}
-                  />
+              <SidebarInset className="flex-1 flex flex-col">
+                <Header
+                  title="Component Library"
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                  searchPlaceholder="Search components..."
+                  onFilterClick={() => console.log("Filter clicked")}
+                  onShareClick={() => console.log("Share clicked")}
+                  onDownloadClick={() => console.log("Download clicked")}
+                />
 
-                  <main className="flex-1 overflow-auto">
-                    <Suspense fallback={null}>{children}</Suspense>
-                  </main>
-                </SidebarInset>
-              </div>
-              <Analytics />
-            </SidebarProvider>
-          </DensityProvider>
-        </LibraryVersionProvider>
+                <main className="flex-1 overflow-auto">
+                  <Suspense fallback={null}>{children}</Suspense>
+                </main>
+              </SidebarInset>
+            </div>
+            <Analytics />
+          </SidebarProvider>
+        </DensityProvider>
       </CatapultImportProvider>
     </ThemeProvider>
   )

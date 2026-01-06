@@ -3,12 +3,11 @@
 import { useState, useMemo } from "react"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Icon } from "@/components/icon"
 import { FilterSidebar } from "@/components/explore/filter-sidebar"
 import { ClipsDataGrid } from "@/components/explore/clips-data-grid"
 import { ClipViewer } from "@/components/explore/clip-viewer"
+import { GlobalFilters } from "@/components/explore/global-filters"
 import { mockClips, type Clip } from "@/lib/mock-clips"
 
 export default function ExplorePage() {
@@ -76,22 +75,10 @@ export default function ExplorePage() {
           </Tabs>
         </div>
 
-        {/* Global Context Bar */}
-        <div className="px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-xs">
-              <Icon name="flag" className="w-3 h-3 mr-1" />
-              NFL
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              <Icon name="calendar" className="w-3 h-3 mr-1" />
-              2024 Season
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              <Icon name="teams" className="w-3 h-3 mr-1" />
-              All Teams
-            </Badge>
-          </div>
+        <GlobalFilters />
+
+        {/* Filter count and clear button */}
+        <div className="px-4 py-2 flex items-center justify-end border-t border-border/30">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{filteredClips.length} clips</span>
             {activeFilterCount > 0 && (

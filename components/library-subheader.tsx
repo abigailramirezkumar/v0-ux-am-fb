@@ -128,25 +128,25 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
         </div>
       </div>
 
-      {/* Fixed Column Headers */}
-      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border pt-1">
-        {/* Name column - Consolidated to left align with checkbox */}
-        <div className="flex-1 min-w-0 pl-4 ml-4">
-          <span className="text-sm font-bold text-muted-foreground">Name</span>
+      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border pt-1 text-xs font-semibold text-muted-foreground">
+        {/* Name column */}
+        <div className="flex-1 min-w-[200px] pl-4 ml-4">
+          <span>Name</span>
         </div>
 
-        {/* Modified column - fixed width */}
-        <div className="w-32 flex-shrink-0 ml-3 pl-4">
-          <span className="text-sm font-bold text-muted-foreground">Modified</span>
-        </div>
+        {/* Metadata Columns */}
+        <div className="w-[100px] flex-shrink-0 text-right">Modified</div>
+        <div className="w-[80px] flex-shrink-0 text-center">Type</div>
+        <div className="w-[60px] flex-shrink-0 text-center">Data</div>
+        <div className="w-[60px] flex-shrink-0 text-center">Items</div>
+        <div className="w-[80px] flex-shrink-0 text-center">Angles</div>
+        <div className="w-[80px] flex-shrink-0 text-center">Duration</div>
+        <div className="w-[80px] flex-shrink-0 text-right">Size</div>
+        <div className="w-[100px] flex-shrink-0 text-center">Comments</div>
+        <div className="w-[100px] flex-shrink-0 text-right mr-2">Created</div>
 
-        {/* Type column - fixed width */}
-        <div className="w-24 flex-shrink-0 ml-3 pl-4">
-          <span className="text-sm font-bold text-muted-foreground">Type</span>
-        </div>
-
-        {/* Actions area - fixed width */}
-        <div className="w-8 flex-shrink-0 ml-3 mr-4" />
+        {/* Actions area spacer */}
+        <div className="w-[40px] flex-shrink-0 mr-4" />
       </div>
     </>
   )

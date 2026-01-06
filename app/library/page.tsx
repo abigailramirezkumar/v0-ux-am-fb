@@ -985,7 +985,7 @@ export default function LibraryPage() {
 
   return (
     <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none">
-      <div className="px-4 pt-2">
+      <div className="px-4 pt-1">
         <LibraryHeader onImportComplete={handleImportComplete} />
 
         <LibrarySubheader breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />

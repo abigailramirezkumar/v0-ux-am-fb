@@ -85,7 +85,7 @@ export function LibraryHeader({
               <button
                 key={item.value}
                 onClick={() => setOrientation(item.value)}
-                className={`rounded-full transition-colors text-sm py-2 px-4 font-semibold whitespace-nowrap ${
+                className={`rounded-full transition-colors text-sm px-4 font-semibold whitespace-nowrap py-1.5 ${
                   orientation === item.value
                     ? "bg-[#1a1a1a] dark:bg-[#343434] text-white dark:text-white"
                     : "bg-[#e5e5e5] dark:bg-[#ffffff] text-[#4a4a4a] dark:text-[#1a1a1a] hover:bg-[#d5d5d5] dark:hover:bg-[#e5e5e5]"

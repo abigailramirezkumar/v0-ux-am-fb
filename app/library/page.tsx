@@ -4,6 +4,7 @@ import { useState } from "react"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
 import { Folder, type FolderData } from "@/components/folder"
+import { LibraryItem, type LibraryItemData } from "@/components/library-item"
 import {
   Dialog,
   DialogContent,
@@ -937,6 +938,51 @@ export default function LibraryPage() {
       ? folders.map(sortFolderChildren)
       : ([findFolderById(folders, currentFolderId)].filter(Boolean).map(sortFolderChildren) as FolderData[])
 
+  const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
+    const items: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
+
+    nodes.forEach((node) => {
+      // Add the folder itself
+      items.push({ type: "folder", data: node, level })
+
+      // If expanded, recursively add its children and items
+      if (expandedFolders.has(node.id)) {
+        if (node.children && node.children.length > 0) {
+          items.push(...getFlattenedVisibleItems(node.children, level + 1))
+        }
+        if (node.items && node.items.length > 0) {
+          node.items.forEach((item) => {
+            items.push({ type: "item", data: item, level: level + 1 })
+          })
+        }
+      }
+    })
+
+    return items
+  }
+
+  let visibleFlatList: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
+
+  if (currentFolderId === null) {
+    // Root view: Flatten everything starting from root folders
+    visibleFlatList = getFlattenedVisibleItems(sortedFolders, 0)
+  } else {
+    // Drilled down view: Show contents of the current folder
+    const currentFolder = sortedFolders[0]
+    if (currentFolder) {
+      // Add children folders (flattened if they are expanded)
+      if (currentFolder.children) {
+        visibleFlatList.push(...getFlattenedVisibleItems(currentFolder.children, 0))
+      }
+      // Add items of the current folder
+      if (currentFolder.items) {
+        currentFolder.items.forEach((item) => {
+          visibleFlatList.push({ type: "item", data: item, level: 0 })
+        })
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen">
       <div className="px-4 pt-2">
@@ -946,13 +992,16 @@ export default function LibraryPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {currentFolderId === null ? (
-          <>
-            {sortedFolders.map((folder, index) => (
+        {visibleFlatList.map((row, index) => {
+          if (row.type === "folder") {
+            const folderData = row.data as FolderData
+            return (
               <Folder
-                key={folder.id}
-                folder={folder}
+                key={folderData.id}
+                folder={folderData}
+                level={row.level}
                 index={index}
+                isFlattened={true}
                 onSelect={handleSelectFolder}
                 onSelectItem={handleSelectItem}
                 onDoubleClick={handleFolderDoubleClick}
@@ -968,36 +1017,31 @@ export default function LibraryPage() {
                 onSortFolder={handleSortFolder}
                 folderSortOptions={folderSortOptions}
               />
-            ))}
-          </>
-        ) : (
-          <>
-            {sortedFolders.map((folder) => (
-              <div key={folder.id}>
-                {folder.children?.map((child, index) => (
-                  <Folder
-                    key={child.id}
-                    folder={child}
-                    index={index}
-                    onSelect={handleSelectFolder}
-                    onSelectItem={handleSelectItem}
-                    onDoubleClick={handleFolderDoubleClick}
-                    selectedFolders={selectedFolders}
-                    selectedItems={selectedItems}
-                    expandedFolders={expandedFolders}
-                    onToggleExpand={handleToggleExpand}
-                    importedFolders={importedFolders}
-                    importedItems={importedItems}
-                    onUpdateImported={handleUpdateImported}
-                    onRename={handleRenameFolder}
-                    onDelete={handleDeleteFolderStart}
-                    onSortFolder={handleSortFolder}
-                    folderSortOptions={folderSortOptions}
-                  />
-                ))}
-              </div>
-            ))}
-          </>
+            )
+          } else {
+            const itemData = row.data as LibraryItemData
+            return (
+              <LibraryItem
+                key={itemData.id}
+                item={{
+                  ...itemData,
+                  thumbnailUrl: itemData.thumbnailUrl || "/football-field.png",
+                }}
+                level={row.level}
+                index={index}
+                onSelect={handleSelectItem}
+                selectedItems={selectedItems}
+                importedItems={importedItems}
+                onUpdateImported={handleUpdateImported}
+              />
+            )
+          }
+        })}
+
+        {visibleFlatList.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+            <p>This folder is empty</p>
+          </div>
         )}
       </div>
 

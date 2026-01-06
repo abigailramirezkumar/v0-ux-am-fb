@@ -83,7 +83,10 @@ export function LibraryItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 pl-4" style={{ marginLeft: `${indentMargin}px` }}>
+      <div className="flex items-center flex-1 min-w-0 pl-4">
+        {/* Indentation Spacer */}
+        <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+
         {/* Checkbox - fixed width */}
         <div className="flex-shrink-0 w-6">
           {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
@@ -102,55 +105,56 @@ export function LibraryItem({
 
         {/* Name - flexible */}
         <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
-          <span className={cn("text-sm font-medium", isSelected ? "text-white" : "text-foreground")}>{item.name}</span>
+          <span className={cn("text-sm font-medium truncate", isSelected ? "text-white" : "text-foreground")}>
+            {item.name}
+          </span>
           {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
         </div>
+      </div>
 
-        {/* Modified column - fixed width */}
-        <div className="w-32 flex-shrink-0 ml-3">
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-            {item.dateModified || "—"}
-          </span>
-        </div>
+      <div className="w-32 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {item.dateModified || "—"}
+        </span>
+      </div>
 
-        {/* Type column - fixed width */}
-        <div className="w-24 flex-shrink-0 ml-3">
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-            {formatItemType(item.type)}
-          </span>
-        </div>
+      {/* Type column - fixed width */}
+      <div className="w-24 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {formatItemType(item.type)}
+        </span>
+      </div>
 
-        {/* Actions - fixed width */}
-        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-          {isImported ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
+      {/* Actions - fixed width */}
+      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
+        {isImported ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={(e) => {
+              e.stopPropagation()
+              onUpdateImported?.(item.id, "item")
+            }}
+          >
+            Update
+          </Button>
+        ) : (
+          isHovered && (
+            <button
+              className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
               onClick={(e) => {
                 e.stopPropagation()
-                onUpdateImported?.(item.id, "item")
               }}
             >
-              Update
-            </Button>
-          ) : (
-            isHovered && (
-              <button
-                className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                <div className="flex gap-1">
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                </div>
-              </button>
-            )
-          )}
-        </div>
+              <div className="flex gap-1">
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+              </div>
+            </button>
+          )
+        )}
       </div>
     </div>
   )

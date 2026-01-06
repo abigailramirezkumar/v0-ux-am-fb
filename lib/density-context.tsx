@@ -31,20 +31,20 @@ export function getDensitySpacing(density: Density) {
       return {
         py: "py-1.5", // Reduced from py-3
         gap: "gap-2", // Reduced from gap-3
-        indent: 16, // Reduced from 24
+        indent: 20, // Increased from 16 to 20
       }
     case "spacious":
       return {
         py: "py-4", // Increased from py-3
         gap: "gap-4", // Increased from gap-3
-        indent: 32, // Increased from 24
+        indent: 40, // Increased from 32 to 40
       }
     case "default":
     default:
       return {
         py: "py-3",
         gap: "gap-3",
-        indent: 24,
+        indent: 28, // Increased from 24 to 28
       }
   }
 }

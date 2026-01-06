@@ -59,7 +59,7 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
   return (
     <>
       {/* Breadcrumbs */}
-      <div className="sticky top-0 z-10 flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 pb-1">
+      <div className="sticky top-0 z-10 flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 border-none pb-0">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <button
             onClick={() => onNavigate(null)}
@@ -129,28 +129,19 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
       </div>
 
       {/* Fixed Column Headers */}
-      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border">
-        {/* Left padding to match rows */}
-        <div className="flex-shrink-0 pl-4" />
-
-        {/* Checkbox area - fixed width */}
-        <div className="flex-shrink-0 w-6" />
-
-        {/* Icon area - fixed width to match library item thumbnails */}
-        <div className="flex-shrink-0 w-9 ml-0" />
-
-        {/* Name column - flexible */}
-        <div className="flex-1 min-w-0 ml-0 mr-0">
+      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border pt-1">
+        {/* Name column - Consolidated to left align with checkbox */}
+        <div className="flex-1 min-w-0 pl-4 ml-4">
           <span className="text-sm font-bold text-muted-foreground">Name</span>
         </div>
 
         {/* Modified column - fixed width */}
-        <div className="w-32 flex-shrink-0 ml-3">
+        <div className="w-32 flex-shrink-0 ml-3 pl-4">
           <span className="text-sm font-bold text-muted-foreground">Modified</span>
         </div>
 
         {/* Type column - fixed width */}
-        <div className="w-24 flex-shrink-0 ml-3 mr-[-16px]">
+        <div className="w-24 flex-shrink-0 ml-3 pl-4">
           <span className="text-sm font-bold text-muted-foreground">Type</span>
         </div>
 

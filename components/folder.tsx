@@ -39,6 +39,7 @@ interface FolderProps {
   folder: FolderData
   level?: number
   index?: number // Added index prop for zebra striping
+  isFlattened?: boolean
   onSelect?: (folderId: string, selected: boolean) => void
   onSelectItem?: (itemId: string, selected: boolean) => void
   onDoubleClick?: (folderId: string) => void
@@ -59,6 +60,7 @@ export function Folder({
   folder,
   level = 0,
   index = 0, // Default to 0
+  isFlattened = false,
   onSelect,
   onSelectItem,
   onDoubleClick,
@@ -151,7 +153,10 @@ export function Folder({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 pl-4" style={{ marginLeft: `${indentMargin}px` }}>
+      <div className="flex items-center flex-1 min-w-0 pl-4">
+        {/* Indentation Spacer */}
+        <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+
         <div className="flex-shrink-0 w-6">
           {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
         </div>
@@ -183,10 +188,10 @@ export function Folder({
             />
           ) : (
             <>
-              <span className={cn("text-sm font-bold", isSelected ? "text-white" : "text-foreground")}>
+              <span className={cn("text-sm font-bold truncate", isSelected ? "text-white" : "text-foreground")}>
                 {folder.name}
               </span>
-              <span className={cn("text-sm", isSelected ? "text-white/70" : "text-muted-foreground")}>
+              <span className={cn("text-sm whitespace-nowrap", isSelected ? "text-white/70" : "text-muted-foreground")}>
                 • {totalItemCount} {totalItemCount === 1 ? "Item" : "Items"}
               </span>
               {hasSortApplied && (
@@ -198,58 +203,58 @@ export function Folder({
             </>
           )}
         </div>
+      </div>
 
-        <div className="w-32 flex-shrink-0 ml-3">
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-            {folder.dateModified || "—"}
-          </span>
-        </div>
+      <div className="w-32 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {folder.dateModified || "—"}
+        </span>
+      </div>
 
-        <div className="w-24 flex-shrink-0 ml-3">
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
-        </div>
+      <div className="w-24 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
+      </div>
 
-        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-          {isImported ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs bg-transparent"
-              onClick={(e) => {
-                e.stopPropagation()
-                onUpdateImported?.(folder.id, "folder")
-              }}
-            >
-              Update
-            </Button>
-          ) : (
-            isHovered && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                    }}
-                  >
-                    <div className="flex gap-1">
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem onClick={handleRenameStart}>Rename Folder</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-                    Delete Folder
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )
-          )}
-        </div>
+      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
+        {isImported ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs bg-transparent"
+            onClick={(e) => {
+              e.stopPropagation()
+              onUpdateImported?.(folder.id, "folder")
+            }}
+          >
+            Update
+          </Button>
+        ) : (
+          isHovered && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                >
+                  <div className="flex gap-1">
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onClick={handleRenameStart}>Rename Folder</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                  Delete Folder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        )}
       </div>
     </div>
   )
@@ -323,14 +328,14 @@ export function Folder({
         </ContextMenuContent>
       </ContextMenu>
 
-      {isExpanded && hasChildren && (
+      {!isFlattened && isExpanded && hasChildren && (
         <div>
           {folder.children?.map((child, i) => (
             <Folder
               key={child.id}
               folder={child}
               level={level + 1}
-              index={i} // Pass index for zebra striping
+              index={i}
               onSelect={onSelect}
               onSelectItem={onSelectItem}
               onDoubleClick={onDoubleClick}

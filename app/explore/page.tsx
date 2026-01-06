@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { FilterSidebar } from "@/components/explore/filter-sidebar"
 import { ClipsDataGrid } from "@/components/explore/clips-data-grid"
 import { ClipViewer } from "@/components/explore/clip-viewer"
@@ -40,10 +39,9 @@ export default function ExplorePage() {
     filters.downs.length + filters.quarters.length + filters.playTypes.length + filters.personnel.length
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Top Bar */}
-      <div className="border-b border-border">
-        {/* Secondary Navigation */}
+    <div className="flex flex-col h-full gap-2">
+      {/* Secondary Navigation */}
+      <div className="rounded-xl bg-background shadow-sm overflow-hidden shrink-0">
         <div className="px-4 py-2 border-b border-border/50">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-transparent p-0 gap-1">
@@ -76,41 +74,27 @@ export default function ExplorePage() {
         </div>
 
         <GlobalFilters />
-
-        {/* Filter count and clear button */}
-        <div className="px-4 py-2 flex items-center justify-end border-t border-border/30">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{filteredClips.length} clips</span>
-            {activeFilterCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-                onClick={() => setFilters({ downs: [], quarters: [], playTypes: [], personnel: [] })}
-              >
-                Clear filters ({activeFilterCount})
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* Main Content - Resizable Split Pane */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
-        {/* Left Pane - Filters */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="border-r border-border">
-          <FilterSidebar filters={filters} onFilterChange={setFilters} />
+        {/* Module 2: Left Sidebar */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+            <FilterSidebar filters={filters} onFilterChange={setFilters} />
+          </div>
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/20" />
 
-        {/* Right Pane - Data Grid */}
+        {/* Module 3: Data Grid */}
         <ResizablePanel defaultSize={80}>
-          <ClipsDataGrid
-            clips={filteredClips}
-            onClipDoubleClick={handleClipDoubleClick}
-            selectedClipId={selectedClip?.id || null}
-          />
+          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+            <ClipsDataGrid
+              clips={filteredClips}
+              onClipDoubleClick={handleClipDoubleClick}
+              selectedClipId={selectedClip?.id || null}
+            />
+          </div>
         </ResizablePanel>
       </ResizablePanelGroup>
 

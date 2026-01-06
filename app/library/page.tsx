@@ -984,7 +984,7 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none">
       <div className="px-4 pt-2">
         <LibraryHeader onImportComplete={handleImportComplete} />
 

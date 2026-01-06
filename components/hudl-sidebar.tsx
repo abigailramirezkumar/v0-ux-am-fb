@@ -32,11 +32,20 @@ interface HudlSidebarProps {
   children?: React.ReactNode
 }
 
+function SidebarLogo() {
+  const { state } = useSidebar()
+
+  return (
+    <div className="flex items-center justify-between mb-4">
+      {state === "collapsed" ? <Logo type="logomark" className="w-5 h-5" /> : <Logo type="logotype" className="h-8" />}
+    </div>
+  )
+}
+
 export function HudlSidebar({ children }: HudlSidebarProps) {
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme, resolvedTheme } = useTheme()
   const { activeVersion, setActiveVersion } = useCatapultImportContext()
-  const { state } = useSidebar()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -60,14 +69,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
   return (
     <Sidebar collapsible="icon" className="border-r-0 border-sidebar">
       <SidebarHeader>
-        {/* Hudl Header */}
-        <div className="flex items-center justify-between mb-4">
-          {state === "collapsed" ? (
-            <Logo type="logomark" className="w-5 h-5" />
-          ) : (
-            <Logo type="logotype" className="h-8" />
-          )}
-        </div>
+        <SidebarLogo />
 
         {/* Team Section */}
         <div className="mb-4">

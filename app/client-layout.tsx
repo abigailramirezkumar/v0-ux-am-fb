@@ -22,10 +22,10 @@ export default function ClientLayout({
       <CatapultImportProvider>
         <DensityProvider>
           <SidebarProvider defaultOpen={true}>
-            <div className="h-screen w-full flex bg-background">
+            <div className="h-screen w-full flex bg-sidebar">
               <HudlSidebar />
 
-              <SidebarInset className="flex-1 flex flex-col">
+              <SidebarInset className="flex-1 flex flex-col bg-sidebar">
                 <Header
                   title="Component Library"
                   searchValue={searchValue}
@@ -34,9 +34,10 @@ export default function ClientLayout({
                   onFilterClick={() => console.log("Filter clicked")}
                   onShareClick={() => console.log("Share clicked")}
                   onDownloadClick={() => console.log("Download clicked")}
+                  className="bg-sidebar border-b border-sidebar-border"
                 />
 
-                <main className="flex-1 overflow-auto">
+                <main className="flex-1 overflow-hidden p-2 px-0 pt-0 pr-2">
                   <Suspense fallback={null}>{children}</Suspense>
                 </main>
               </SidebarInset>

@@ -27,7 +27,7 @@ export function Header({
   searchPlaceholder = "Search or filter...",
 }: HeaderProps) {
   return (
-    <header className={cn("bg-sidebar border-b-0 border-border px-4 py-3 font-sans", className)}>
+    <header className={cn("bg-sidebar border-b-0 border-border px-4 py-3 font-sans border-none", className)}>
       <div className="flex items-center gap-4">
         {/* Menu Button */}
         <SidebarTrigger className="p-1 hover:bg-muted rounded transition-colors" />

@@ -15,6 +15,14 @@ export interface LibraryItemData {
   thumbnailUrl?: string
   type: "video" | "pdf" | "image" | "audio" | "document"
   dateModified?: string
+  // New metadata fields
+  hasData?: boolean
+  clipCount?: number
+  duration?: string
+  size?: string
+  createdDate?: string
+  angleCount?: number
+  commentCount?: number
 }
 
 interface LibraryItemProps {
@@ -69,6 +77,8 @@ export function LibraryItem({
 
   const indentMargin = level * spacing.indent
 
+  const isVideo = item.type === "video"
+
   return (
     <div
       className={cn(
@@ -112,16 +122,83 @@ export function LibraryItem({
         </div>
       </div>
 
-      <div className="w-32 flex-shrink-0 ml-3">
+      {/* Modified column */}
+      <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
           {item.dateModified || "—"}
         </span>
       </div>
 
-      {/* Type column - fixed width */}
-      <div className="w-24 flex-shrink-0 ml-3">
+      {/* Type column */}
+      <div className="w-16 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
           {formatItemType(item.type)}
+        </span>
+      </div>
+
+      <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
+        {item.hasData ? (
+          <img src="/images/data.png" alt="Has data" className={cn("w-4 h-4", isSelected && "brightness-0 invert")} />
+        ) : (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+        )}
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {isVideo && item.clipCount !== undefined ? item.clipCount : "—"}
+        </span>
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 flex items-center justify-center gap-1">
+        {isVideo && item.angleCount !== undefined ? (
+          <>
+            <img
+              src="/images/angles.png"
+              alt="Angles"
+              className={cn("w-3.5 h-3.5", isSelected && "brightness-0 invert")}
+            />
+            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+              {item.angleCount}
+            </span>
+          </>
+        ) : (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+        )}
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {isVideo && item.duration ? item.duration : "—"}
+        </span>
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-right">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {item.size || "—"}
+        </span>
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 flex items-center justify-center gap-1">
+        {isVideo && item.commentCount !== undefined ? (
+          <>
+            <img
+              src="/images/comments.png"
+              alt="Comments"
+              className={cn("w-3.5 h-3.5", isSelected && "brightness-0 invert")}
+            />
+            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+              {item.commentCount}
+            </span>
+          </>
+        ) : (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+        )}
+      </div>
+
+      <div className="w-24 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {item.createdDate || "—"}
         </span>
       </div>
 

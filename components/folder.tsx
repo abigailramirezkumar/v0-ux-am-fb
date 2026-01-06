@@ -31,6 +31,7 @@ export interface FolderData {
   id: string
   name: string
   dateModified?: string
+  createdDate?: string
   children?: FolderData[]
   items?: LibraryItemData[]
 }
@@ -38,7 +39,7 @@ export interface FolderData {
 interface FolderProps {
   folder: FolderData
   level?: number
-  index?: number // Added index prop for zebra striping
+  index?: number
   isFlattened?: boolean
   onSelect?: (folderId: string, selected: boolean) => void
   onSelectItem?: (itemId: string, selected: boolean) => void
@@ -59,7 +60,7 @@ interface FolderProps {
 export function Folder({
   folder,
   level = 0,
-  index = 0, // Default to 0
+  index = 0,
   isFlattened = false,
   onSelect,
   onSelectItem,
@@ -191,9 +192,6 @@ export function Folder({
               <span className={cn("text-sm font-bold truncate", isSelected ? "text-white" : "text-foreground")}>
                 {folder.name}
               </span>
-              <span className={cn("text-sm whitespace-nowrap", isSelected ? "text-white/70" : "text-muted-foreground")}>
-                • {totalItemCount} {totalItemCount === 1 ? "Item" : "Items"}
-              </span>
               {hasSortApplied && (
                 <div className="flex items-center gap-1">
                   <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
@@ -205,16 +203,49 @@ export function Folder({
         </div>
       </div>
 
-      <div className="w-32 flex-shrink-0 ml-3">
+      {/* Modified column */}
+      <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
           {folder.dateModified || "—"}
         </span>
       </div>
 
-      <div className="w-24 flex-shrink-0 ml-3">
+      {/* Type column */}
+      <div className="w-16 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
       </div>
 
+      <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>{totalItemCount}</span>
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-right">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      </div>
+
+      <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      </div>
+
+      <div className="w-24 flex-shrink-0 ml-3">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {folder.createdDate || "—"}
+        </span>
+      </div>
+
+      {/* Actions - fixed width */}
       <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
         {isImported ? (
           <Button
@@ -361,7 +392,7 @@ export function Folder({
                 thumbnailUrl: item.thumbnailUrl || "/football-field.png",
               }}
               level={level + 1}
-              index={i + (folder.children?.length || 0)} // Continue index sequence after folders
+              index={i + (folder.children?.length || 0)}
               onSelect={onSelectItem}
               selectedItems={selectedItems}
               importedItems={importedItems}

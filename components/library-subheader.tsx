@@ -128,25 +128,61 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
         </div>
       </div>
 
-      {/* Fixed Column Headers */}
       <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border pt-1">
-        {/* Name column - Consolidated to left align with checkbox */}
+        {/* Name column */}
         <div className="flex-1 min-w-0 pl-4 ml-4">
           <span className="text-sm font-bold text-muted-foreground">Name</span>
         </div>
 
-        {/* Modified column - fixed width */}
-        <div className="w-32 flex-shrink-0 ml-3 pl-4">
-          <span className="text-sm font-bold text-muted-foreground">Modified</span>
-        </div>
+        <div className="flex items-center flex-shrink-0">
+          {/* Modified column */}
+          <div className="w-24 flex-shrink-0 ml-3">
+            <span className="text-sm font-bold text-muted-foreground">Modified</span>
+          </div>
 
-        {/* Type column - fixed width */}
-        <div className="w-24 flex-shrink-0 ml-3 pl-4">
-          <span className="text-sm font-bold text-muted-foreground">Type</span>
-        </div>
+          {/* Type column */}
+          <div className="w-16 flex-shrink-0 ml-3">
+            <span className="text-sm font-bold text-muted-foreground">Type</span>
+          </div>
 
-        {/* Actions area - fixed width */}
-        <div className="w-8 flex-shrink-0 ml-3 mr-4" />
+          {/* Data column */}
+          <div className="w-12 flex-shrink-0 ml-3 text-center">
+            <span className="text-sm font-bold text-muted-foreground">Data</span>
+          </div>
+
+          {/* Items column */}
+          <div className="w-14 flex-shrink-0 ml-3 text-center">
+            <span className="text-sm font-bold text-muted-foreground">Items</span>
+          </div>
+
+          {/* Angles column */}
+          <div className="w-14 flex-shrink-0 ml-3 text-center">
+            <span className="text-sm font-bold text-muted-foreground">Angles</span>
+          </div>
+
+          {/* Duration column */}
+          <div className="w-16 flex-shrink-0 ml-3 text-center">
+            <span className="text-sm font-bold text-muted-foreground">Duration</span>
+          </div>
+
+          {/* Size column */}
+          <div className="w-16 flex-shrink-0 ml-3 text-right">
+            <span className="text-sm font-bold text-muted-foreground">Size</span>
+          </div>
+
+          {/* Comments column */}
+          <div className="w-14 flex-shrink-0 ml-3 text-center">
+            <span className="text-sm font-bold text-muted-foreground">Comments</span>
+          </div>
+
+          {/* Created column */}
+          <div className="w-24 flex-shrink-0 ml-3">
+            <span className="text-sm font-bold text-muted-foreground">Created</span>
+          </div>
+
+          {/* Actions area */}
+          <div className="w-8 flex-shrink-0 ml-3 mr-4" />
+        </div>
       </div>
     </>
   )

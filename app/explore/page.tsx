@@ -11,7 +11,6 @@ import { mockClips, type Clip } from "@/lib/mock-clips"
 
 export default function ExplorePage() {
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null)
-  const [clipViewerOpen, setClipViewerOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("plays")
   const [filters, setFilters] = useState({
     downs: [] as number[],
@@ -30,76 +29,74 @@ export default function ExplorePage() {
     })
   }, [filters])
 
-  const handleClipDoubleClick = (clip: Clip) => {
-    setSelectedClip(clip)
-    setClipViewerOpen(true)
-  }
-
-  const activeFilterCount =
-    filters.downs.length + filters.quarters.length + filters.playTypes.length + filters.personnel.length
-
   return (
-    <div className="flex flex-col h-full gap-2">
-      {/* Secondary Navigation */}
+    <div className="h-full flex flex-col gap-2">
+      {/* Top Module: Header & Global Filters */}
       <div className="rounded-xl bg-background shadow-sm overflow-hidden shrink-0">
         <div className="px-4 py-2 border-b border-border/50">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-transparent p-0 gap-1">
+            <TabsList className="bg-transparent p-0 gap-1 h-auto">
               <TabsTrigger
                 value="games"
-                className="data-[state=active]:bg-muted px-4 py-1.5 text-xs font-medium rounded"
+                className="data-[state=active]:bg-muted px-3 py-1.5 text-xs font-medium rounded-md"
               >
                 Games
               </TabsTrigger>
               <TabsTrigger
                 value="plays"
-                className="data-[state=active]:bg-muted px-4 py-1.5 text-xs font-medium rounded"
+                className="data-[state=active]:bg-muted px-3 py-1.5 text-xs font-medium rounded-md"
               >
                 Plays
               </TabsTrigger>
               <TabsTrigger
                 value="players"
-                className="data-[state=active]:bg-muted px-4 py-1.5 text-xs font-medium rounded"
+                className="data-[state=active]:bg-muted px-3 py-1.5 text-xs font-medium rounded-md"
               >
                 Players
-              </TabsTrigger>
-              <TabsTrigger
-                value="saved"
-                className="data-[state=active]:bg-muted px-4 py-1.5 text-xs font-medium rounded"
-              >
-                Saved Filters
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
-
         <GlobalFilters />
       </div>
 
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        {/* Module 2: Left Sidebar */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+      {/* Main Layout: Split Panes with Module Design */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
+        {/* Left Module: Filters */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-transparent">
+          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
             <FilterSidebar filters={filters} onFilterChange={setFilters} />
           </div>
         </ResizablePanel>
 
-        <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/20" />
+        {/* Gap 1 */}
+        <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/10" />
 
-        {/* Module 3: Data Grid */}
-        <ResizablePanel defaultSize={80}>
-          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+        {/* Middle Module: Data Grid */}
+        <ResizablePanel defaultSize={selectedClip ? 50 : 80} minSize={30} className="bg-transparent">
+          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
             <ClipsDataGrid
               clips={filteredClips}
-              onClipDoubleClick={handleClipDoubleClick}
+              onClipDoubleClick={(clip) => setSelectedClip(clip)}
               selectedClipId={selectedClip?.id || null}
             />
           </div>
         </ResizablePanel>
-      </ResizablePanelGroup>
 
-      {/* Clip Viewer Sheet */}
-      <ClipViewer clip={selectedClip} open={clipViewerOpen} onOpenChange={setClipViewerOpen} />
+        {/* Right Module: Clip Viewer (Conditional) */}
+        {selectedClip && (
+          <>
+            {/* Gap 2 */}
+            <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/10" />
+
+            <ResizablePanel defaultSize={30} minSize={20} maxSize={50} className="bg-transparent">
+              <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+                <ClipViewer clip={selectedClip} onClose={() => setSelectedClip(null)} />
+              </div>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   )
 }

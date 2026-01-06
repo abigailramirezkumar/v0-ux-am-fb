@@ -30,9 +30,7 @@ import { useDensity, getDensitySpacing } from "@/lib/density-context"
 export interface FolderData {
   id: string
   name: string
-  modifiedDate: string
-  type: "Folder"
-  createdDate: string
+  dateModified?: string
   children?: FolderData[]
   items?: LibraryItemData[]
 }
@@ -40,7 +38,7 @@ export interface FolderData {
 interface FolderProps {
   folder: FolderData
   level?: number
-  index?: number
+  index?: number // Added index prop for zebra striping
   isFlattened?: boolean
   onSelect?: (folderId: string, selected: boolean) => void
   onSelectItem?: (itemId: string, selected: boolean) => void
@@ -61,7 +59,7 @@ interface FolderProps {
 export function Folder({
   folder,
   level = 0,
-  index = 0,
+  index = 0, // Default to 0
   isFlattened = false,
   onSelect,
   onSelectItem,
@@ -155,7 +153,7 @@ export function Folder({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 min-w-[200px] pl-4">
+      <div className="flex items-center flex-1 min-w-0 pl-4">
         {/* Indentation Spacer */}
         <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
@@ -207,57 +205,17 @@ export function Folder({
         </div>
       </div>
 
-      {/* Modified */}
-      <div className="w-[100px] flex-shrink-0 text-right">
+      <div className="w-32 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.modifiedDate}
+          {folder.dateModified || "—"}
         </span>
       </div>
 
-      {/* Type */}
-      <div className="w-[80px] flex-shrink-0 text-center">
+      <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
       </div>
 
-      {/* Data */}
-      <div className="w-[60px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Items */}
-      <div className="w-[60px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Angles */}
-      <div className="w-[80px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Duration */}
-      <div className="w-[80px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Size */}
-      <div className="w-[80px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Comments */}
-      <div className="w-[100px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-      </div>
-
-      {/* Created */}
-      <div className="w-[100px] flex-shrink-0 text-right mr-2">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.createdDate}
-        </span>
-      </div>
-
-      {/* Actions */}
-      <div className="w-[40px] flex-shrink-0 flex items-center justify-center mr-4">
+      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
         {isImported ? (
           <Button
             variant="outline"
@@ -330,14 +288,14 @@ export function Folder({
               </ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem
-                onClick={() => onSortFolder?.(folder.id, "modifiedDate", "desc")}
-                className={currentSort?.by === "modifiedDate" && currentSort?.direction === "desc" ? "bg-accent" : ""}
+                onClick={() => onSortFolder?.(folder.id, "dateModified", "desc")}
+                className={currentSort?.by === "dateModified" && currentSort?.direction === "desc" ? "bg-accent" : ""}
               >
                 Date Modified (Newest)
               </ContextMenuItem>
               <ContextMenuItem
-                onClick={() => onSortFolder?.(folder.id, "modifiedDate", "asc")}
-                className={currentSort?.by === "modifiedDate" && currentSort?.direction === "asc" ? "bg-accent" : ""}
+                onClick={() => onSortFolder?.(folder.id, "dateModified", "asc")}
+                className={currentSort?.by === "dateModified" && currentSort?.direction === "asc" ? "bg-accent" : ""}
               >
                 Date Modified (Oldest)
               </ContextMenuItem>
@@ -403,7 +361,7 @@ export function Folder({
                 thumbnailUrl: item.thumbnailUrl || "/football-field.png",
               }}
               level={level + 1}
-              index={i + (folder.children?.length || 0)}
+              index={i + (folder.children?.length || 0)} // Continue index sequence after folders
               onSelect={onSelectItem}
               selectedItems={selectedItems}
               importedItems={importedItems}

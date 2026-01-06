@@ -13,15 +13,8 @@ export interface LibraryItemData {
   id: string
   name: string
   thumbnailUrl?: string
-  type: "video" | "pdf" | "image" | "audio" | "document" | "Game"
-  modifiedDate: string
-  dataStatus?: boolean
-  itemCount?: number
-  angleCount?: number
-  duration?: string
-  size?: string
-  commentCount?: number
-  createdDate: string
+  type: "video" | "pdf" | "image" | "audio" | "document"
+  dateModified?: string
 }
 
 interface LibraryItemProps {
@@ -41,7 +34,6 @@ const formatItemType = (type: string): string => {
     image: "Image",
     audio: "Audio",
     document: "Document",
-    Game: "Game",
   }
   return typeMap[type] || type
 }
@@ -91,7 +83,7 @@ export function LibraryItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 min-w-[200px] pl-4">
+      <div className="flex items-center flex-1 min-w-0 pl-4">
         {/* Indentation Spacer */}
         <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
@@ -120,91 +112,21 @@ export function LibraryItem({
         </div>
       </div>
 
-      {/* Modified */}
-      <div className="w-[100px] flex-shrink-0 text-right">
+      <div className="w-32 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.modifiedDate}
+          {item.dateModified || "—"}
         </span>
       </div>
 
-      {/* Type */}
-      <div className="w-[80px] flex-shrink-0 text-center">
+      {/* Type column - fixed width */}
+      <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
           {formatItemType(item.type)}
         </span>
       </div>
 
-      {/* Data */}
-      <div className="w-[60px] flex-shrink-0 flex justify-center">
-        {item.dataStatus ? (
-          <Icon name="fileText" size={14} className={cn(isSelected ? "text-white/80" : "text-muted-foreground")} />
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-        )}
-      </div>
-
-      {/* Items */}
-      <div className="w-[60px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.itemCount || "–"}
-        </span>
-      </div>
-
-      {/* Angles */}
-      <div className="w-[80px] flex-shrink-0 flex justify-center items-center gap-1">
-        {item.angleCount ? (
-          <>
-            <Icon name="video" size={14} className={cn(isSelected ? "text-white/80" : "text-muted-foreground")} />
-            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-              {item.angleCount}
-            </span>
-          </>
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-        )}
-      </div>
-
-      {/* Duration */}
-      <div className="w-[80px] flex-shrink-0 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.duration || "–"}
-        </span>
-      </div>
-
-      {/* Size */}
-      <div className="w-[80px] flex-shrink-0 text-right">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.size || "–"}
-        </span>
-      </div>
-
-      {/* Comments */}
-      <div className="w-[100px] flex-shrink-0 flex justify-center items-center gap-1">
-        {item.commentCount ? (
-          <>
-            <Icon
-              name="messageSquare"
-              size={14}
-              className={cn(isSelected ? "text-white/80" : "text-muted-foreground")}
-            />
-            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-              {item.commentCount}
-            </span>
-          </>
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>–</span>
-        )}
-      </div>
-
-      {/* Created */}
-      <div className="w-[100px] flex-shrink-0 text-right mr-2">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.createdDate}
-        </span>
-      </div>
-
       {/* Actions - fixed width */}
-      <div className="w-[40px] flex-shrink-0 flex items-center justify-center mr-4">
+      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
         {isImported ? (
           <Button
             variant="ghost"

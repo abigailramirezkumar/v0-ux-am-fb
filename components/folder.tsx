@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
+import { useLibraryContext } from "@/lib/library-context"
 
 export interface FolderData {
   id: string
@@ -83,6 +84,7 @@ export function Folder({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
+  const { columns } = useLibraryContext()
 
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
@@ -140,6 +142,62 @@ export function Folder({
   const currentSort = folderSortOptions[folder.id]
   const hasSortApplied = !!currentSort
 
+  const renderCell = (colId: string) => {
+    switch (colId) {
+      case "name":
+        return (
+          <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
+            {isRenaming ? (
+              <Input
+                value={renameName}
+                onChange={(e) => setRenameName(e.target.value)}
+                onBlur={handleRenameComplete}
+                onKeyDown={handleRenameKeyDown}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                className="h-7 text-sm font-medium"
+              />
+            ) : (
+              <>
+                <span className={cn("text-sm font-bold truncate", isSelected ? "text-white" : "text-foreground")}>
+                  {folder.name}
+                </span>
+                {hasSortApplied && (
+                  <div className="flex items-center gap-1">
+                    <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
+                  </div>
+                )}
+                {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+              </>
+            )}
+          </div>
+        )
+      case "dateModified":
+        return (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+            {folder.dateModified || ""}
+          </span>
+        )
+      case "type":
+        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
+      case "itemCount":
+        return (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+            {totalItemCount}
+          </span>
+        )
+      case "createdDate":
+        return (
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
+            {folder.createdDate || ""}
+          </span>
+        )
+      default:
+        // hasData, angles, duration, size, comments are N/A for folders
+        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+    }
+  }
+
   const folderRow = (
     <div
       className={cn(
@@ -154,96 +212,49 @@ export function Folder({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 min-w-0 pl-4">
-        {/* Indentation Spacer */}
-        <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+      {columns.map((col) => {
+        if (!col.visible) return null
 
-        <div className="flex-shrink-0 w-6">
-          {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
-        </div>
+        if (col.id === "name") {
+          // Render fixed structure for Name column
+          return (
+            <div key={col.id} className={cn("flex items-center min-w-0 pl-4", col.width)}>
+              <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+              <div className="flex-shrink-0 w-6">
+                {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+              </div>
+              <div className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0">
+                {isHovered && hasChildren ? (
+                  isExpanded ? (
+                    <ChevronDownIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                  ) : (
+                    <ChevronRightIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                  )
+                ) : isExpanded ? (
+                  <FolderFilledIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                ) : (
+                  <FolderIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                )}
+              </div>
+              {renderCell(col.id)}
+            </div>
+          )
+        }
 
-        <div className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0">
-          {isHovered && hasChildren ? (
-            isExpanded ? (
-              <ChevronDownIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-            ) : (
-              <ChevronRightIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-            )
-          ) : isExpanded ? (
-            <FolderFilledIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-          ) : (
-            <FolderIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-          )}
-        </div>
-
-        <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
-          {isRenaming ? (
-            <Input
-              value={renameName}
-              onChange={(e) => setRenameName(e.target.value)}
-              onBlur={handleRenameComplete}
-              onKeyDown={handleRenameKeyDown}
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-              className="h-7 text-sm font-medium"
-            />
-          ) : (
-            <>
-              <span className={cn("text-sm font-bold truncate", isSelected ? "text-white" : "text-foreground")}>
-                {folder.name}
-              </span>
-              {hasSortApplied && (
-                <div className="flex items-center gap-1">
-                  <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
-                </div>
-              )}
-              {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Modified column */}
-      <div className="w-24 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.dateModified || ""}
-        </span>
-      </div>
-
-      {/* Type column */}
-      <div className="w-16 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>Folder</span>
-      </div>
-
-      <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>{totalItemCount}</span>
-      </div>
-
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-24 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.createdDate || ""}
-        </span>
-      </div>
+        return (
+          <div
+            key={col.id}
+            className={cn(
+              "flex-shrink-0 ml-3 flex",
+              col.width,
+              col.align === "right" && "justify-end",
+              col.align === "center" && "justify-center",
+            )}
+          >
+            {renderCell(col.id)}
+          </div>
+        )
+      })}
 
       {/* Actions - fixed width */}
       <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">

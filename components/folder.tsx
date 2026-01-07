@@ -323,9 +323,22 @@ export function Folder({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem onClick={handleRenameStart}>Rename Folder</DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    handleRenameStart()
+                  }}
+                >
+                  Rename Folder
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    handleDelete()
+                  }}
+                >
                   Delete Folder
                 </DropdownMenuItem>
               </DropdownMenuContent>

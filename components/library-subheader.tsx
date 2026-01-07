@@ -124,7 +124,14 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
               </DropdownMenuSubContent>
             </DropdownMenuSub>
 
-            <DropdownMenuItem onClick={onReorderFolders}>Set Folder Order</DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                onReorderFolders()
+              }}
+            >
+              Set Folder Order
+            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>More Settings...</DropdownMenuItem>

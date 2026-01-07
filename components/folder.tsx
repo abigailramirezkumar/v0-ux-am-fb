@@ -302,7 +302,14 @@ export function Folder({
           <ContextMenuItem onClick={handleRenameStart}>Rename Folder</ContextMenuItem>
 
           {hasChildFolders && (
-            <ContextMenuItem onClick={() => onReorderChildren?.(folder.id)}>Set Folder Order</ContextMenuItem>
+            <ContextMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                onReorderChildren?.(folder.id)
+              }}
+            >
+              Set Folder Order
+            </ContextMenuItem>
           )}
 
           <ContextMenuSub>

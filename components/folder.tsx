@@ -206,7 +206,7 @@ export function Folder({
       {/* Modified column */}
       <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.dateModified || "—"}
+          {folder.dateModified || ""}
         </span>
       </div>
 
@@ -216,32 +216,32 @@ export function Folder({
       </div>
 
       <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 
-      <div className="w-14 flex-shrink-0 ml-3 text-center">
+      <div className="w-14 flex-shrink-0 ml-3 text-left">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>{totalItemCount}</span>
       </div>
 
-      <div className="w-14 flex-shrink-0 ml-3 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      <div className="w-14 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 
-      <div className="w-16 flex-shrink-0 ml-3 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 
-      <div className="w-16 flex-shrink-0 ml-3 text-right">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 
-      <div className="w-14 flex-shrink-0 ml-3 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+      <div className="w-14 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 
       <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {folder.createdDate || "—"}
+          {folder.createdDate || ""}
         </span>
       </div>
 

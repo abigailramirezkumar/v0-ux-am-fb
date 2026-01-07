@@ -25,22 +25,22 @@ export function LibraryTableHeader() {
         </div>
 
         {/* Items column - matches folder.tsx: w-14 flex-shrink-0 ml-3 */}
-        <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <div className="w-14 flex-shrink-0 ml-3 text-left">
           <span className="text-sm font-bold text-muted-foreground">Items</span>
         </div>
 
         {/* Angles column - matches folder.tsx: w-14 flex-shrink-0 ml-3 */}
-        <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <div className="w-14 flex-shrink-0 ml-3 text-left">
           <span className="text-sm font-bold text-muted-foreground">Angles</span>
         </div>
 
         {/* Duration column - matches folder.tsx: w-16 flex-shrink-0 ml-3 */}
-        <div className="w-16 flex-shrink-0 ml-3 text-center">
+        <div className="w-16 flex-shrink-0 ml-3">
           <span className="text-sm font-bold text-muted-foreground">Duration</span>
         </div>
 
         {/* Size column - matches folder.tsx: w-16 flex-shrink-0 ml-3 */}
-        <div className="w-16 flex-shrink-0 ml-3 text-right">
+        <div className="w-16 flex-shrink-0 ml-3">
           <span className="text-sm font-bold text-muted-foreground">Size</span>
         </div>
 

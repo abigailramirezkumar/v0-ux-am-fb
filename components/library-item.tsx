@@ -182,7 +182,7 @@ export function LibraryItem({
       {/* Modified column */}
       <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.dateModified || "—"}
+          {item.dateModified || ""}
         </span>
       </div>
 
@@ -200,45 +200,45 @@ export function LibraryItem({
             <DataIcon className={cn("w-4 h-4", isSelected ? "text-white" : "text-muted-foreground")} />
           ) : null
         ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
         )}
       </div>
 
       {/* Items column */}
-      <div className="w-14 flex-shrink-0 ml-3 text-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.itemCount ?? "—") : "—"}
+      <div className="w-14 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm text-left", isSelected ? "text-white/80" : "text-muted-foreground")}>
+          {isVideo ? (item.itemCount ?? "") : ""}
         </span>
       </div>
 
       {/* Angles column */}
-      <div className="w-14 flex-shrink-0 ml-3 flex items-center justify-center gap-1">
+      <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
         {isVideo && item.angles !== undefined ? (
           <>
             <AnglesIcon className={cn("w-3.5 h-3.5", isSelected ? "text-white" : "text-muted-foreground")} />
             <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>{item.angles}</span>
           </>
         ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
         )}
       </div>
 
       {/* Duration column */}
-      <div className="w-16 flex-shrink-0 ml-3 text-center">
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.duration ?? "—") : "—"}
+          {isVideo ? (item.duration ?? "") : ""}
         </span>
       </div>
 
       {/* Size column */}
-      <div className="w-16 flex-shrink-0 ml-3 text-right">
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.size ?? "—") : "—"}
+          {isVideo ? (item.size ?? "") : ""}
         </span>
       </div>
 
       {/* Comments column */}
-      <div className="w-14 flex-shrink-0 ml-3 flex items-center justify-center gap-1">
+      <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
         {isVideo ? (
           <>
             <CommentsIcon className={cn("w-3.5 h-3.5", isSelected ? "text-white" : "text-muted-foreground")} />
@@ -247,14 +247,14 @@ export function LibraryItem({
             </span>
           </>
         ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>—</span>
+          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
         )}
       </div>
 
       {/* Created column */}
       <div className="w-24 flex-shrink-0 ml-3">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.createdDate || "—"}
+          {item.createdDate || ""}
         </span>
       </div>
 

@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/button"
 import { useDensity } from "@/lib/density-context"
-import { LibraryProvider, useLibraryContext } from "@/lib/library-context"
 
 const testFolders: FolderData[] = [
   {
@@ -279,63 +278,468 @@ const testFolders: FolderData[] = [
     name: "Folder 6",
     dateModified: "Oct 23, 2024",
     createdDate: "Sep 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-6-1",
+        name: "Subfolder 6-1",
+        dateModified: "Oct 23, 2024",
+        createdDate: "Sep 5, 2024",
+        children: [
+          {
+            id: "subfolder-6-1-1",
+            name: "Subfolder 6-1-1",
+            dateModified: "Oct 23, 2024",
+            createdDate: "Sep 8, 2024",
+            children: [
+              {
+                id: "subfolder-6-1-1-1",
+                name: "Subfolder 6-1-1-1",
+                dateModified: "Oct 23, 2024",
+                createdDate: "Sep 10, 2024",
+                children: [
+                  {
+                    id: "subfolder-6-1-1-1-1",
+                    name: "Subfolder 6-1-1-1-1",
+                    dateModified: "Oct 23, 2024",
+                    createdDate: "Sep 12, 2024",
+                    children: [
+                      {
+                        id: "subfolder-6-1-1-1-1-1",
+                        name: "Subfolder 6-1-1-1-1-1",
+                        dateModified: "Oct 23, 2024",
+                        createdDate: "Sep 15, 2024",
+                        children: [
+                          {
+                            id: "subfolder-6-1-1-1-1-1-1",
+                            name: "Subfolder 6-1-1-1-1-1-1",
+                            dateModified: "Oct 23, 2024",
+                            createdDate: "Sep 18, 2024",
+                            children: [
+                              {
+                                id: "subfolder-6-1-1-1-1-1-1-1",
+                                name: "Subfolder 6-1-1-1-1-1-1-1",
+                                dateModified: "Oct 22, 2024",
+                                createdDate: "Sep 20, 2024",
+                                items: [
+                                  {
+                                    id: "item-11",
+                                    name: "TB vs. NO Goal Line Situations",
+                                    type: "video",
+                                    dateModified: "Oct 22, 2024",
+                                    hasData: true,
+                                    itemCount: 45,
+                                    angles: 6,
+                                    duration: "1:32:20",
+                                    size: "1.8 GB",
+                                    comments: 67,
+                                    createdDate: "Oct 22, 2024",
+                                  },
+                                  {
+                                    id: "item-12",
+                                    name: "ATL Play Action Efficiency",
+                                    type: "video",
+                                    dateModified: "Oct 18, 2024",
+                                    hasData: true,
+                                    itemCount: 58,
+                                    angles: 4,
+                                    duration: "1:45:30",
+                                    size: "2.0 GB",
+                                    comments: 32,
+                                    createdDate: "Oct 18, 2024",
+                                  },
+                                  {
+                                    id: "item-13",
+                                    name: "CAR Blitz Packages Study",
+                                    type: "pdf",
+                                    dateModified: "Oct 15, 2024",
+                                    createdDate: "Oct 15, 2024",
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-7",
     name: "Folder 7",
     dateModified: "Sep 12, 2024",
     createdDate: "Aug 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-7-1",
+        name: "Subfolder 7-1",
+        dateModified: "Sep 12, 2024",
+        createdDate: "Aug 5, 2024",
+        children: [
+          {
+            id: "subfolder-7-1-1",
+            name: "Subfolder 7-1-1",
+            dateModified: "Sep 12, 2024",
+            createdDate: "Aug 10, 2024",
+            children: [
+              {
+                id: "subfolder-7-1-1-1",
+                name: "Subfolder 7-1-1-1",
+                dateModified: "Sep 10, 2024",
+                createdDate: "Aug 15, 2024",
+                items: [
+                  {
+                    id: "item-14",
+                    name: "NYJ Offensive Line Assignments",
+                    type: "video",
+                    dateModified: "Sep 10, 2024",
+                    hasData: true,
+                    itemCount: 112,
+                    angles: 5,
+                    duration: "2:58:40",
+                    size: "3.4 GB",
+                    comments: 48,
+                    createdDate: "Sep 10, 2024",
+                  },
+                  {
+                    id: "item-15",
+                    name: "BUF Coverage Schemes",
+                    type: "pdf",
+                    dateModified: "Sep 8, 2024",
+                    createdDate: "Sep 8, 2024",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        items: [
+          {
+            id: "item-16",
+            name: "MIA QB Decision Making",
+            type: "video",
+            dateModified: "Sep 12, 2024",
+            hasData: false,
+            itemCount: 95,
+            angles: 4,
+            duration: "2:35:15",
+            size: "3.0 GB",
+            comments: 73,
+            createdDate: "Sep 12, 2024",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-8",
     name: "Folder 8",
     dateModified: "Aug 28, 2024",
     createdDate: "Jul 15, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-8-1",
+        name: "Subfolder 8-1",
+        dateModified: "Aug 28, 2024",
+        createdDate: "Jul 20, 2024",
+        children: [
+          {
+            id: "subfolder-8-1-1",
+            name: "Subfolder 8-1-1",
+            dateModified: "Aug 25, 2024",
+            createdDate: "Jul 25, 2024",
+            items: [
+              {
+                id: "item-17",
+                name: "NE Run Game Tendencies",
+                type: "video",
+                dateModified: "Aug 25, 2024",
+                hasData: true,
+                itemCount: 88,
+                angles: 3,
+                duration: "2:22:30",
+                size: "2.6 GB",
+                comments: 21,
+                createdDate: "Aug 25, 2024",
+              },
+            ],
+          },
+        ],
+        items: [
+          {
+            id: "item-18",
+            name: "PIT Zone Coverage Week 1",
+            type: "video",
+            dateModified: "Aug 28, 2024",
+            hasData: true,
+            itemCount: 76,
+            angles: 4,
+            duration: "2:05:45",
+            size: "2.4 GB",
+            comments: 35,
+            createdDate: "Aug 28, 2024",
+          },
+          {
+            id: "item-19",
+            name: "CLE Pass Rush Analysis",
+            type: "pdf",
+            dateModified: "Aug 26, 2024",
+            createdDate: "Aug 26, 2024",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-9",
     name: "Folder 9",
     dateModified: "Jul 15, 2024",
     createdDate: "Jun 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-9-1",
+        name: "Subfolder 9-1",
+        dateModified: "Jul 15, 2024",
+        createdDate: "Jun 5, 2024",
+        children: [
+          {
+            id: "subfolder-9-1-1",
+            name: "Subfolder 9-1-1",
+            dateModified: "Jul 12, 2024",
+            createdDate: "Jun 10, 2024",
+            items: [
+              {
+                id: "item-20",
+                name: "HOU Pre-Season Camp Highlights",
+                type: "video",
+                dateModified: "Jul 12, 2024",
+                hasData: false,
+                itemCount: 234,
+                angles: 6,
+                duration: "4:15:00",
+                size: "5.2 GB",
+                comments: 156,
+                createdDate: "Jul 12, 2024",
+              },
+              {
+                id: "item-21",
+                name: "IND Rookie Development Plan",
+                type: "pdf",
+                dateModified: "Jul 10, 2024",
+                createdDate: "Jul 10, 2024",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-10",
     name: "Folder 10",
     dateModified: "Jun 22, 2024",
     createdDate: "May 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-10-1",
+        name: "Subfolder 10-1",
+        dateModified: "Jun 22, 2024",
+        createdDate: "May 5, 2024",
+        children: [
+          {
+            id: "subfolder-10-1-1",
+            name: "Subfolder 10-1-1",
+            dateModified: "Jun 20, 2024",
+            createdDate: "May 10, 2024",
+            children: [
+              {
+                id: "subfolder-10-1-1-1",
+                name: "Subfolder 10-1-1-1",
+                dateModified: "Jun 18, 2024",
+                createdDate: "May 15, 2024",
+                items: [
+                  {
+                    id: "item-22",
+                    name: "JAX Draft Pick Breakdown",
+                    type: "video",
+                    dateModified: "Jun 18, 2024",
+                    hasData: true,
+                    itemCount: 42,
+                    angles: 3,
+                    duration: "1:28:30",
+                    size: "1.6 GB",
+                    comments: 28,
+                    createdDate: "Jun 18, 2024",
+                  },
+                  {
+                    id: "item-23",
+                    name: "TEN Offseason Acquisitions",
+                    type: "pdf",
+                    dateModified: "Jun 15, 2024",
+                    createdDate: "Jun 15, 2024",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        items: [
+          {
+            id: "item-24",
+            name: "DEN Training Camp Schedule",
+            type: "pdf",
+            dateModified: "Jun 22, 2024",
+            createdDate: "Jun 22, 2024",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-11",
     name: "Folder 11",
     dateModified: "May 30, 2024",
     createdDate: "Apr 15, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-11-1",
+        name: "Subfolder 11-1",
+        dateModified: "May 30, 2024",
+        createdDate: "Apr 20, 2024",
+        items: [
+          {
+            id: "item-25",
+            name: "LV Coaching Staff Updates",
+            type: "pdf",
+            dateModified: "May 30, 2024",
+            createdDate: "May 30, 2024",
+          },
+          {
+            id: "item-26",
+            name: "LAC Personnel Changes",
+            type: "video",
+            dateModified: "May 28, 2024",
+            hasData: true,
+            itemCount: 65,
+            angles: 2,
+            duration: "1:45:20",
+            size: "2.0 GB",
+            comments: 14,
+            createdDate: "May 28, 2024",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-12",
     name: "Folder 12",
     dateModified: "Apr 18, 2024",
     createdDate: "Mar 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-12-1",
+        name: "Subfolder 12-1",
+        dateModified: "Apr 18, 2024",
+        createdDate: "Mar 5, 2024",
+        children: [
+          {
+            id: "subfolder-12-1-1",
+            name: "Subfolder 12-1-1",
+            dateModified: "Apr 15, 2024",
+            createdDate: "Mar 10, 2024",
+            children: [
+              {
+                id: "subfolder-12-1-1-1",
+                name: "Subfolder 12-1-1-1",
+                dateModified: "Apr 12, 2024",
+                createdDate: "Mar 15, 2024",
+                items: [
+                  {
+                    id: "item-27",
+                    name: "ARI Scheme Implementation",
+                    type: "video",
+                    dateModified: "Apr 12, 2024",
+                    hasData: true,
+                    itemCount: 108,
+                    angles: 5,
+                    duration: "2:52:15",
+                    size: "3.3 GB",
+                    comments: 62,
+                    createdDate: "Apr 12, 2024",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        items: [
+          {
+            id: "item-28",
+            name: "MIN Draft Strategy Overview",
+            type: "pdf",
+            dateModified: "Apr 18, 2024",
+            createdDate: "Apr 18, 2024",
+          },
+        ],
+      },
+    ],
   },
   {
     id: "folder-13",
     name: "Folder 13",
     dateModified: "Mar 5, 2024",
     createdDate: "Feb 1, 2024",
-    children: [],
+    children: [
+      {
+        id: "subfolder-13-1",
+        name: "Subfolder 13-1",
+        dateModified: "Mar 5, 2024",
+        createdDate: "Feb 5, 2024",
+        children: [
+          {
+            id: "subfolder-13-1-1",
+            name: "Subfolder 13-1-1",
+            dateModified: "Mar 3, 2024",
+            createdDate: "Feb 10, 2024",
+            items: [
+              {
+                id: "item-29",
+                name: "WAS Free Agency Targets",
+                type: "pdf",
+                dateModified: "Mar 3, 2024",
+                createdDate: "Mar 3, 2024",
+              },
+              {
+                id: "item-30",
+                name: "CHI Combine Evaluations",
+                type: "video",
+                dateModified: "Mar 1, 2024",
+                hasData: true,
+                itemCount: 186,
+                angles: 8,
+                duration: "3:45:00",
+                size: "4.5 GB",
+                comments: 245,
+                createdDate: "Mar 1, 2024",
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
 ]
 
-function LibraryPageContent() {
+export default function LibraryPage() {
   const { isCatapultImportOpen, setIsCatapultImportOpen } = useCatapultImport()
   const { density } = useDensity()
-  const { sort } = useLibraryContext()
 
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [teamFolders, setTeamFolders] = useState<FolderData[]>(testFolders)
@@ -535,6 +939,8 @@ function LibraryPageContent() {
     () => (currentFolderId === null ? null : findFolderById(folders, currentFolderId)),
     [folders, currentFolderId],
   )
+  const displayedFolders = currentFolderId === null ? folders : currentFolder?.children || []
+  const displayedItems = currentFolderId === null ? [] : currentFolder?.items || []
 
   const collectAllDescendantIds = (folder: FolderData): { folderIds: string[]; itemIds: string[] } => {
     const folderIds: string[] = []
@@ -598,6 +1004,10 @@ function LibraryPageContent() {
       }
       return newSet
     })
+  }
+
+  const handleItemActivate = (itemId: string) => {
+    setActiveItem(itemId)
   }
 
   const handleToggleExpand = (folderId: string) => {
@@ -694,11 +1104,7 @@ function LibraryPageContent() {
   const sortFolderChildren = (folder: FolderData): FolderData => {
     const sortOption = folderSortOptions[folder.id]
 
-    // Use context sort if no folder-specific sort is applied
-    const activeSortBy = sortOption?.by || (sort.direction ? sort.columnId : null)
-    const activeSortDirection = sortOption?.direction || sort.direction
-
-    if (!activeSortBy || !activeSortDirection) {
+    if (!sortOption) {
       // No sorting, return as-is with recursively sorted children
       return {
         ...folder,
@@ -708,34 +1114,32 @@ function LibraryPageContent() {
 
     const sortedFolder = { ...folder }
 
-    // Generic compare function
-    const compare = (a: any, b: any) => {
-      let valA = a[activeSortBy as keyof typeof a]
-      let valB = b[activeSortBy as keyof typeof b]
-
-      // Handle specific fields mapping
-      if (activeSortBy === "itemCount") {
-        valA = a.itemCount || 0
-        valB = b.itemCount || 0
-      }
-      if (activeSortBy === "dateModified" || activeSortBy === "createdDate") {
-        valA = new Date(valA || "").getTime()
-        valB = new Date(valB || "").getTime()
-      }
-
-      if (valA < valB) return activeSortDirection === "asc" ? -1 : 1
-      if (valA > valB) return activeSortDirection === "asc" ? 1 : -1
-      return 0
-    }
-
     // Sort items if they exist
     if (sortedFolder.items && sortedFolder.items.length > 0) {
-      sortedFolder.items = [...sortedFolder.items].sort(compare)
+      sortedFolder.items = [...sortedFolder.items].sort((a, b) => {
+        let comparison = 0
+
+        if (sortOption.by === "dateModified") {
+          const dateA = new Date(a.dateModified || "")
+          const dateB = new Date(b.dateModified || "")
+          comparison = dateA.getTime() - dateB.getTime()
+        } else if (sortOption.by === "type") {
+          comparison = (a.type || "").localeCompare(b.type || "")
+        } else if (sortOption.by === "name") {
+          comparison = a.name.localeCompare(b.name)
+        } else if (sortOption.by === "createdDate") {
+          const dateA = new Date(a.createdDate || "")
+          const dateB = new Date(b.createdDate || "")
+          comparison = dateA.getTime() - dateB.getTime()
+        }
+
+        return sortOption.direction === "desc" ? -comparison : comparison
+      })
     }
 
     // Recursively sort children folders
     if (sortedFolder.children) {
-      sortedFolder.children = sortedFolder.children.map(sortFolderChildren).sort(compare)
+      sortedFolder.children = sortedFolder.children.map(sortFolderChildren)
     }
 
     return sortedFolder
@@ -746,7 +1150,7 @@ function LibraryPageContent() {
       currentFolderId === null
         ? folders.map(sortFolderChildren)
         : ([findFolderById(folders, currentFolderId)].filter(Boolean).map(sortFolderChildren) as FolderData[]),
-    [folders, folderSortOptions, currentFolderId, sort],
+    [folders, folderSortOptions, currentFolderId],
   )
 
   const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
@@ -882,13 +1286,5 @@ function LibraryPageContent() {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
-
-export default function LibraryPage() {
-  return (
-    <LibraryProvider>
-      <LibraryPageContent />
-    </LibraryProvider>
   )
 }

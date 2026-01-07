@@ -55,6 +55,7 @@ interface FolderProps {
   onDelete?: (folderId: string) => void
   onSortFolder?: (folderId: string, sortBy: string, direction: "asc" | "desc") => void
   folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
+  onReorderChildren?: (folderId: string) => void // New prop for reorder
 }
 
 export function Folder({
@@ -76,6 +77,7 @@ export function Folder({
   onDelete,
   onSortFolder,
   folderSortOptions = {},
+  onReorderChildren,
 }: FolderProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -139,6 +141,8 @@ export function Folder({
 
   const currentSort = folderSortOptions[folder.id]
   const hasSortApplied = !!currentSort
+
+  const hasChildFolders = folder.children && folder.children.length > 0
 
   const folderRow = (
     <div
@@ -297,6 +301,10 @@ export function Folder({
         <ContextMenuContent>
           <ContextMenuItem onClick={handleRenameStart}>Rename Folder</ContextMenuItem>
 
+          {hasChildFolders && (
+            <ContextMenuItem onClick={() => onReorderChildren?.(folder.id)}>Set Folder Order</ContextMenuItem>
+          )}
+
           <ContextMenuSub>
             <ContextMenuSubTrigger>
               <div className="flex items-center gap-2">
@@ -381,6 +389,7 @@ export function Folder({
               onDelete={onDelete}
               onSortFolder={onSortFolder}
               folderSortOptions={folderSortOptions}
+              onReorderChildren={onReorderChildren}
             />
           ))}
 

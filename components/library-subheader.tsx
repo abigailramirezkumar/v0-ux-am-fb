@@ -10,6 +10,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
 import { useDensity } from "@/lib/density-context"
@@ -23,6 +24,7 @@ interface LibrarySubheaderProps {
   breadcrumbs: BreadcrumbItem[]
   onNavigate: (folderId: string | null) => void
   onCreateFolder: () => void
+  onReorderFolders: () => void // New prop for reorder modal
 }
 
 function LibraryIcon({ className }: { className?: string }) {
@@ -53,7 +55,7 @@ function LibraryIcon({ className }: { className?: string }) {
   )
 }
 
-export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: LibrarySubheaderProps) {
+export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
   const { density, setDensity } = useDensity()
 
   return (
@@ -121,7 +123,11 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
-            <DropdownMenuItem disabled>Settings coming soon</DropdownMenuItem>
+
+            <DropdownMenuItem onClick={onReorderFolders}>Set Folder Order</DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled>More Settings...</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

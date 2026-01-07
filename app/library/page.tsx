@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/button"
 import { useDensity } from "@/lib/density-context"
+import { LibraryProvider, useLibraryContext } from "@/lib/library-context"
+import { FolderReorderModal } from "@/components/folder-reorder-modal"
 
 const testFolders: FolderData[] = [
   {
@@ -737,9 +739,10 @@ const testFolders: FolderData[] = [
   },
 ]
 
-export default function LibraryPage() {
+function LibraryPageContent() {
   const { isCatapultImportOpen, setIsCatapultImportOpen } = useCatapultImport()
   const { density } = useDensity()
+  const { folderOrder, updateFolderOrder } = useLibraryContext()
 
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [teamFolders, setTeamFolders] = useState<FolderData[]>(testFolders)
@@ -760,6 +763,9 @@ export default function LibraryPage() {
   const [folderSortOptions, setFolderSortOptions] = useState<Record<string, { by: string; direction: "asc" | "desc" }>>(
     {},
   )
+
+  const [reorderModalOpen, setReorderModalOpen] = useState(false)
+  const [reorderTargetId, setReorderTargetId] = useState<string | null>(null)
 
   const folders = libraryView === "team" ? teamFolders : myFolders
   const setFolders = libraryView === "team" ? setTeamFolders : setMyFolders
@@ -1101,21 +1107,70 @@ export default function LibraryPage() {
     }
   }
 
-  const sortFolderChildren = (folder: FolderData): FolderData => {
-    const sortOption = folderSortOptions[folder.id]
+  const handleOpenReorder = (targetId: string | null = null) => {
+    // If targetId is null, we use currentFolderId (context of the view)
+    setReorderTargetId(targetId ?? currentFolderId ?? "root")
+    setReorderModalOpen(true)
+  }
 
-    if (!sortOption) {
-      // No sorting, return as-is with recursively sorted children
-      return {
-        ...folder,
-        children: folder.children?.map(sortFolderChildren),
-      }
+  const getFoldersForReorder = (): FolderData[] => {
+    const targetId = reorderTargetId === "root" ? null : reorderTargetId
+
+    if (targetId === null) {
+      return folders // Root folders
     }
 
-    const sortedFolder = { ...folder }
+    // Find the folder and return its children
+    const parent = findFolderById(folders, targetId)
+    return parent?.children || []
+  }
 
-    // Sort items if they exist
-    if (sortedFolder.items && sortedFolder.items.length > 0) {
+  const sortFolderChildren = (folder: FolderData): FolderData => {
+    const sortOption = folderSortOptions[folder.id]
+    const customOrder = folderOrder[folder.id] || []
+
+    const sortedChildren = folder.children ? [...folder.children] : []
+
+    // Apply custom order if it exists and no specific column sort overrides it
+    if (customOrder.length > 0 && !sortOption) {
+      sortedChildren.sort((a, b) => {
+        const indexA = customOrder.indexOf(a.id)
+        const indexB = customOrder.indexOf(b.id)
+
+        // New/Unordered items go to top (index -1)
+        if (indexA === -1 && indexB !== -1) return -1
+        if (indexA !== -1 && indexB === -1) return 1
+        if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name)
+        return indexA - indexB
+      })
+    } else if (sortOption) {
+      // Apply folder-specific sort
+      sortedChildren.sort((a, b) => {
+        let comparison = 0
+
+        if (sortOption.by === "dateModified") {
+          const dateA = new Date(a.dateModified || "")
+          const dateB = new Date(b.dateModified || "")
+          comparison = dateA.getTime() - dateB.getTime()
+        } else if (sortOption.by === "name") {
+          comparison = a.name.localeCompare(b.name)
+        } else if (sortOption.by === "createdDate") {
+          const dateA = new Date(a.createdDate || "")
+          const dateB = new Date(b.createdDate || "")
+          comparison = dateA.getTime() - dateB.getTime()
+        }
+
+        return sortOption.direction === "desc" ? -comparison : comparison
+      })
+    }
+
+    const sortedFolder = {
+      ...folder,
+      children: sortedChildren.map(sortFolderChildren),
+    }
+
+    // Sort items if they exist and a sort option is set
+    if (sortOption && sortedFolder.items && sortedFolder.items.length > 0) {
       sortedFolder.items = [...sortedFolder.items].sort((a, b) => {
         let comparison = 0
 
@@ -1137,21 +1192,35 @@ export default function LibraryPage() {
       })
     }
 
-    // Recursively sort children folders
-    if (sortedFolder.children) {
-      sortedFolder.children = sortedFolder.children.map(sortFolderChildren)
-    }
-
     return sortedFolder
   }
 
-  const sortedFolders = useMemo(
-    () =>
-      currentFolderId === null
-        ? folders.map(sortFolderChildren)
-        : ([findFolderById(folders, currentFolderId)].filter(Boolean).map(sortFolderChildren) as FolderData[]),
-    [folders, folderSortOptions, currentFolderId],
-  )
+  const sortedFolders = useMemo(() => {
+    // Recursively process everything first
+    const processed = folders.map(sortFolderChildren)
+
+    if (currentFolderId === null) {
+      // ROOT LEVEL SORTING
+      const customOrder = folderOrder["root"] || []
+
+      if (customOrder.length > 0) {
+        return processed.sort((a, b) => {
+          const indexA = customOrder.indexOf(a.id)
+          const indexB = customOrder.indexOf(b.id)
+          if (indexA === -1 && indexB !== -1) return -1
+          if (indexA !== -1 && indexB === -1) return 1
+          if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name)
+          return indexA - indexB
+        })
+      }
+
+      // Default Alpha sort
+      return processed.sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    // Drilled down view
+    return [findFolderById(processed, currentFolderId)].filter(Boolean) as FolderData[]
+  }, [folders, folderSortOptions, currentFolderId, folderOrder])
 
   const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
     const items: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
@@ -1202,7 +1271,12 @@ export default function LibraryPage() {
     <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none min-w-0">
       <div className="px-4 pt-1 shrink-0 border-b border-border">
         <LibraryHeader onImportComplete={handleImportComplete} />
-        <LibrarySubheader breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />
+        <LibrarySubheader
+          breadcrumbs={breadcrumbs}
+          onNavigate={handleNavigate}
+          onCreateFolder={createFolder}
+          onReorderFolders={() => handleOpenReorder(null)}
+        />
       </div>
 
       <div className="flex-1 overflow-auto min-h-0">
@@ -1234,7 +1308,7 @@ export default function LibraryPage() {
                     onDelete={handleDeleteFolderStart}
                     onSortFolder={handleSortFolder}
                     folderSortOptions={folderSortOptions}
-                    density={density}
+                    onReorderChildren={(id) => handleOpenReorder(id)}
                   />
                 )
               } else {
@@ -1285,6 +1359,22 @@ export default function LibraryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <FolderReorderModal
+        open={reorderModalOpen}
+        onOpenChange={setReorderModalOpen}
+        parentId={reorderTargetId || "root"}
+        folders={getFoldersForReorder()}
+        onSave={updateFolderOrder}
+      />
     </div>
+  )
+}
+
+export default function LibraryPage() {
+  return (
+    <LibraryProvider>
+      <LibraryPageContent />
+    </LibraryProvider>
   )
 }

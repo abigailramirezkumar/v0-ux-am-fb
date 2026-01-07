@@ -3,8 +3,9 @@
 import { useState, useMemo } from "react"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
+import { LibraryTableHeader } from "@/components/library-table-header"
 import { Folder, type FolderData } from "@/components/folder"
-import { LibraryItem, type LibraryItemData } from "@/components/library-item" // Updated import
+import { LibraryItem, type LibraryItemData } from "@/components/library-item"
 import { useCatapultImport } from "@/lib/catapult-import-context"
 import {
   Dialog,
@@ -1198,67 +1199,72 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none">
-      <div className="px-4 pt-1">
+    <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none min-w-0">
+      <div className="px-4 pt-1 shrink-0 border-b border-border">
         <LibraryHeader onImportComplete={handleImportComplete} />
-
         <LibrarySubheader breadcrumbs={breadcrumbs} onNavigate={handleNavigate} onCreateFolder={createFolder} />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {visibleFlatList.map((row, index) => {
-          if (row.type === "folder") {
-            const folderData = row.data as FolderData
-            return (
-              <Folder
-                key={folderData.id}
-                folder={folderData}
-                level={row.level}
-                index={index}
-                isFlattened={true}
-                onSelect={handleSelectFolder}
-                onSelectItem={handleSelectItem}
-                onDoubleClick={handleFolderDoubleClick}
-                selectedFolders={selectedFolders}
-                selectedItems={selectedItems}
-                expandedFolders={expandedFolders}
-                onToggleExpand={handleToggleExpand}
-                importedFolders={importedFolders}
-                importedItems={importedItems}
-                onUpdateImported={handleUpdateImported}
-                onRename={handleRenameFolder}
-                onDelete={handleDeleteFolderStart}
-                onSortFolder={handleSortFolder}
-                folderSortOptions={folderSortOptions}
-                density={density}
-              />
-            )
-          } else {
-            const itemData = row.data as LibraryItemData
-            return (
-              <LibraryItem
-                key={itemData.id}
-                item={{
-                  ...itemData,
-                  thumbnailUrl: itemData.thumbnailUrl || "/football-field.png",
-                }}
-                level={row.level}
-                index={index}
-                onSelect={handleSelectItem}
-                selectedItems={selectedItems}
-                importedItems={importedItems}
-                onUpdateImported={handleUpdateImported}
-                density={density}
-              />
-            )
-          }
-        })}
+      <div className="flex-1 overflow-auto min-h-0">
+        <div className="min-w-[1000px] pb-4">
+          <LibraryTableHeader />
 
-        {visibleFlatList.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <p>This folder is empty</p>
+          <div className="flex flex-col">
+            {visibleFlatList.map((row, index) => {
+              if (row.type === "folder") {
+                const folderData = row.data as FolderData
+                return (
+                  <Folder
+                    key={folderData.id}
+                    folder={folderData}
+                    level={row.level}
+                    index={index}
+                    isFlattened={true}
+                    onSelect={handleSelectFolder}
+                    onSelectItem={handleSelectItem}
+                    onDoubleClick={handleFolderDoubleClick}
+                    selectedFolders={selectedFolders}
+                    selectedItems={selectedItems}
+                    expandedFolders={expandedFolders}
+                    onToggleExpand={handleToggleExpand}
+                    importedFolders={importedFolders}
+                    importedItems={importedItems}
+                    onUpdateImported={handleUpdateImported}
+                    onRename={handleRenameFolder}
+                    onDelete={handleDeleteFolderStart}
+                    onSortFolder={handleSortFolder}
+                    folderSortOptions={folderSortOptions}
+                    density={density}
+                  />
+                )
+              } else {
+                const itemData = row.data as LibraryItemData
+                return (
+                  <LibraryItem
+                    key={itemData.id}
+                    item={{
+                      ...itemData,
+                      thumbnailUrl: itemData.thumbnailUrl || "/football-field.png",
+                    }}
+                    level={row.level}
+                    index={index}
+                    onSelect={handleSelectItem}
+                    selectedItems={selectedItems}
+                    importedItems={importedItems}
+                    onUpdateImported={handleUpdateImported}
+                    density={density}
+                  />
+                )
+              }
+            })}
+
+            {visibleFlatList.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                <p>This folder is empty</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>

@@ -57,133 +57,74 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: Li
   const { density, setDensity } = useDensity()
 
   return (
-    <>
+    <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
       {/* Breadcrumbs */}
-      <div className="sticky top-0 z-10 flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 border-none pb-0">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <button
-            onClick={() => onNavigate(null)}
-            className="hover:text-foreground transition-colors flex items-center"
-            aria-label="Go to library root"
-          >
-            <LibraryIcon className="w-3 h-3" />
-          </button>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <button
+          onClick={() => onNavigate(null)}
+          className="hover:text-foreground transition-colors flex items-center"
+          aria-label="Go to library root"
+        >
+          <LibraryIcon className="w-3 h-3" />
+        </button>
 
-          {breadcrumbs.map((crumb, index) => (
-            <div key={crumb.id} className="flex items-center gap-2">
-              <span>/</span>
-              <button
-                onClick={() => onNavigate(crumb.id)}
-                className={`hover:text-foreground transition-colors text-foreground ${
-                  index === breadcrumbs.length - 1 ? "font-semibold" : ""
-                }`}
-              >
-                {crumb.name}
-              </button>
-            </div>
-          ))}
+        {breadcrumbs.map((crumb, index) => (
+          <div key={crumb.id} className="flex items-center gap-2">
+            <span>/</span>
+            <button
+              onClick={() => onNavigate(crumb.id)}
+              className={`hover:text-foreground transition-colors text-foreground ${
+                index === breadcrumbs.length - 1 ? "font-semibold" : ""
+              }`}
+            >
+              {crumb.name}
+            </button>
+          </div>
+        ))}
 
-          <span>/</span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Add content">
-                <Icon name="add" className="w-5 h-5 text-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onCreateFolder}>
-                <Icon name="folder" className="w-4 h-4 mr-2" />
-                New Folder
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
-                <Icon name="settings" className="w-5 h-5 text-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup
-                    value={density}
-                    onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
-                  >
-                    <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuItem disabled>Settings coming soon</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <span>/</span>
       </div>
 
-      <div className="sticky top-[53px] z-10 flex items-center py-2 bg-background border-b border-border pt-1">
-        {/* Name column */}
-        <div className="flex-1 min-w-0 pl-4 ml-4">
-          <span className="text-sm font-bold text-muted-foreground">Name</span>
-        </div>
+      {/* Actions */}
+      <div className="flex items-center gap-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Add content">
+              <Icon name="add" className="w-5 h-5 text-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onCreateFolder}>
+              <Icon name="folder" className="w-4 h-4 mr-2" />
+              New Folder
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <div className="flex items-center flex-shrink-0">
-          {/* Modified column */}
-          <div className="w-24 flex-shrink-0 ml-3">
-            <span className="text-sm font-bold text-muted-foreground">Modified</span>
-          </div>
-
-          {/* Type column */}
-          <div className="w-16 flex-shrink-0 ml-3">
-            <span className="text-sm font-bold text-muted-foreground">Type</span>
-          </div>
-
-          {/* Data column */}
-          <div className="w-12 flex-shrink-0 ml-3 text-center">
-            <span className="text-sm font-bold text-muted-foreground">Data</span>
-          </div>
-
-          {/* Items column */}
-          <div className="w-14 flex-shrink-0 ml-3 text-center">
-            <span className="text-sm font-bold text-muted-foreground">Items</span>
-          </div>
-
-          {/* Angles column */}
-          <div className="w-14 flex-shrink-0 ml-3 text-center">
-            <span className="text-sm font-bold text-muted-foreground">Angles</span>
-          </div>
-
-          {/* Duration column */}
-          <div className="w-16 flex-shrink-0 ml-3 text-center">
-            <span className="text-sm font-bold text-muted-foreground">Duration</span>
-          </div>
-
-          {/* Size column */}
-          <div className="w-16 flex-shrink-0 ml-3 text-right">
-            <span className="text-sm font-bold text-muted-foreground">Size</span>
-          </div>
-
-          {/* Comments column */}
-          <div className="w-14 flex-shrink-0 ml-3 text-center">
-            <span className="text-sm font-bold text-muted-foreground">Comments</span>
-          </div>
-
-          {/* Created column */}
-          <div className="w-24 flex-shrink-0 ml-3">
-            <span className="text-sm font-bold text-muted-foreground">Created</span>
-          </div>
-
-          {/* Actions area */}
-          <div className="w-8 flex-shrink-0 ml-3 mr-4" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
+              <Icon name="settings" className="w-5 h-5 text-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={density}
+                  onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
+                >
+                  <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem disabled>Settings coming soon</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </>
+    </div>
   )
 }

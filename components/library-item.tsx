@@ -1,12 +1,14 @@
 "use client"
 
 import type React from "react"
+import { TooltipProvider } from "@/components/ui/tooltip" // Import TooltipProvider
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 
 export interface LibraryItemData {
@@ -137,158 +139,219 @@ export function LibraryItem({
   const isVideo = item.type === "video"
 
   return (
-    <div
-      className={cn(
-        `flex items-center ${spacing.py} cursor-pointer transition-colors`,
-        isSelected && !isHovered && "bg-[#0273e3]",
-        isSelected && isHovered && "bg-[#0273e3]",
-        !isSelected && isHovered && "bg-muted",
-        !isSelected && !isHovered && isAlternate && "bg-muted/20",
-        !isSelected && !isHovered && !isAlternate && "bg-background",
-      )}
-      onClick={handleRowClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex items-center flex-1 min-w-0 pl-4">
-        {/* Indentation Spacer */}
-        <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+    <TooltipProvider>
+      {" "}
+      {/* Wrap the entire component in TooltipProvider */}
+      <div
+        className={cn(
+          `flex items-center ${spacing.py} cursor-pointer transition-colors`,
+          isSelected && !isHovered && "bg-[#0273e3]",
+          isSelected && isHovered && "bg-[#0273e3]",
+          !isSelected && isHovered && "bg-muted",
+          !isSelected && !isHovered && isAlternate && "bg-muted/20",
+          !isSelected && !isHovered && !isAlternate && "bg-background",
+        )}
+        onClick={handleRowClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-center flex-1 min-w-0 pl-4">
+          {/* Indentation Spacer */}
+          <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-        {/* Checkbox - fixed width */}
-        <div className="flex-shrink-0 w-6">
-          {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+          {/* Checkbox - fixed width */}
+          <div className="flex-shrink-0 w-6">
+            {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+          </div>
+
+          {/* Icon/Thumbnail - fixed width */}
+          <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
+            {isHovered && item.type === "video" ? (
+              <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
+            ) : item.thumbnailUrl ? (
+              <img
+                src={item.thumbnailUrl || "/placeholder.svg"}
+                alt={item.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
+            )}
+          </div>
+
+          <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn("text-sm font-medium truncate block", isSelected ? "text-white" : "text-foreground")}
+                >
+                  {item.name}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{item.name}</TooltipContent>
+            </Tooltip>
+            {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+          </div>
         </div>
 
-        {/* Icon/Thumbnail - fixed width */}
-        <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
-          {isHovered && item.type === "video" ? (
-            <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
-          ) : item.thumbnailUrl ? (
-            <img src={item.thumbnailUrl || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
+        <div className="w-24 flex-shrink-0 ml-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {item.dateModified || ""}
+              </span>
+            </TooltipTrigger>
+            {item.dateModified && <TooltipContent>{item.dateModified}</TooltipContent>}
+          </Tooltip>
+        </div>
+
+        <div className="w-16 flex-shrink-0 ml-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {formatItemType(item.type)}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{formatItemType(item.type)}</TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Data column */}
+        <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
+          {isVideo ? (
+            item.hasData ? (
+              <DataIcon className={cn("w-4 h-4", isSelected ? "text-white" : "text-muted-foreground")} />
+            ) : null
           ) : (
-            <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
+            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
           )}
         </div>
 
-        {/* Name - flexible */}
-        <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
-          <span className={cn("text-sm font-medium truncate", isSelected ? "text-white" : "text-foreground")}>
-            {item.name}
-          </span>
-          {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+        <div className="w-14 flex-shrink-0 ml-3 text-left">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className={cn(
+                  "text-sm text-left truncate block",
+                  isSelected ? "text-white/80" : "text-muted-foreground",
+                )}
+              >
+                {isVideo ? (item.itemCount ?? "") : ""}
+              </span>
+            </TooltipTrigger>
+            {isVideo && item.itemCount !== undefined && <TooltipContent>{item.itemCount}</TooltipContent>}
+          </Tooltip>
         </div>
-      </div>
 
-      {/* Modified column */}
-      <div className="w-24 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.dateModified || ""}
-        </span>
-      </div>
+        <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
+          {isVideo && item.angles !== undefined ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <AnglesIcon
+                    className={cn("w-3.5 h-3.5 flex-shrink-0", isSelected ? "text-white" : "text-muted-foreground")}
+                  />
+                  <span
+                    className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}
+                  >
+                    {item.angles}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{item.angles} Angles</TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+          )}
+        </div>
 
-      {/* Type column */}
-      <div className="w-16 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {formatItemType(item.type)}
-        </span>
-      </div>
+        <div className="w-16 flex-shrink-0 ml-3 text-left">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {isVideo ? (item.duration ?? "") : ""}
+              </span>
+            </TooltipTrigger>
+            {isVideo && item.duration && <TooltipContent>{item.duration}</TooltipContent>}
+          </Tooltip>
+        </div>
 
-      {/* Data column */}
-      <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
-        {isVideo ? (
-          item.hasData ? (
-            <DataIcon className={cn("w-4 h-4", isSelected ? "text-white" : "text-muted-foreground")} />
-          ) : null
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-        )}
-      </div>
+        <div className="w-16 flex-shrink-0 ml-3 text-left">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {isVideo ? (item.size ?? "") : ""}
+              </span>
+            </TooltipTrigger>
+            {isVideo && item.size && <TooltipContent>{item.size}</TooltipContent>}
+          </Tooltip>
+        </div>
 
-      {/* Items column */}
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm text-left", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.itemCount ?? "") : ""}
-        </span>
-      </div>
+        <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
+          {isVideo ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1">
+                  <CommentsIcon
+                    className={cn("w-3.5 h-3.5 flex-shrink-0", isSelected ? "text-white" : "text-muted-foreground")}
+                  />
+                  <span
+                    className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}
+                  >
+                    {item.comments ?? 0}
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{item.comments ?? 0} Comments</TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+          )}
+        </div>
 
-      {/* Angles column */}
-      <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
-        {isVideo && item.angles !== undefined ? (
-          <>
-            <AnglesIcon className={cn("w-3.5 h-3.5", isSelected ? "text-white" : "text-muted-foreground")} />
-            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>{item.angles}</span>
-          </>
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-        )}
-      </div>
+        <div className="w-24 flex-shrink-0 ml-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {item.createdDate || ""}
+              </span>
+            </TooltipTrigger>
+            {item.createdDate && <TooltipContent>{item.createdDate}</TooltipContent>}
+          </Tooltip>
+        </div>
 
-      {/* Duration column */}
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.duration ?? "") : ""}
-        </span>
-      </div>
-
-      {/* Size column */}
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {isVideo ? (item.size ?? "") : ""}
-        </span>
-      </div>
-
-      {/* Comments column */}
-      <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
-        {isVideo ? (
-          <>
-            <CommentsIcon className={cn("w-3.5 h-3.5", isSelected ? "text-white" : "text-muted-foreground")} />
-            <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-              {item.comments ?? 0}
-            </span>
-          </>
-        ) : (
-          <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-        )}
-      </div>
-
-      {/* Created column */}
-      <div className="w-24 flex-shrink-0 ml-3">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}>
-          {item.createdDate || ""}
-        </span>
-      </div>
-
-      {/* Actions - fixed width */}
-      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-        {isImported ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={(e) => {
-              e.stopPropagation()
-              onUpdateImported?.(item.id, "item")
-            }}
-          >
-            Update
-          </Button>
-        ) : (
-          isHovered && (
-            <button
-              className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+        {/* Actions - fixed width */}
+        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
+          {isImported ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
               onClick={(e) => {
                 e.stopPropagation()
+                onUpdateImported?.(item.id, "item")
               }}
             >
-              <div className="flex gap-1">
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-              </div>
-            </button>
-          )
-        )}
+              Update
+            </Button>
+          ) : (
+            isHovered && (
+              <button
+                className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+              >
+                <div className="flex gap-1">
+                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                </div>
+              </button>
+            )
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

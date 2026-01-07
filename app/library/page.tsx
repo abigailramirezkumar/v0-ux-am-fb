@@ -1113,17 +1113,45 @@ function LibraryPageContent() {
     setReorderModalOpen(true)
   }
 
-  const getFoldersForReorder = (): FolderData[] => {
-    const targetId = reorderTargetId === "root" ? null : reorderTargetId
+  const foldersForReorder = useMemo(() => {
+    if (!reorderModalOpen) return []
 
+    const targetId = reorderTargetId === "root" ? null : reorderTargetId
+    let items: FolderData[] = []
+
+    // 1. Get the raw items for the current level
     if (targetId === null) {
-      return folders // Root folders
+      items = [...folders]
+    } else {
+      const parent = findFolderById(folders, targetId)
+      items = parent?.children ? [...parent.children] : []
     }
 
-    // Find the folder and return its children
-    const parent = findFolderById(folders, targetId)
-    return parent?.children || []
-  }
+    // 2. Apply the Custom Order Logic to ensure Modal matches expected state
+    const orderKey = targetId || "root"
+    const customOrder = folderOrder[orderKey] || []
+
+    if (customOrder.length > 0) {
+      items.sort((a, b) => {
+        const indexA = customOrder.indexOf(a.id)
+        const indexB = customOrder.indexOf(b.id)
+
+        // New/Unordered items go to top (index -1)
+        if (indexA === -1 && indexB !== -1) return -1
+        if (indexA !== -1 && indexB === -1) return 1
+
+        // If both are unordered, sort them alphabetically
+        if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name)
+
+        return indexA - indexB
+      })
+    } else {
+      // Default to Alpha if no custom order exists yet
+      items.sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    return items
+  }, [reorderModalOpen, reorderTargetId, folders, folderOrder])
 
   const sortFolderChildren = (folder: FolderData): FolderData => {
     const sortOption = folderSortOptions[folder.id]
@@ -1364,7 +1392,7 @@ function LibraryPageContent() {
         open={reorderModalOpen}
         onOpenChange={setReorderModalOpen}
         parentId={reorderTargetId || "root"}
-        folders={getFoldersForReorder()}
+        folders={foldersForReorder}
         onSave={updateFolderOrder}
       />
     </div>

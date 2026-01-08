@@ -262,19 +262,19 @@ export function Folder({
         </TooltipProvider>
       </div>
 
-      <div className="w-20 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
       <div className="w-14 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+      </div>
+
+      <div className="w-16 flex-shrink-0 ml-3 text-left">
+        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+      </div>
+
+      <div className="w-20 flex-shrink-0 ml-3 text-left">
         <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       </div>
 

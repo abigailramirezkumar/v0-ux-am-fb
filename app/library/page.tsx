@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
 import { LibraryTableHeader } from "@/components/library-table-header"
@@ -19,6 +19,7 @@ import { Button } from "@/components/button"
 import { useDensity } from "@/lib/density-context"
 import { LibraryProvider, useLibraryContext } from "@/lib/library-context"
 import { FolderReorderModal } from "@/components/folder-reorder-modal"
+import { toast } from "@/components/ui/use-toast"
 
 const parseDuration = (str?: string) => {
   if (!str) return 0
@@ -1342,6 +1343,126 @@ function LibraryPageContent() {
     }
   }
 
+  const isDescendantOf = useCallback((nodes: FolderData[], parentId: string, targetId: string): boolean => {
+    const findInChildren = (folder: FolderData): boolean => {
+      if (folder.id === targetId) return true
+      if (folder.children) {
+        return folder.children.some(findInChildren)
+      }
+      return false
+    }
+
+    const parent = findFolderById(nodes, parentId)
+    if (!parent || !parent.children) return false
+    return parent.children.some(findInChildren)
+  }, [])
+
+  const handleMove = useCallback(
+    (movedId: string, targetId: string, type: "folder" | "item") => {
+      if (movedId === targetId) return
+
+      setFolders((prevFolders) => {
+        // Deep copy to mutate
+        const newStructure = JSON.parse(JSON.stringify(prevFolders)) as FolderData[]
+
+        // 1. Safety Check: Circular Dependency (Folders only)
+        if (type === "folder") {
+          if (isDescendantOf(newStructure, movedId, targetId)) {
+            toast({
+              title: "Cannot move folder",
+              description: "You cannot move a folder into its own child.",
+              variant: "destructive",
+            })
+            return prevFolders
+          }
+        }
+
+        // 2. Find and Remove logic
+        let movedObject: FolderData | LibraryItemData | null = null
+
+        // Recursive remove function
+        const removeObject = (nodes: FolderData[]): boolean => {
+          for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i]
+
+            // Check if item is in this folder's items
+            if (type === "item" && node.items) {
+              const itemIndex = node.items.findIndex((it) => it.id === movedId)
+              if (itemIndex !== -1) {
+                movedObject = node.items[itemIndex]
+                node.items.splice(itemIndex, 1)
+                return true
+              }
+            }
+
+            // Check if folder is in this folder's children
+            if (type === "folder" && node.children) {
+              const childIndex = node.children.findIndex((ch) => ch.id === movedId)
+              if (childIndex !== -1) {
+                movedObject = node.children[childIndex]
+                node.children.splice(childIndex, 1)
+                return true
+              }
+            }
+
+            // Recurse into children
+            if (node.children && removeObject(node.children)) return true
+          }
+          return false
+        }
+
+        // Handle Root Level Removal for folders
+        if (type === "folder") {
+          const rootIndex = newStructure.findIndex((f) => f.id === movedId)
+          if (rootIndex !== -1) {
+            movedObject = newStructure[rootIndex]
+            newStructure.splice(rootIndex, 1)
+          } else {
+            removeObject(newStructure)
+          }
+        } else {
+          removeObject(newStructure)
+        }
+
+        if (!movedObject) {
+          console.error("Could not find object to move")
+          return prevFolders
+        }
+
+        // 3. Find Target and Insert
+        const findAndInsert = (nodes: FolderData[]): boolean => {
+          for (const node of nodes) {
+            if (node.id === targetId) {
+              if (type === "folder") {
+                node.children = node.children || []
+                node.children.push(movedObject as FolderData)
+              } else {
+                node.items = node.items || []
+                node.items.push(movedObject as LibraryItemData)
+              }
+              return true
+            }
+            if (node.children && findAndInsert(node.children)) return true
+          }
+          return false
+        }
+
+        if (findAndInsert(newStructure)) {
+          const targetFolder = findFolderById(newStructure, targetId)
+          toast({
+            title: "Moved Successfully",
+            description: `Moved to ${targetFolder?.name || "folder"}`,
+          })
+          return newStructure
+        } else {
+          console.error("Could not find target folder")
+          return prevFolders
+        }
+      })
+    },
+    [setFolders, isDescendantOf],
+  )
+
   return (
     <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none min-w-0">
       <div className="px-4 pt-1 shrink-0 border-b border-border">
@@ -1384,6 +1505,7 @@ function LibraryPageContent() {
                     onSortFolder={handleSortFolder}
                     folderSortOptions={folderSortOptions}
                     onReorderChildren={(id) => handleOpenReorder(id)}
+                    onMove={handleMove}
                   />
                 )
               } else {
@@ -1402,6 +1524,7 @@ function LibraryPageContent() {
                     importedItems={importedItems}
                     onUpdateImported={handleUpdateImported}
                     density={density}
+                    onMove={handleMove}
                   />
                 )
               }

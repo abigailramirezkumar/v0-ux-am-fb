@@ -35,17 +35,8 @@ interface LibraryItemProps {
   selectedItems?: Set<string>
   importedItems?: Set<string>
   onUpdateImported?: (id: string, type: "folder" | "item") => void
-}
-
-const formatItemType = (type: string): string => {
-  const typeMap: Record<string, string> = {
-    video: "Video",
-    pdf: "PDF",
-    image: "Image",
-    audio: "Audio",
-    document: "Document",
-  }
-  return typeMap[type] || type
+  density?: string
+  onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
 }
 
 const DataIcon = ({ className }: { className?: string }) => (
@@ -113,6 +104,7 @@ export function LibraryItem({
   selectedItems = new Set(),
   importedItems = new Set(),
   onUpdateImported,
+  onMove,
 }: LibraryItemProps) {
   const [isHovered, setIsHovered] = useState(false)
   const isSelected = selectedItems.has(item.id)
@@ -143,6 +135,12 @@ export function LibraryItem({
     if (target.closest("button") || target.closest('[role="checkbox"]')) {
       return
     }
+  }
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation()
+    e.dataTransfer.setData("application/json", JSON.stringify({ id: item.id, type: "item" }))
+    e.dataTransfer.effectAllowed = "move"
   }
 
   const renderCell = (columnId: string) => {
@@ -323,6 +321,8 @@ export function LibraryItem({
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        draggable
+        onDragStart={handleDragStart}
       >
         <div className="flex items-center flex-shrink-0 pl-4">
           {columns.map((column, idx) =>
@@ -377,4 +377,15 @@ export function LibraryItem({
       </div>
     </TooltipProvider>
   )
+}
+
+const formatItemType = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    video: "Video",
+    pdf: "PDF",
+    image: "Image",
+    audio: "Audio",
+    document: "Document",
+  }
+  return typeMap[type] || type
 }

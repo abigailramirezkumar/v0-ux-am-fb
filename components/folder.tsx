@@ -2,9 +2,13 @@
 
 import { ContextMenuTrigger } from "@/components/ui/context-menu"
 
-import { Tooltip } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent as TooltipContentImport,
+  TooltipProvider,
+} from "@/components/ui/tooltip"
 
-import { TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { useState } from "react"
 import type React from "react"
 import { cn } from "@/lib/utils"
@@ -44,6 +48,9 @@ interface FolderProps {
   onRename?: (folderId: string, newName: string) => void
   onDelete?: (folderId: string) => void
   onReorderChildren?: (folderId: string) => void
+  onSortFolder?: (folderId: string, sortBy: string, direction?: "asc" | "desc") => void
+  folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
+  onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
 }
 
 export function Folder({
@@ -64,10 +71,14 @@ export function Folder({
   onRename,
   onDelete,
   onReorderChildren,
+  onSortFolder,
+  folderSortOptions,
+  onMove,
 }: FolderProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameName, setRenameName] = useState(folder.name)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
@@ -135,6 +146,40 @@ export function Folder({
     onDelete?.(folder.id)
   }
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation()
+    e.dataTransfer.setData("application/json", JSON.stringify({ id: folder.id, type: "folder" }))
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("application/json"))
+      if (data && data.id && data.type) {
+        onMove?.(data.id, folder.id, data.type)
+      }
+    } catch (err) {
+      console.error("Failed to parse drag data", err)
+    }
+  }
+
   const renderCell = (columnId: string) => {
     switch (columnId) {
       case "name":
@@ -186,7 +231,7 @@ export function Folder({
                           {folder.name}
                         </span>
                       </TooltipTrigger>
-                      {folder.name && <TooltipContent>{folder.name}</TooltipContent>}
+                      {folder.name && <TooltipContentImport>{folder.name}</TooltipContentImport>}
                     </Tooltip>
                   </TooltipProvider>
                   {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
@@ -204,7 +249,7 @@ export function Folder({
                   {folder.dateModified || ""}
                 </span>
               </TooltipTrigger>
-              {folder.dateModified && <TooltipContent>{folder.dateModified}</TooltipContent>}
+              {folder.dateModified && <TooltipContentImport>{folder.dateModified}</TooltipContentImport>}
             </Tooltip>
           </TooltipProvider>
         )
@@ -217,7 +262,7 @@ export function Folder({
                   Folder
                 </span>
               </TooltipTrigger>
-              <TooltipContent>Folder</TooltipContent>
+              <TooltipContentImport>Folder</TooltipContentImport>
             </Tooltip>
           </TooltipProvider>
         )
@@ -232,7 +277,7 @@ export function Folder({
                   {totalItemCount}
                 </span>
               </TooltipTrigger>
-              <TooltipContent>{totalItemCount} Items</TooltipContent>
+              <TooltipContentImport>{totalItemCount} Items</TooltipContentImport>
             </Tooltip>
           </TooltipProvider>
         )
@@ -245,7 +290,7 @@ export function Folder({
                   {folder.createdDate || ""}
                 </span>
               </TooltipTrigger>
-              {folder.createdDate && <TooltipContent>{folder.createdDate}</TooltipContent>}
+              {folder.createdDate && <TooltipContentImport>{folder.createdDate}</TooltipContentImport>}
             </Tooltip>
           </TooltipProvider>
         )
@@ -263,11 +308,17 @@ export function Folder({
         !isSelected && isHovered && "bg-muted",
         !isSelected && !isHovered && isAlternate && "bg-muted/20",
         !isSelected && !isHovered && !isAlternate && "bg-background",
+        isDragOver && "bg-accent border border-primary/50",
       )}
       style={{ minWidth: totalRowWidth }}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      draggable={!isRenaming}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div className="flex items-center flex-shrink-0 pl-4">
         {columns.map((column, idx) =>
@@ -374,6 +425,9 @@ export function Folder({
               onRename={onRename}
               onDelete={onDelete}
               onReorderChildren={onReorderChildren}
+              onSortFolder={onSortFolder}
+              folderSortOptions={folderSortOptions}
+              onMove={onMove}
             />
           ))}
 
@@ -390,6 +444,7 @@ export function Folder({
               selectedItems={selectedItems}
               importedItems={importedItems}
               onUpdateImported={onUpdateImported}
+              onMove={onMove}
             />
           ))}
         </div>

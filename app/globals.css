@@ -78,13 +78,14 @@
   --chart-3: #d3a7ff;
   --chart-4: #d70f9a;
   --chart-5: #1db3f3;
-  --sidebar: #191f24;
+  /* Updated dark mode sidebar colors to match screenshot */
+  --sidebar: #1a1f24;
   --sidebar-foreground: #c0c6cd;
   --sidebar-primary: #0273e3;
   --sidebar-primary-foreground: #fefefe;
-  --sidebar-accent: #0f1215;
+  --sidebar-accent: #252b31;
   --sidebar-accent-foreground: #fefefe;
-  --sidebar-border: #42474c;
+  --sidebar-border: #2b3035;
   --sidebar-ring: #0273e3;
   --font-barlow: Barlow;
   --font-sans: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;

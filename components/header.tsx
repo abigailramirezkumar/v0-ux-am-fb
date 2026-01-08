@@ -3,7 +3,6 @@ import { Icon } from "@/components/icon"
 import { Button } from "@/components/button"
 import { Input } from "@/components/input"
 import { cn } from "@/lib/utils"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface HeaderProps {
   className?: string
@@ -29,12 +28,6 @@ export function Header({
   return (
     <header className={cn("bg-sidebar border-b-0 border-border px-4 py-3 font-sans border-none", className)}>
       <div className="flex items-center gap-4">
-        {/* Menu Button */}
-        <SidebarTrigger className="p-1 hover:bg-muted rounded transition-colors" />
-
-        {/* Separator */}
-        <div className="w-px h-6 bg-border" />
-
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2">
           <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />

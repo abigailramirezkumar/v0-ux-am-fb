@@ -1,7 +1,7 @@
 "use client"
 
 import type * as React from "react"
-import { ChevronRight, User, Settings, LogOut } from "lucide-react"
+import { ChevronRight, ChevronsLeft, ChevronsRight, User, Settings, LogOut } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { Icon } from "@/components/icon"
 import { Logo } from "@/components/logo"
@@ -17,7 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar"
 import {
@@ -27,18 +26,88 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 
 interface HudlSidebarProps {
   children?: React.ReactNode
 }
 
 function SidebarLogo() {
-  const { state } = useSidebar()
+  const { state, toggleSidebar } = useSidebar()
 
   return (
-    <div className="flex items-center justify-between mb-4">
-      {state === "collapsed" ? <Logo type="logomark" className="w-5 h-5" /> : <Logo type="logotype" className="h-8" />}
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Logo type="logomark" className="w-6 h-6" />
+        {state === "expanded" && <span className="text-sidebar-foreground font-semibold text-lg px-1">Hudl</span>}
+      </div>
+      {state === "expanded" && (
+        <button
+          onClick={toggleSidebar}
+          className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </button>
+      )}
     </div>
+  )
+}
+
+function CollapsedToggle() {
+  const { state, toggleSidebar } = useSidebar()
+
+  if (state !== "collapsed") return null
+
+  return (
+    <button
+      onClick={toggleSidebar}
+      className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
+      aria-label="Expand sidebar"
+    >
+      <ChevronsRight className="w-4 h-4" />
+    </button>
+  )
+}
+
+function TeamSection() {
+  const { state } = useSidebar()
+
+  if (state === "collapsed") {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex justify-center">
+              <div className="w-10 h-10 bg-[#19356f] rounded-lg flex items-center justify-center">
+                <span className="text-white text-xs font-bold">SUN</span>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <div>
+              <div className="font-medium">Team name</div>
+              <div className="text-xs text-muted-foreground">User Role</div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
+  return (
+    <SidebarMenuButton className="w-full justify-between h-auto py-2">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#19356f] rounded flex items-center justify-center flex-shrink-0">
+          <span className="text-white text-xs font-bold">SUN</span>
+        </div>
+        <div className="flex flex-col items-start">
+          <span className="text-sm font-medium text-sidebar-foreground">Team name</span>
+          <span className="text-xs text-muted-foreground">User Role</span>
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+    </SidebarMenuButton>
   )
 }
 
@@ -62,75 +131,54 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
   const bottomNavItems = [
     { name: "Calendar", icon: "calendar", badge: null },
     { name: "Messages", icon: "messages", badge: null },
-    { name: "Notifications", icon: "notifications", badge: "24" },
+    { name: "Notifications", icon: "notifications", badge: null },
     { name: "Settings", icon: "settings", badge: null },
   ]
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 border-sidebar">
-      <SidebarHeader>
+      <SidebarHeader className="p-3">
         <SidebarLogo />
+        <CollapsedToggle />
 
         {/* Team Section */}
-        <div className="mb-4">
-          <SidebarMenuButton className="w-full justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#19356f] rounded flex items-center justify-center">
-                <span className="text-white text-xs font-bold">SUN</span>
-              </div>
-              <span>Team name</span>
-            </div>
-            <ChevronRight className="w-4 h-4" />
-          </SidebarMenuButton>
+        <div className="mt-4">
+          <TeamSection />
         </div>
-
-        <SidebarSeparator />
       </SidebarHeader>
 
-      <SidebarContent className="px-4">
+      <SidebarContent className="px-3">
         {/* Main Navigation */}
-        <SidebarMenu>
+        <SidebarMenu className="gap-1">
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname === "/library"}>
+            <SidebarMenuButton asChild isActive={pathname === "/library"} tooltip="Library">
               <Link href="/library">
-                <div className="flex items-center gap-3">
-                  <Icon name="folder" className="w-5 h-5 flex-shrink-0" />
-                  <span>Library</span>
-                </div>
+                <Icon name="folder" className="w-5 h-5 flex-shrink-0" />
+                <span>Library</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname.startsWith("/explore")}>
+            <SidebarMenuButton asChild isActive={pathname.startsWith("/explore")} tooltip="Explore">
               <Link href="/explore">
-                <div className="flex items-center gap-3">
-                  <Icon name="explore" className="w-5 h-5 flex-shrink-0" />
-                  <span>Explore</span>
-                </div>
+                <Icon name="explore" className="w-5 h-5 flex-shrink-0" />
+                <span>Explore</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="px-3">
+        <div className="border-t border-dashed border-sidebar-border my-2" />
+
         {/* Bottom Navigation */}
-        <SidebarMenu>
+        <SidebarMenu className="gap-1">
           {bottomNavItems.map((item) => (
             <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton className="justify-between">
-                <div className="flex items-center gap-3">
-                  <Icon name={item.icon as any} className="w-5 h-5 flex-shrink-0" />
-                  <span>{item.name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {item.badge && (
-                    <div className="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded min-w-[20px] text-center">
-                      {item.badge}
-                    </div>
-                  )}
-                  <ChevronRight className="w-4 h-4" />
-                </div>
+              <SidebarMenuButton tooltip={item.name}>
+                <Icon name={item.icon as any} className="w-5 h-5 flex-shrink-0" />
+                <span>{item.name}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -138,12 +186,11 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleThemeToggle}
-              className="justify-start opacity-60 hover:opacity-100 transition-opacity"
+              className="opacity-60 hover:opacity-100 transition-opacity"
+              tooltip={mounted && resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
             >
-              <div className="flex items-center gap-3">
-                <Icon name={mounted && resolvedTheme === "dark" ? "sun" : "moon"} className="w-5 h-5 flex-shrink-0" />
-                <span>{mounted && resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}</span>
-              </div>
+              <Icon name={mounted && resolvedTheme === "dark" ? "sun" : "moon"} className="w-5 h-5 flex-shrink-0" />
+              <span>{mounted && resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
@@ -151,12 +198,9 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
           <SidebarMenuItem>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="justify-between">
-                  <div className="flex items-center gap-3">
-                    <Icon name="settings" className="w-5 h-5 flex-shrink-0" />
-                    <span>Catapult Import</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4" />
+                <SidebarMenuButton tooltip="Catapult Import">
+                  <Icon name="settings" className="w-5 h-5 flex-shrink-0" />
+                  <span>Catapult Import</span>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-56">
@@ -193,20 +237,17 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <SidebarSeparator />
-
-        <SidebarMenu>
+        {/* User Profile Section */}
+        <SidebarMenu className="gap-1">
           <SidebarMenuItem>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#ff6300] rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">AD</span>
-                    </div>
-                    <span>User Name</span>
+                <SidebarMenuButton className="h-auto py-2" tooltip="User Name">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                    <img src="/professional-headshot.png" alt="User avatar" className="w-full h-full object-cover" />
                   </div>
-                  <ChevronRight className="w-4 h-4" />
+                  <span>User name</span>
+                  <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-56">

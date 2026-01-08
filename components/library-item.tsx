@@ -243,7 +243,7 @@ export function LibraryItem({
           </Tooltip>
         </div>
 
-        <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
+        <div className="w-20 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
           {isVideo && item.angles !== undefined ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -287,7 +287,7 @@ export function LibraryItem({
           </Tooltip>
         </div>
 
-        <div className="w-14 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
+        <div className="w-20 flex-shrink-0 ml-3 flex items-center gap-1 justify-start">
           {isVideo ? (
             <Tooltip>
               <TooltipTrigger asChild>

@@ -8,7 +8,7 @@ export function LibraryTableHeader() {
         <span className="text-sm font-bold text-muted-foreground">Name</span>
       </div>
 
-      <div className="flex items-center flex-shrink-0">
+      <div className="flex flex-shrink-0 text-left items-center ml-[-8px] pl-0">
         {/* Modified column - matches folder.tsx: w-24 flex-shrink-0 ml-3 */}
         <div className="w-24 flex-shrink-0 ml-3">
           <span className="text-sm font-bold text-muted-foreground">Modified</span>
@@ -44,8 +44,7 @@ export function LibraryTableHeader() {
           <span className="text-sm font-bold text-muted-foreground">Size</span>
         </div>
 
-        {/* Comments column - matches folder.tsx: w-14 flex-shrink-0 ml-3 */}
-        <div className="w-14 flex-shrink-0 ml-3 text-center">
+        <div className="w-20 flex-shrink-0 ml-3 text-left">
           <span className="text-sm font-bold text-muted-foreground">Comments</span>
         </div>
 

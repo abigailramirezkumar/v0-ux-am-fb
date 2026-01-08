@@ -35,21 +35,27 @@ interface HudlSidebarProps {
 function SidebarLogo() {
   const { state, toggleSidebar } = useSidebar()
 
+  if (state === "collapsed") {
+    return (
+      <div className="flex justify-center">
+        <Logo type="logomark" className="w-6 h-6" />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between px-1">
       <div className="flex items-center gap-2">
         <Logo type="logomark" className="w-6 h-6" />
-        {state === "expanded" && <span className="text-sidebar-foreground font-semibold text-lg px-1">Hudl</span>}
+        <span className="text-sidebar-foreground font-semibold text-lg">Hudl</span>
       </div>
-      {state === "expanded" && (
-        <button
-          onClick={toggleSidebar}
-          className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
-          aria-label="Collapse sidebar"
-        >
-          <ChevronsLeft className="w-4 h-4" />
-        </button>
-      )}
+      <button
+        onClick={toggleSidebar}
+        className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
+        aria-label="Collapse sidebar"
+      >
+        <ChevronsLeft className="w-4 h-4" />
+      </button>
     </div>
   )
 }
@@ -60,13 +66,15 @@ function CollapsedToggle() {
   if (state !== "collapsed") return null
 
   return (
-    <button
-      onClick={toggleSidebar}
-      className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
-      aria-label="Expand sidebar"
-    >
-      <ChevronsRight className="w-4 h-4" />
-    </button>
+    <div className="flex justify-center">
+      <button
+        onClick={toggleSidebar}
+        className="p-1 rounded hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-sidebar-foreground"
+        aria-label="Expand sidebar"
+      >
+        <ChevronsRight className="w-4 h-4" />
+      </button>
+    </div>
   )
 }
 
@@ -242,12 +250,17 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
           <SidebarMenuItem>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="h-auto py-2" tooltip="User Name">
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                    <img src="/professional-headshot.png" alt="User avatar" className="w-full h-full object-cover" />
+                <SidebarMenuButton
+                  className="h-auto py-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
+                  tooltip="User Name"
+                >
+                  <div className="flex items-center gap-3 group-data-[collapsible=icon]:gap-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      <img src="/professional-headshot.png" alt="User avatar" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="group-data-[collapsible=icon]:hidden">User name</span>
                   </div>
-                  <span>User name</span>
-                  <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-56">

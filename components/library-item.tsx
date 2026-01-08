@@ -126,6 +126,14 @@ export function LibraryItem({
   const indentMargin = level * spacing.indent
   const isVideo = item.type === "video"
 
+  const totalRowWidth =
+    columns.reduce((sum, col) => (col.visible ? sum + col.width : sum), 0) +
+    (columns.filter((c) => c.visible).length - 1) * 12 + // ml-3 gaps (12px each)
+    16 + // pl-4 left padding
+    8 + // w-8 actions area
+    12 + // ml-3 for actions
+    16 // mr-4 right padding
+
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(item.id, checked)
   }
@@ -311,6 +319,7 @@ export function LibraryItem({
           !isSelected && !isHovered && isAlternate && "bg-muted/20",
           !isSelected && !isHovered && !isAlternate && "bg-background",
         )}
+        style={{ minWidth: totalRowWidth }}
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

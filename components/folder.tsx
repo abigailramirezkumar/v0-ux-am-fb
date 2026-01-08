@@ -1,31 +1,19 @@
 "use client"
 
+import { ContextMenuTrigger } from "@/components/ui/context-menu"
+
+import { Tooltip } from "@/components/ui/tooltip"
+
+import { TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { useState } from "react"
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
-import { FolderIcon, FolderFilledIcon, ChevronRightIcon, ChevronDownIcon, SortIcon } from "@/components/icon"
+import { FolderIcon, FolderFilledIcon, ChevronRightIcon, ChevronDownIcon } from "@/components/icon"
 import { LibraryItem, type LibraryItemData } from "@/components/library-item"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/input"
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubTrigger,
-  ContextMenuSubContent,
-} from "@/components/ui/context-menu"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 
@@ -55,8 +43,6 @@ interface FolderProps {
   onUpdateImported?: (id: string, type: "folder" | "item") => void
   onRename?: (folderId: string, newName: string) => void
   onDelete?: (folderId: string) => void
-  onSortFolder?: (folderId: string, sortBy: string, direction: "asc" | "desc") => void
-  folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
   onReorderChildren?: (folderId: string) => void
 }
 
@@ -77,8 +63,6 @@ export function Folder({
   onUpdateImported,
   onRename,
   onDelete,
-  onSortFolder,
-  folderSortOptions = {},
   onReorderChildren,
 }: FolderProps) {
   const [isHovered, setIsHovered] = useState(false)
@@ -99,9 +83,15 @@ export function Folder({
   const isAlternate = index % 2 === 1
   const indentMargin = level * spacing.indent
 
-  const currentSort = folderSortOptions[folder.id]
-  const hasSortApplied = !!currentSort
   const hasChildFolders = folder.children && folder.children.length > 0
+
+  const totalRowWidth =
+    columns.reduce((sum, col) => (col.visible ? sum + col.width : sum), 0) +
+    (columns.filter((c) => c.visible).length - 1) * 12 + // ml-3 gaps (12px each)
+    16 + // pl-4 left padding
+    8 + // w-8 actions area
+    12 + // ml-3 for actions
+    16 // mr-4 right padding
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(folder.id, checked)
@@ -196,14 +186,9 @@ export function Folder({
                           {folder.name}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent>{folder.name}</TooltipContent>
+                      {folder.name && <TooltipContent>{folder.name}</TooltipContent>}
                     </Tooltip>
                   </TooltipProvider>
-                  {hasSortApplied && (
-                    <div className="flex items-center gap-1">
-                      <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
-                    </div>
-                  )}
                   {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
                 </>
               )}
@@ -212,49 +197,57 @@ export function Folder({
         )
       case "dateModified":
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {folder.dateModified || ""}
-              </span>
-            </TooltipTrigger>
-            {folder.dateModified && <TooltipContent>{folder.dateModified}</TooltipContent>}
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  {folder.dateModified || ""}
+                </span>
+              </TooltipTrigger>
+              {folder.dateModified && <TooltipContent>{folder.dateModified}</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
         )
       case "type":
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                Folder
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Folder</TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  Folder
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Folder</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )
       case "hasData":
         return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
       case "itemCount":
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {totalItemCount}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{totalItemCount} Items</TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  {totalItemCount}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{totalItemCount} Items</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )
       case "createdDate":
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {folder.createdDate || ""}
-              </span>
-            </TooltipTrigger>
-            {folder.createdDate && <TooltipContent>{folder.createdDate}</TooltipContent>}
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                  {folder.createdDate || ""}
+                </span>
+              </TooltipTrigger>
+              {folder.createdDate && <TooltipContent>{folder.createdDate}</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
         )
       default:
         return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
@@ -271,29 +264,28 @@ export function Folder({
         !isSelected && !isHovered && isAlternate && "bg-muted/20",
         !isSelected && !isHovered && !isAlternate && "bg-background",
       )}
+      style={{ minWidth: totalRowWidth }}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex items-center flex-shrink-0 pl-4">
-        <TooltipProvider>
-          {columns.map((column, idx) =>
-            column.visible ? (
-              <div
-                key={column.id}
-                className={cn("flex-shrink-0", {
-                  "flex justify-center": column.align === "center",
-                  "text-left": column.align === "left",
-                  "text-right": column.align === "right",
-                  "ml-3": idx > 0,
-                })}
-                style={{ width: column.width, minWidth: column.width }}
-              >
-                {renderCell(column.id)}
-              </div>
-            ) : null,
-          )}
-        </TooltipProvider>
+        {columns.map((column, idx) =>
+          column.visible ? (
+            <div
+              key={column.id}
+              className={cn("flex-shrink-0", {
+                "flex justify-center": column.align === "center",
+                "text-left": column.align === "left",
+                "text-right": column.align === "right",
+                "ml-3": idx > 0,
+              })}
+              style={{ width: column.width, minWidth: column.width }}
+            >
+              {renderCell(column.id)}
+            </div>
+          ) : null,
+        )}
 
         {/* Actions - fixed width */}
         <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
@@ -311,42 +303,11 @@ export function Folder({
             </Button>
           ) : (
             isHovered && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                    }}
-                  >
-                    <div className="flex gap-1">
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      handleRenameStart()
-                    }}
-                  >
-                    Rename Folder
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      handleDelete()
-                    }}
-                  >
-                    Delete Folder
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex gap-1">
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+              </div>
             )
           )}
         </div>
@@ -378,61 +339,6 @@ export function Folder({
               Set Folder Order
             </ContextMenuItem>
           )}
-
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <div className="flex items-center gap-2">
-                Sort By
-                {hasSortApplied && <div className="w-1.5 h-1.5 rounded-full bg-[#0273e3]" />}
-              </div>
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "name", "asc")}
-                className={currentSort?.by === "name" && currentSort?.direction === "asc" ? "bg-accent" : ""}
-              >
-                Name (A-Z)
-              </ContextMenuItem>
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "name", "desc")}
-                className={currentSort?.by === "name" && currentSort?.direction === "desc" ? "bg-accent" : ""}
-              >
-                Name (Z-A)
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "dateModified", "desc")}
-                className={currentSort?.by === "dateModified" && currentSort?.direction === "desc" ? "bg-accent" : ""}
-              >
-                Date Modified (Newest)
-              </ContextMenuItem>
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "dateModified", "asc")}
-                className={currentSort?.by === "dateModified" && currentSort?.direction === "asc" ? "bg-accent" : ""}
-              >
-                Date Modified (Oldest)
-              </ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "type", "asc")}
-                className={currentSort?.by === "type" && currentSort?.direction === "asc" ? "bg-accent" : ""}
-              >
-                Type (A-Z)
-              </ContextMenuItem>
-              <ContextMenuItem
-                onSelect={() => onSortFolder?.(folder.id, "type", "desc")}
-                className={currentSort?.by === "type" && currentSort?.direction === "desc" ? "bg-accent" : ""}
-              >
-                Type (Z-A)
-              </ContextMenuItem>
-              {hasSortApplied && (
-                <>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem onSelect={() => onSortFolder?.(folder.id, "", "asc")}>Clear Sort</ContextMenuItem>
-                </>
-              )}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
 
           <ContextMenuSeparator />
           <ContextMenuItem
@@ -467,8 +373,6 @@ export function Folder({
               onUpdateImported={onUpdateImported}
               onRename={onRename}
               onDelete={onDelete}
-              onSortFolder={onSortFolder}
-              folderSortOptions={folderSortOptions}
               onReorderChildren={onReorderChildren}
             />
           ))}

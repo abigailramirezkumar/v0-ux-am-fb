@@ -18,12 +18,14 @@ interface LibraryContextType {
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
   folderOrder: Record<string, string[]>
+  activeWatchItemId: string | null
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
   updateFolderOrder: (parentId: string, newOrder: string[]) => void
   resizeColumn: (columnId: string, width: number) => void
   moveColumn: (dragIndex: number, hoverIndex: number) => void
+  setWatchItem: (itemId: string | null) => void
 }
 
 const defaultColumns: Column[] = [
@@ -49,6 +51,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   })
   const [folderOrder, setFolderOrder] = useState<Record<string, string[]>>({})
   const [isLoaded, setIsLoaded] = useState(false)
+  const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -144,18 +147,24 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
+  const setWatchItem = (itemId: string | null) => {
+    setActiveWatchItemId(itemId)
+  }
+
   return (
     <LibraryContext.Provider
       value={{
         columns,
         sort,
         folderOrder,
+        activeWatchItemId,
         setSort,
         toggleColumnVisibility,
         setColumns,
         updateFolderOrder,
         resizeColumn,
         moveColumn,
+        setWatchItem,
       }}
     >
       {children}

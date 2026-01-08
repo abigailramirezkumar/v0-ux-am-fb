@@ -37,6 +37,7 @@ interface LibraryItemProps {
   onUpdateImported?: (id: string, type: "folder" | "item") => void
   density?: string
   onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
+  onOpen?: (itemId: string) => void
 }
 
 const DataIcon = ({ className }: { className?: string }) => (
@@ -105,6 +106,7 @@ export function LibraryItem({
   importedItems = new Set(),
   onUpdateImported,
   onMove,
+  onOpen,
 }: LibraryItemProps) {
   const [isHovered, setIsHovered] = useState(false)
   const isSelected = selectedItems.has(item.id)
@@ -120,11 +122,11 @@ export function LibraryItem({
 
   const totalRowWidth =
     columns.reduce((sum, col) => (col.visible ? sum + col.width : sum), 0) +
-    (columns.filter((c) => c.visible).length - 1) * 12 + // ml-3 gaps (12px each)
-    16 + // pl-4 left padding
-    8 + // w-8 actions area
-    12 + // ml-3 for actions
-    16 // mr-4 right padding
+    (columns.filter((c) => c.visible).length - 1) * 12 +
+    16 +
+    8 +
+    12 +
+    16
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(item.id, checked)
@@ -134,6 +136,11 @@ export function LibraryItem({
     const target = e.target as HTMLElement
     if (target.closest("button") || target.closest('[role="checkbox"]')) {
       return
+    }
+
+    // Double-click opens the item in Watch page
+    if (e.detail === 2) {
+      onOpen?.(item.id)
     }
   }
 

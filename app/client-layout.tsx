@@ -9,6 +9,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CatapultImportProvider } from "@/lib/catapult-import-context"
 import { DensityProvider } from "@/lib/density-context"
+import { LibraryProvider } from "@/lib/library-context"
 
 export default function ClientLayout({
   children,
@@ -21,29 +22,31 @@ export default function ClientLayout({
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <CatapultImportProvider>
         <DensityProvider>
-          <SidebarProvider defaultOpen={true}>
-            <div className="h-screen w-full flex bg-sidebar">
-              <HudlSidebar />
+          <LibraryProvider>
+            <SidebarProvider defaultOpen={true}>
+              <div className="h-screen w-full flex bg-sidebar">
+                <HudlSidebar />
 
-              <SidebarInset className="flex-1 flex flex-col bg-sidebar">
-                <Header
-                  title="Component Library"
-                  searchValue={searchValue}
-                  onSearchChange={setSearchValue}
-                  searchPlaceholder="Search components..."
-                  onFilterClick={() => console.log("Filter clicked")}
-                  onShareClick={() => console.log("Share clicked")}
-                  onDownloadClick={() => console.log("Download clicked")}
-                  className="bg-sidebar border-b border-sidebar-border"
-                />
+                <SidebarInset className="flex-1 flex flex-col bg-sidebar">
+                  <Header
+                    title="Component Library"
+                    searchValue={searchValue}
+                    onSearchChange={setSearchValue}
+                    searchPlaceholder="Search components..."
+                    onFilterClick={() => console.log("Filter clicked")}
+                    onShareClick={() => console.log("Share clicked")}
+                    onDownloadClick={() => console.log("Download clicked")}
+                    className="bg-sidebar border-b border-sidebar-border"
+                  />
 
-                <main className="flex-1 overflow-hidden p-2 px-0 pt-0 pr-2">
-                  <Suspense fallback={null}>{children}</Suspense>
-                </main>
-              </SidebarInset>
-            </div>
-            <Analytics />
-          </SidebarProvider>
+                  <main className="flex-1 overflow-hidden p-2 px-0 pt-0 pr-2">
+                    <Suspense fallback={null}>{children}</Suspense>
+                  </main>
+                </SidebarInset>
+              </div>
+              <Analytics />
+            </SidebarProvider>
+          </LibraryProvider>
         </DensityProvider>
       </CatapultImportProvider>
     </ThemeProvider>

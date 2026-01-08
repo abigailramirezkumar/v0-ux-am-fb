@@ -51,6 +51,7 @@ interface FolderProps {
   onSortFolder?: (folderId: string, sortBy: string, direction?: "asc" | "desc") => void
   folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
   onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
+  onOpen?: (itemId: string) => void
 }
 
 export function Folder({
@@ -74,6 +75,7 @@ export function Folder({
   onSortFolder,
   folderSortOptions,
   onMove,
+  onOpen,
 }: FolderProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -428,6 +430,7 @@ export function Folder({
               onSortFolder={onSortFolder}
               folderSortOptions={folderSortOptions}
               onMove={onMove}
+              onOpen={onOpen}
             />
           ))}
 
@@ -445,6 +448,7 @@ export function Folder({
               importedItems={importedItems}
               onUpdateImported={onUpdateImported}
               onMove={onMove}
+              onOpen={onOpen}
             />
           ))}
         </div>

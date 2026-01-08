@@ -123,6 +123,8 @@ export function LibraryItem({
   const { columns } = useLibraryContext()
 
   const isAlternate = index % 2 === 1
+  const indentMargin = level * spacing.indent
+  const isVideo = item.type === "video"
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(item.id, checked)
@@ -135,12 +137,49 @@ export function LibraryItem({
     }
   }
 
-  const indentMargin = level * spacing.indent
-
-  const isVideo = item.type === "video"
-
   const renderCell = (columnId: string) => {
     switch (columnId) {
+      case "name":
+        return (
+          <div className="flex items-center flex-1 min-w-0">
+            {/* Indentation Spacer */}
+            <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+
+            {/* Checkbox - fixed width */}
+            <div className="flex-shrink-0 w-6">
+              {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+            </div>
+
+            {/* Icon/Thumbnail - fixed width */}
+            <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
+              {isHovered && item.type === "video" ? (
+                <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
+              ) : item.thumbnailUrl ? (
+                <img
+                  src={item.thumbnailUrl || "/placeholder.svg"}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
+              )}
+            </div>
+
+            <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn("text-sm font-medium truncate block", isSelected ? "text-white" : "text-foreground")}
+                  >
+                    {item.name}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{item.name}</TooltipContent>
+              </Tooltip>
+              {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+            </div>
+          </div>
+        )
       case "dateModified":
         return (
           <Tooltip>
@@ -276,90 +315,55 @@ export function LibraryItem({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="flex items-center flex-1 min-w-0 pl-4">
-          {/* Indentation Spacer */}
-          <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+        <div className="flex items-center flex-shrink-0 pl-4">
+          {columns.map((column, idx) =>
+            column.visible ? (
+              <div
+                key={column.id}
+                className={cn("flex-shrink-0", {
+                  "flex justify-center": column.align === "center",
+                  "text-left": column.align === "left",
+                  "text-right": column.align === "right",
+                  "ml-3": idx > 0,
+                })}
+                style={{ width: column.width, minWidth: column.width }}
+              >
+                {renderCell(column.id)}
+              </div>
+            ) : null,
+          )}
 
-          {/* Checkbox - fixed width */}
-          <div className="flex-shrink-0 w-6">
-            {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
-          </div>
-
-          {/* Icon/Thumbnail - fixed width */}
-          <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
-            {isHovered && item.type === "video" ? (
-              <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
-            ) : item.thumbnailUrl ? (
-              <img
-                src={item.thumbnailUrl || "/placeholder.svg"}
-                alt={item.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
-            )}
-          </div>
-
-          <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={cn("text-sm font-medium truncate block", isSelected ? "text-white" : "text-foreground")}
-                >
-                  {item.name}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{item.name}</TooltipContent>
-            </Tooltip>
-            {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
-          </div>
-        </div>
-
-        {columns.map((column) =>
-          column.visible ? (
-            <div
-              key={column.id}
-              className={cn(column.width, "flex-shrink-0 ml-3", {
-                "flex justify-center": column.align === "center",
-                "text-left": column.align === "left",
-                "text-right": column.align === "right",
-              })}
-            >
-              {renderCell(column.id)}
-            </div>
-          ) : null,
-        )}
-
-        {/* Actions - fixed width */}
-        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-          {isImported ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={(e) => {
-                e.stopPropagation()
-                onUpdateImported?.(item.id, "item")
-              }}
-            >
-              Update
-            </Button>
-          ) : (
-            isHovered && (
-              <button
-                className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+          {/* Actions - fixed width */}
+          <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
+            {isImported ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
                 onClick={(e) => {
                   e.stopPropagation()
+                  onUpdateImported?.(item.id, "item")
                 }}
               >
-                <div className="flex gap-1">
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                </div>
-              </button>
-            )
-          )}
+                Update
+              </Button>
+            ) : (
+              isHovered && (
+                <button
+                  className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                >
+                  <div className="flex gap-1">
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                  </div>
+                </button>
+              )
+            )}
+          </div>
         </div>
       </div>
     </TooltipProvider>

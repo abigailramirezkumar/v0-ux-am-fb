@@ -9,8 +9,9 @@ export interface Column {
   id: string
   label: string
   visible: boolean
-  width: string
+  width: number // Pixel width
   align?: "left" | "center" | "right"
+  fixed?: boolean // Cannot be reordered
 }
 
 interface LibraryContextType {
@@ -21,18 +22,21 @@ interface LibraryContextType {
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
   updateFolderOrder: (parentId: string, newOrder: string[]) => void
+  resizeColumn: (columnId: string, width: number) => void
+  moveColumn: (dragIndex: number, hoverIndex: number) => void
 }
 
 const defaultColumns: Column[] = [
-  { id: "dateModified", label: "Modified", visible: true, width: "w-24", align: "left" },
-  { id: "type", label: "Type", visible: true, width: "w-16", align: "left" },
-  { id: "hasData", label: "Data", visible: true, width: "w-12", align: "center" },
-  { id: "itemCount", label: "Items", visible: true, width: "w-14", align: "left" },
-  { id: "angles", label: "Angles", visible: true, width: "w-14", align: "left" },
-  { id: "duration", label: "Duration", visible: true, width: "w-16", align: "left" },
-  { id: "size", label: "Size", visible: true, width: "w-16", align: "left" },
-  { id: "comments", label: "Comments", visible: true, width: "w-20", align: "left" },
-  { id: "createdDate", label: "Created", visible: true, width: "w-24", align: "left" },
+  { id: "name", label: "Name", visible: true, width: 300, align: "left", fixed: true },
+  { id: "dateModified", label: "Modified", visible: true, width: 120, align: "left" },
+  { id: "type", label: "Type", visible: true, width: 80, align: "left" },
+  { id: "hasData", label: "Data", visible: true, width: 60, align: "center" },
+  { id: "itemCount", label: "Items", visible: true, width: 80, align: "left" },
+  { id: "angles", label: "Angles", visible: true, width: 80, align: "left" },
+  { id: "duration", label: "Duration", visible: true, width: 90, align: "left" },
+  { id: "size", label: "Size", visible: true, width: 90, align: "left" },
+  { id: "comments", label: "Comments", visible: true, width: 100, align: "left" },
+  { id: "createdDate", label: "Created", visible: true, width: 120, align: "left" },
 ]
 
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined)
@@ -46,24 +50,38 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderOrder, setFolderOrder] = useState<Record<string, string[]>>({})
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load from local storage
   useEffect(() => {
     try {
-      const savedColumns = localStorage.getItem("library_columns")
-      const savedOrder = localStorage.getItem("library_folder_order")
+      const savedColumnOrder = localStorage.getItem("library_column_order")
+      const savedFolderOrder = localStorage.getItem("library_folder_order")
 
-      if (savedColumns) {
-        const parsed = JSON.parse(savedColumns)
-        // Merge with defaults to handle any schema changes safely
-        const merged = defaultColumns.map((def) => {
-          const saved = parsed.find((p: Column) => p.id === def.id)
-          return saved ? { ...def, visible: saved.visible } : def
+      if (savedColumnOrder) {
+        const orderIds = JSON.parse(savedColumnOrder) as string[]
+
+        // Reconstruct: Sort defaultColumns based on saved IDs
+        // This keeps the default widths but applies the saved order
+        const reordered: Column[] = []
+
+        // 1. Add columns found in saved order
+        orderIds.forEach((id) => {
+          const def = defaultColumns.find((c) => c.id === id)
+          if (def) reordered.push({ ...def })
         })
-        setColumns(merged)
+
+        // 2. Append any new default columns not in saved order
+        defaultColumns.forEach((def) => {
+          if (!reordered.find((c) => c.id === def.id)) {
+            reordered.push({ ...def })
+          }
+        })
+
+        setColumns(reordered)
+      } else {
+        setColumns(defaultColumns.map((c) => ({ ...c })))
       }
 
-      if (savedOrder) {
-        setFolderOrder(JSON.parse(savedOrder))
+      if (savedFolderOrder) {
+        setFolderOrder(JSON.parse(savedFolderOrder))
       }
     } catch (e) {
       console.error("Failed to load library settings", e)
@@ -71,10 +89,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true)
   }, [])
 
-  // Save to local storage
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem("library_columns", JSON.stringify(columns))
+      const orderIds = columns.map((c) => c.id)
+      localStorage.setItem("library_column_order", JSON.stringify(orderIds))
       localStorage.setItem("library_folder_order", JSON.stringify(folderOrder))
     }
   }, [columns, folderOrder, isLoaded])
@@ -82,11 +100,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const setSort = (columnId: string) => {
     setSortState((prev) => {
       if (prev.columnId === columnId) {
-        // Cycle: asc -> desc -> null
         if (prev.direction === "asc") return { columnId, direction: "desc" }
         if (prev.direction === "desc") return { columnId: "", direction: null }
       }
-      // Default new column to asc
       return { columnId, direction: "asc" }
     })
   }
@@ -109,6 +125,25 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     }))
   }
 
+  const resizeColumn = (columnId: string, newWidth: number) => {
+    setColumns((prev) => prev.map((col) => (col.id === columnId ? { ...col, width: Math.max(50, newWidth) } : col)))
+  }
+
+  const moveColumn = (dragIndex: number, hoverIndex: number) => {
+    setColumns((prev) => {
+      const newCols = [...prev]
+      const targetCol = newCols[hoverIndex]
+      const draggedCol = newCols[dragIndex]
+
+      // Cannot move fixed columns or drop onto fixed columns
+      if (targetCol.fixed || draggedCol.fixed) return prev
+
+      const [removed] = newCols.splice(dragIndex, 1)
+      newCols.splice(hoverIndex, 0, removed)
+      return newCols
+    })
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -119,6 +154,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         toggleColumnVisibility,
         setColumns,
         updateFolderOrder,
+        resizeColumn,
+        moveColumn,
       }}
     >
       {children}

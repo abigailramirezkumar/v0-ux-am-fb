@@ -97,6 +97,11 @@ export function Folder({
   const totalItemCount = (folder.children?.length || 0) + (folder.items?.length || 0)
 
   const isAlternate = index % 2 === 1
+  const indentMargin = level * spacing.indent
+
+  const currentSort = folderSortOptions[folder.id]
+  const hasSortApplied = !!currentSort
+  const hasChildFolders = folder.children && folder.children.length > 0
 
   const handleCheckboxChange = (checked: boolean) => {
     onSelect?.(folder.id, checked)
@@ -140,15 +145,71 @@ export function Folder({
     onDelete?.(folder.id)
   }
 
-  const indentMargin = level * spacing.indent
-
-  const currentSort = folderSortOptions[folder.id]
-  const hasSortApplied = !!currentSort
-
-  const hasChildFolders = folder.children && folder.children.length > 0
-
   const renderCell = (columnId: string) => {
     switch (columnId) {
+      case "name":
+        return (
+          <div className="flex items-center flex-1 min-w-0">
+            {/* Indentation Spacer */}
+            <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
+
+            <div className="flex-shrink-0 w-6">
+              {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+            </div>
+
+            <div className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0">
+              {isHovered && hasChildren ? (
+                isExpanded ? (
+                  <ChevronDownIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                ) : (
+                  <ChevronRightIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                )
+              ) : isExpanded ? (
+                <FolderFilledIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+              ) : (
+                <FolderIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+              )}
+            </div>
+
+            <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
+              {isRenaming ? (
+                <Input
+                  value={renameName}
+                  onChange={(e) => setRenameName(e.target.value)}
+                  onBlur={handleRenameComplete}
+                  onKeyDown={handleRenameKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                  autoFocus
+                  className="h-7 text-sm font-medium"
+                />
+              ) : (
+                <>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={cn(
+                            "text-sm font-bold truncate block",
+                            isSelected ? "text-white" : "text-foreground",
+                          )}
+                        >
+                          {folder.name}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>{folder.name}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  {hasSortApplied && (
+                    <div className="flex items-center gap-1">
+                      <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
+                    </div>
+                  )}
+                  {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+                </>
+              )}
+            </div>
+          </div>
+        )
       case "dateModified":
         return (
           <Tooltip>
@@ -196,7 +257,6 @@ export function Folder({
           </Tooltip>
         )
       default:
-        // Angles, Duration, Size, Comments are empty for Folders
         return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
     }
   }
@@ -215,135 +275,81 @@ export function Folder({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center flex-1 min-w-0 pl-4">
-        {/* Indentation Spacer */}
-        <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
-
-        <div className="flex-shrink-0 w-6">
-          {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
-        </div>
-
-        <div className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0">
-          {isHovered && hasChildren ? (
-            isExpanded ? (
-              <ChevronDownIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-            ) : (
-              <ChevronRightIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-            )
-          ) : isExpanded ? (
-            <FolderFilledIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
-          ) : (
-            <FolderIcon size={20} className={cn(isSelected ? "text-white" : "text-foreground")} />
+      <div className="flex items-center flex-shrink-0 pl-4">
+        <TooltipProvider>
+          {columns.map((column, idx) =>
+            column.visible ? (
+              <div
+                key={column.id}
+                className={cn("flex-shrink-0", {
+                  "flex justify-center": column.align === "center",
+                  "text-left": column.align === "left",
+                  "text-right": column.align === "right",
+                  "ml-3": idx > 0,
+                })}
+                style={{ width: column.width, minWidth: column.width }}
+              >
+                {renderCell(column.id)}
+              </div>
+            ) : null,
           )}
-        </div>
+        </TooltipProvider>
 
-        <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
-          {isRenaming ? (
-            <Input
-              value={renameName}
-              onChange={(e) => setRenameName(e.target.value)}
-              onBlur={handleRenameComplete}
-              onKeyDown={handleRenameKeyDown}
-              onClick={(e) => e.stopPropagation()}
-              autoFocus
-              className="h-7 text-sm font-medium"
-            />
-          ) : (
-            <>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className={cn("text-sm font-bold truncate block", isSelected ? "text-white" : "text-foreground")}
-                    >
-                      {folder.name}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{folder.name}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {hasSortApplied && (
-                <div className="flex items-center gap-1">
-                  <SortIcon size={14} className={cn(isSelected ? "text-white/70" : "text-[#0273e3]")} />
-                </div>
-              )}
-              {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
-            </>
-          )}
-        </div>
-      </div>
-
-      <TooltipProvider>
-        {columns.map((column) =>
-          column.visible ? (
-            <div
-              key={column.id}
-              className={cn(column.width, "flex-shrink-0 ml-3", {
-                "flex justify-center": column.align === "center",
-                "text-left": column.align === "left",
-                "text-right": column.align === "right",
-              })}
+        {/* Actions - fixed width */}
+        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
+          {isImported ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs bg-transparent"
+              onClick={(e) => {
+                e.stopPropagation()
+                onUpdateImported?.(folder.id, "folder")
+              }}
             >
-              {renderCell(column.id)}
-            </div>
-          ) : null,
-        )}
-      </TooltipProvider>
-
-      {/* Actions - fixed width */}
-      <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-        {isImported ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs bg-transparent"
-            onClick={(e) => {
-              e.stopPropagation()
-              onUpdateImported?.(folder.id, "folder")
-            }}
-          >
-            Update
-          </Button>
-        ) : (
-          isHovered && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  <div className="flex gap-1">
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    handleRenameStart()
-                  }}
-                >
-                  Rename Folder
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    handleDelete()
-                  }}
-                >
-                  Delete Folder
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        )}
+              Update
+            </Button>
+          ) : (
+            isHovered && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
+                  >
+                    <div className="flex gap-1">
+                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                      <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      handleRenameStart()
+                    }}
+                  >
+                    Rename Folder
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      handleDelete()
+                    }}
+                  >
+                    Delete Folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          )}
+        </div>
       </div>
     </div>
   )

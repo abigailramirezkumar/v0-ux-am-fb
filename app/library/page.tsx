@@ -20,6 +20,24 @@ import { useDensity } from "@/lib/density-context"
 import { LibraryProvider, useLibraryContext } from "@/lib/library-context"
 import { FolderReorderModal } from "@/components/folder-reorder-modal"
 
+const parseDuration = (str?: string) => {
+  if (!str) return 0
+  const parts = str.split(":").map(Number)
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  return 0
+}
+
+const parseSize = (str?: string) => {
+  if (!str) return 0
+  const units: Record<string, number> = { B: 1, KB: 1024, MB: 1024 ** 2, GB: 1024 ** 3, TB: 1024 ** 4 }
+  const match = str.match(/([\d.]+)\s*([A-Z]+)/i)
+  if (!match) return 0
+  const val = Number.parseFloat(match[1])
+  const unit = match[2].toUpperCase()
+  return val * (units[unit] || 1)
+}
+
 const testFolders: FolderData[] = [
   {
     id: "folder-1",
@@ -742,7 +760,7 @@ const testFolders: FolderData[] = [
 function LibraryPageContent() {
   const { isCatapultImportOpen, setIsCatapultImportOpen } = useCatapultImport()
   const { density } = useDensity()
-  const { folderOrder, updateFolderOrder } = useLibraryContext()
+  const { sort, folderOrder, updateFolderOrder } = useLibraryContext()
 
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [teamFolders, setTeamFolders] = useState<FolderData[]>(testFolders)
@@ -1153,86 +1171,114 @@ function LibraryPageContent() {
     return items
   }, [reorderModalOpen, reorderTargetId, folders, folderOrder])
 
+  const compareItems = (a: any, b: any, sortBy: string, direction: "asc" | "desc") => {
+    let valA: any = a[sortBy]
+    let valB: any = b[sortBy]
+
+    // Handle Metadata Specifics
+    if (sortBy === "itemCount") {
+      // Special Case: Folders often calculate this dynamically
+      valA = a.itemCount ?? 0
+      valB = b.itemCount ?? 0
+    } else if (sortBy === "dateModified" || sortBy === "createdDate") {
+      valA = valA ? new Date(valA).getTime() : 0
+      valB = valB ? new Date(valB).getTime() : 0
+    } else if (sortBy === "hasData") {
+      valA = valA === true ? 1 : 0
+      valB = valB === true ? 1 : 0
+    } else if (sortBy === "duration") {
+      valA = parseDuration(valA)
+      valB = parseDuration(valB)
+    } else if (sortBy === "size") {
+      valA = parseSize(valA)
+      valB = parseSize(valB)
+    } else if (sortBy === "angles" || sortBy === "comments") {
+      valA = Number(valA || 0)
+      valB = Number(valB || 0)
+    } else {
+      // Default String comparison (Name, Type)
+      valA = String(valA || "").toLowerCase()
+      valB = String(valB || "").toLowerCase()
+    }
+
+    if (valA < valB) return direction === "asc" ? -1 : 1
+    if (valA > valB) return direction === "asc" ? 1 : -1
+    return 0
+  }
+
   const sortFolderChildren = (folder: FolderData): FolderData => {
-    const sortOption = folderSortOptions[folder.id]
     const customOrder = folderOrder[folder.id] || []
+    const sortOption = folderSortOptions[folder.id]
 
-    const sortedChildren = folder.children ? [...folder.children] : []
+    // Priority: Folder Specific > Global Context
+    const activeSortBy = sortOption?.by || sort.columnId
+    const activeDirection = sortOption?.direction || sort.direction
 
-    // Apply custom order if it exists and no specific column sort overrides it
-    if (customOrder.length > 0 && !sortOption) {
+    // Folders ONLY sort by applicable columns: Name, Modified, Created, Type, Items
+    const folderSortApplicable = ["name", "dateModified", "createdDate", "type", "itemCount"].includes(activeSortBy)
+
+    let sortedChildren = folder.children ? [...folder.children] : []
+
+    // Calculate Folder Item Counts if sorting by Items
+    if (activeSortBy === "itemCount") {
+      sortedChildren = sortedChildren.map((child) => ({
+        ...child,
+        itemCount: (child.children?.length || 0) + (child.items?.length || 0),
+      }))
+    }
+
+    // Apply Sort to Folders
+    if (activeSortBy && activeDirection && folderSortApplicable) {
+      sortedChildren.sort((a, b) => compareItems(a, b, activeSortBy, activeDirection!))
+    } else if (customOrder.length > 0) {
+      // Fallback to Custom Order if global sort isn't folder-compatible
       sortedChildren.sort((a, b) => {
         const indexA = customOrder.indexOf(a.id)
         const indexB = customOrder.indexOf(b.id)
-
-        // New/Unordered items go to top (index -1)
         if (indexA === -1 && indexB !== -1) return -1
         if (indexA !== -1 && indexB === -1) return 1
         if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name)
         return indexA - indexB
       })
-    } else if (sortOption) {
-      // Apply folder-specific sort
-      sortedChildren.sort((a, b) => {
-        let comparison = 0
-
-        if (sortOption.by === "dateModified") {
-          const dateA = new Date(a.dateModified || "")
-          const dateB = new Date(b.dateModified || "")
-          comparison = dateA.getTime() - dateB.getTime()
-        } else if (sortOption.by === "name") {
-          comparison = a.name.localeCompare(b.name)
-        } else if (sortOption.by === "createdDate") {
-          const dateA = new Date(a.createdDate || "")
-          const dateB = new Date(b.createdDate || "")
-          comparison = dateA.getTime() - dateB.getTime()
-        }
-
-        return sortOption.direction === "desc" ? -comparison : comparison
-      })
+    } else {
+      // Default Alpha if no custom order and no applicable sort
+      sortedChildren.sort((a, b) => a.name.localeCompare(b.name))
     }
 
-    const sortedFolder = {
+    // Apply Sort to Items (Always applies if direction exists)
+    const sortedItems = folder.items ? [...folder.items] : []
+    if (activeSortBy && activeDirection) {
+      sortedItems.sort((a, b) => compareItems(a, b, activeSortBy, activeDirection))
+    }
+
+    // Recurse
+    return {
       ...folder,
       children: sortedChildren.map(sortFolderChildren),
+      items: sortedItems,
     }
-
-    // Sort items if they exist and a sort option is set
-    if (sortOption && sortedFolder.items && sortedFolder.items.length > 0) {
-      sortedFolder.items = [...sortedFolder.items].sort((a, b) => {
-        let comparison = 0
-
-        if (sortOption.by === "dateModified") {
-          const dateA = new Date(a.dateModified || "")
-          const dateB = new Date(b.dateModified || "")
-          comparison = dateA.getTime() - dateB.getTime()
-        } else if (sortOption.by === "type") {
-          comparison = (a.type || "").localeCompare(b.type || "")
-        } else if (sortOption.by === "name") {
-          comparison = a.name.localeCompare(b.name)
-        } else if (sortOption.by === "createdDate") {
-          const dateA = new Date(a.createdDate || "")
-          const dateB = new Date(b.createdDate || "")
-          comparison = dateA.getTime() - dateB.getTime()
-        }
-
-        return sortOption.direction === "desc" ? -comparison : comparison
-      })
-    }
-
-    return sortedFolder
   }
 
   const sortedFolders = useMemo(() => {
-    // Recursively process everything first
-    const processed = folders.map(sortFolderChildren)
+    // Process recursively (Sorts contents of every folder)
+    const recursiveSorted = folders.map(sortFolderChildren)
+
+    // Root Level Sort - same folder-applicable logic
+    const folderSortApplicable = ["name", "dateModified", "createdDate", "type", "itemCount"].includes(sort.columnId)
+    const customOrder = folderOrder["root"] || []
 
     if (currentFolderId === null) {
-      // ROOT LEVEL SORTING
-      const customOrder = folderOrder["root"] || []
+      if (sort.columnId && sort.direction && folderSortApplicable) {
+        // Inject count if needed for root sort
+        const withCounts = recursiveSorted.map((f) => ({
+          ...f,
+          itemCount: (f.children?.length || 0) + (f.items?.length || 0),
+        }))
+        return withCounts.sort((a, b) => compareItems(a, b, sort.columnId, sort.direction!))
+      }
 
       if (customOrder.length > 0) {
-        return processed.sort((a, b) => {
+        return recursiveSorted.sort((a, b) => {
           const indexA = customOrder.indexOf(a.id)
           const indexB = customOrder.indexOf(b.id)
           if (indexA === -1 && indexB !== -1) return -1
@@ -1242,13 +1288,14 @@ function LibraryPageContent() {
         })
       }
 
-      // Default Alpha sort
-      return processed.sort((a, b) => a.name.localeCompare(b.name))
+      // Default
+      return recursiveSorted.sort((a, b) => a.name.localeCompare(b.name))
     }
 
-    // Drilled down view
-    return [findFolderById(processed, currentFolderId)].filter(Boolean) as FolderData[]
-  }, [folders, folderSortOptions, currentFolderId, folderOrder])
+    // Drilled Down View
+    const target = findFolderById(recursiveSorted, currentFolderId)
+    return target ? [target] : []
+  }, [folders, folderSortOptions, currentFolderId, sort, folderOrder])
 
   const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
     const items: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []

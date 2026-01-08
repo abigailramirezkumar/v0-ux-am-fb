@@ -40,8 +40,8 @@ const LibraryContext = createContext<LibraryContextType | undefined>(undefined)
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [columns, setColumns] = useState<Column[]>(defaultColumns)
   const [sort, setSortState] = useState<{ columnId: string; direction: SortDirection }>({
-    columnId: "name",
-    direction: "asc",
+    columnId: "",
+    direction: null,
   })
   const [folderOrder, setFolderOrder] = useState<Record<string, string[]>>({})
   const [isLoaded, setIsLoaded] = useState(false)
@@ -82,9 +82,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const setSort = (columnId: string) => {
     setSortState((prev) => {
       if (prev.columnId === columnId) {
+        // Cycle: asc -> desc -> null
         if (prev.direction === "asc") return { columnId, direction: "desc" }
-        if (prev.direction === "desc") return { columnId, direction: "asc" }
+        if (prev.direction === "desc") return { columnId: "", direction: null }
       }
+      // Default new column to asc
       return { columnId, direction: "asc" }
     })
   }

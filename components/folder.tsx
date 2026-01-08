@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
+import { useLibraryContext } from "@/lib/library-context"
 
 export interface FolderData {
   id: string
@@ -56,7 +57,7 @@ interface FolderProps {
   onDelete?: (folderId: string) => void
   onSortFolder?: (folderId: string, sortBy: string, direction: "asc" | "desc") => void
   folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
-  onReorderChildren?: (folderId: string) => void // New prop for reorder
+  onReorderChildren?: (folderId: string) => void
 }
 
 export function Folder({
@@ -86,6 +87,7 @@ export function Folder({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
+  const { columns } = useLibraryContext()
 
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
@@ -144,6 +146,60 @@ export function Folder({
   const hasSortApplied = !!currentSort
 
   const hasChildFolders = folder.children && folder.children.length > 0
+
+  const renderCell = (columnId: string) => {
+    switch (columnId) {
+      case "dateModified":
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {folder.dateModified || ""}
+              </span>
+            </TooltipTrigger>
+            {folder.dateModified && <TooltipContent>{folder.dateModified}</TooltipContent>}
+          </Tooltip>
+        )
+      case "type":
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                Folder
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Folder</TooltipContent>
+          </Tooltip>
+        )
+      case "hasData":
+        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+      case "itemCount":
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {totalItemCount}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{totalItemCount} Items</TooltipContent>
+          </Tooltip>
+        )
+      case "createdDate":
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                {folder.createdDate || ""}
+              </span>
+            </TooltipTrigger>
+            {folder.createdDate && <TooltipContent>{folder.createdDate}</TooltipContent>}
+          </Tooltip>
+        )
+      default:
+        // Angles, Duration, Size, Comments are empty for Folders
+        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+    }
+  }
 
   const folderRow = (
     <div
@@ -217,79 +273,22 @@ export function Folder({
         </div>
       </div>
 
-      {/* Modified column */}
-      <div className="w-24 flex-shrink-0 ml-3">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {folder.dateModified || ""}
-              </span>
-            </TooltipTrigger>
-            {folder.dateModified && <TooltipContent>{folder.dateModified}</TooltipContent>}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      {/* Type column */}
-      <div className="w-16 flex-shrink-0 ml-3">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                Folder
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Folder</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="w-12 flex-shrink-0 ml-3 flex justify-center">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {totalItemCount}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{totalItemCount} Items</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <div className="w-14 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-16 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-20 flex-shrink-0 ml-3 text-left">
-        <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
-      </div>
-
-      <div className="w-24 flex-shrink-0 ml-3">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
-                {folder.createdDate || ""}
-              </span>
-            </TooltipTrigger>
-            {folder.createdDate && <TooltipContent>{folder.createdDate}</TooltipContent>}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+      <TooltipProvider>
+        {columns.map((column) =>
+          column.visible ? (
+            <div
+              key={column.id}
+              className={cn(column.width, "flex-shrink-0 ml-3", {
+                "flex justify-center": column.align === "center",
+                "text-left": column.align === "left",
+                "text-right": column.align === "right",
+              })}
+            >
+              {renderCell(column.id)}
+            </div>
+          ) : null,
+        )}
+      </TooltipProvider>
 
       {/* Actions - fixed width */}
       <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">

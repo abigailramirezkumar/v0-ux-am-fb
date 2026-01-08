@@ -10,31 +10,28 @@ export interface Column {
   label: string
   visible: boolean
   width: string
-  fixed?: boolean
   align?: "left" | "center" | "right"
 }
 
 interface LibraryContextType {
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
-  folderOrder: Record<string, string[]> // parentId -> ordered child IDs
+  folderOrder: Record<string, string[]>
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
-  moveColumn: (dragIndex: number, hoverIndex: number) => void
   setColumns: (columns: Column[]) => void
   updateFolderOrder: (parentId: string, newOrder: string[]) => void
 }
 
 const defaultColumns: Column[] = [
-  { id: "name", label: "Name", visible: true, width: "flex-1 min-w-[200px]", fixed: true, align: "left" },
   { id: "dateModified", label: "Modified", visible: true, width: "w-24", align: "left" },
   { id: "type", label: "Type", visible: true, width: "w-16", align: "left" },
   { id: "hasData", label: "Data", visible: true, width: "w-12", align: "center" },
-  { id: "itemCount", label: "Items", visible: true, width: "w-14", align: "center" },
-  { id: "angles", label: "Angles", visible: true, width: "w-14", align: "center" },
-  { id: "duration", label: "Duration", visible: true, width: "w-16", align: "center" },
-  { id: "size", label: "Size", visible: true, width: "w-16", align: "right" },
-  { id: "comments", label: "Comments", visible: true, width: "w-14", align: "center" },
+  { id: "itemCount", label: "Items", visible: true, width: "w-14", align: "left" },
+  { id: "angles", label: "Angles", visible: true, width: "w-14", align: "left" },
+  { id: "duration", label: "Duration", visible: true, width: "w-16", align: "left" },
+  { id: "size", label: "Size", visible: true, width: "w-16", align: "left" },
+  { id: "comments", label: "Comments", visible: true, width: "w-20", align: "left" },
   { id: "createdDate", label: "Created", visible: true, width: "w-24", align: "left" },
 ]
 
@@ -57,22 +54,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
       if (savedColumns) {
         const parsed = JSON.parse(savedColumns)
-        // Merge with defaults
+        // Merge with defaults to handle any schema changes safely
         const merged = defaultColumns.map((def) => {
           const saved = parsed.find((p: Column) => p.id === def.id)
           return saved ? { ...def, visible: saved.visible } : def
         })
-
-        // Restore order
-        const ordered: Column[] = []
-        parsed.forEach((saved: Column) => {
-          const found = merged.find((m) => m.id === saved.id)
-          if (found) ordered.push(found)
-        })
-        merged.forEach((m) => {
-          if (!ordered.find((o) => o.id === m.id)) ordered.push(m)
-        })
-        setColumns(ordered)
+        setColumns(merged)
       }
 
       if (savedOrder) {
@@ -105,22 +92,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const toggleColumnVisibility = (columnId: string) => {
     setColumns((prev) =>
       prev.map((col) => {
-        if (col.id === columnId && !col.fixed) {
+        if (col.id === columnId) {
           return { ...col, visible: !col.visible }
         }
         return col
       }),
     )
-  }
-
-  const moveColumn = (dragIndex: number, hoverIndex: number) => {
-    setColumns((prev) => {
-      const newCols = [...prev]
-      const [draggedItem] = newCols.splice(dragIndex, 1)
-      newCols.splice(hoverIndex, 0, draggedItem)
-      if (newCols[0].fixed === false) return prev
-      return newCols
-    })
   }
 
   const updateFolderOrder = (parentId: string, newOrder: string[]) => {
@@ -138,7 +115,6 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         folderOrder,
         setSort,
         toggleColumnVisibility,
-        moveColumn,
         setColumns,
         updateFolderOrder,
       }}

@@ -40,358 +40,42 @@ const parseSize = (str?: string) => {
   return val * (units[unit] || 1)
 }
 
-const testFolders: FolderData[] = [
-  {
-    id: "folder-1",
-    name: "Folder 1",
-    dateModified: "Dec 5, 2024",
-    createdDate: "Nov 1, 2024",
-    children: [
-      {
-        id: "subfolder-1",
-        name: "Subfolder 1",
-        dateModified: "Jan 16, 2024",
-        createdDate: "Jan 10, 2024",
-        items: [
-          {
-            id: "item-1",
-            name: "NYG vs. BUF 01.01.24",
-            type: "video",
-            dateModified: "Jan 15, 2024",
-            hasData: true,
-            itemCount: 145,
-            angles: 4,
-            duration: "3:24:15",
-            size: "4.2 GB",
-            comments: 23,
-            createdDate: "Jan 2, 2024",
-          },
-          {
-            id: "item-2",
-            name: "DAL vs. PHI 12.15.23",
-            type: "video",
-            dateModified: "Dec 20, 2023",
-            hasData: true,
-            itemCount: 128,
-            angles: 3,
-            duration: "3:18:42",
-            size: "3.9 GB",
-            comments: 45,
-            createdDate: "Dec 16, 2023",
-          },
-        ],
-      },
-      {
-        id: "subfolder-2",
-        name: "Subfolder 2",
-        dateModified: "Feb 15, 2024",
-        createdDate: "Feb 1, 2024",
-        items: [
-          {
-            id: "item-3",
-            name: "KC vs. SF 02.11.24",
-            type: "video",
-            dateModified: "Feb 14, 2024",
-            hasData: true,
-            itemCount: 156,
-            angles: 6,
-            duration: "4:02:30",
-            size: "5.1 GB",
-            comments: 89,
-            createdDate: "Feb 12, 2024",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "folder-2",
-    name: "Folder 2",
-    dateModified: "Nov 20, 2024",
-    createdDate: "Oct 15, 2024",
-    children: [
-      {
-        id: "subfolder-3",
-        name: "Subfolder 3",
-        dateModified: "Nov 19, 2023",
-        createdDate: "Nov 1, 2023",
-        items: [
-          {
-            id: "item-4",
-            name: "BAL vs. CIN 11.16.23",
-            type: "video",
-            dateModified: "Nov 18, 2023",
-            hasData: false,
-            itemCount: 132,
-            angles: 4,
-            duration: "3:15:20",
-            size: "3.8 GB",
-            comments: 12,
-            createdDate: "Nov 17, 2023",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "folder-3",
-    name: "Folder 3",
-    dateModified: "Oct 31, 2024",
-    createdDate: "Sep 20, 2024",
-    children: [
-      {
-        id: "subfolder-4",
-        name: "Subfolder 4",
-        dateModified: "Oct 31, 2023",
-        createdDate: "Oct 15, 2023",
-        items: [
-          {
-            id: "item-5",
-            name: "MIA vs. NE 10.29.23",
-            type: "video",
-            dateModified: "Oct 30, 2023",
-            hasData: true,
-            itemCount: 118,
-            angles: 3,
-            duration: "3:08:45",
-            size: "3.5 GB",
-            comments: 34,
-            createdDate: "Oct 30, 2023",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "folder-4",
-    name: "Folder 4",
-    dateModified: "Dec 2, 2024",
-    createdDate: "Nov 15, 2024",
-    children: [
-      {
-        id: "subfolder-4-1",
-        name: "Subfolder 4-1",
-        dateModified: "Dec 2, 2024",
-        createdDate: "Nov 20, 2024",
-        children: [
-          {
-            id: "subfolder-4-1-1",
-            name: "Subfolder 4-1-1",
-            dateModified: "Dec 2, 2024",
-            createdDate: "Nov 22, 2024",
-            children: [
-              {
-                id: "subfolder-4-1-1-1",
-                name: "Subfolder 4-1-1-1",
-                dateModified: "Dec 2, 2024",
-                createdDate: "Nov 25, 2024",
-                children: [
-                  {
-                    id: "subfolder-4-1-1-1-1",
-                    name: "Subfolder 4-1-1-1-1",
-                    dateModified: "Dec 2, 2024",
-                    createdDate: "Nov 28, 2024",
-                    children: [
-                      {
-                        id: "subfolder-4-1-1-1-1-1",
-                        name: "Subfolder 4-1-1-1-1-1",
-                        dateModified: "Dec 1, 2024",
-                        createdDate: "Nov 30, 2024",
-                        items: [
-                          {
-                            id: "item-6",
-                            name: "GB vs. CHI Red Zone Analysis",
-                            type: "video",
-                            dateModified: "Dec 1, 2024",
-                            hasData: true,
-                            itemCount: 87,
-                            angles: 5,
-                            duration: "2:45:30",
-                            size: "3.2 GB",
-                            comments: 56,
-                            createdDate: "Dec 1, 2024",
-                          },
-                          {
-                            id: "item-7",
-                            name: "DET Third Down Conversions",
-                            type: "video",
-                            dateModified: "Nov 28, 2024",
-                            hasData: true,
-                            itemCount: 64,
-                            angles: 4,
-                            duration: "1:52:18",
-                            size: "2.1 GB",
-                            comments: 28,
-                            createdDate: "Nov 28, 2024",
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "folder-5",
-    name: "Folder 5",
-    dateModified: "Nov 21, 2024",
-    createdDate: "Oct 1, 2024",
-    children: [
-      {
-        id: "subfolder-5-1",
-        name: "Subfolder 5-1",
-        dateModified: "Nov 21, 2024",
-        createdDate: "Oct 5, 2024",
-        children: [
-          {
-            id: "subfolder-5-1-1",
-            name: "Subfolder 5-1-1",
-            dateModified: "Nov 15, 2024",
-            createdDate: "Oct 10, 2024",
-            items: [
-              {
-                id: "item-8",
-                name: "LAR Defensive Scheme Week 10",
-                type: "video",
-                dateModified: "Nov 15, 2024",
-                hasData: true,
-                itemCount: 92,
-                angles: 4,
-                duration: "2:28:45",
-                size: "2.8 GB",
-                comments: 41,
-                createdDate: "Nov 15, 2024",
-              },
-            ],
-          },
-        ],
-        items: [
-          {
-            id: "item-9",
-            name: "SEA Offensive Playbook Q3",
-            type: "pdf",
-            dateModified: "Nov 20, 2024",
-            createdDate: "Nov 18, 2024",
-          },
-          {
-            id: "item-10",
-            name: "SF Special Teams Breakdown",
-            type: "video",
-            dateModified: "Nov 18, 2024",
-            hasData: false,
-            itemCount: 78,
-            angles: 3,
-            duration: "2:15:10",
-            size: "2.5 GB",
-            comments: 19,
-            createdDate: "Nov 18, 2024",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "folder-6",
-    name: "Folder 6",
-    dateModified: "Oct 23, 2024",
-    createdDate: "Sep 1, 2024",
-    children: [
-      {
-        id: "subfolder-6-1",
-        name: "Subfolder 6-1",
-        dateModified: "Oct 23, 2024",
-        createdDate: "Sep 5, 2024",
-        items: [],
-      },
-    ],
-  },
-  {
-    id: "folder-7",
-    name: "Folder 7",
-    dateModified: "Sep 12, 2024",
-    createdDate: "Aug 1, 2024",
-    children: [],
-  },
-  {
-    id: "folder-8",
-    name: "Folder 8",
-    dateModified: "Aug 28, 2024",
-    createdDate: "Jul 15, 2024",
-    children: [],
-  },
-  {
-    id: "folder-9",
-    name: "Folder 9",
-    dateModified: "Jul 15, 2024",
-    createdDate: "Jun 1, 2024",
-    children: [],
-  },
-  {
-    id: "folder-10",
-    name: "Folder 10",
-    dateModified: "Jun 22, 2024",
-    createdDate: "May 1, 2024",
-    children: [],
-  },
-  {
-    id: "folder-11",
-    name: "Folder 11",
-    dateModified: "May 30, 2024",
-    createdDate: "Apr 15, 2024",
-    children: [],
-  },
-  {
-    id: "folder-12",
-    name: "Folder 12",
-    dateModified: "Apr 18, 2024",
-    createdDate: "Mar 1, 2024",
-    children: [],
-  },
-  {
-    id: "folder-13",
-    name: "Folder 13",
-    dateModified: "Mar 5, 2024",
-    createdDate: "Feb 1, 2024",
-    children: [],
-  },
-]
-
 export function LibraryView() {
   const router = useRouter()
   const { isCatapultImportOpen, setIsCatapultImportOpen } = useCatapultImport()
   const { density } = useDensity()
-  const { sort, folderOrder, updateFolderOrder, setWatchItem } = useLibraryContext()
 
-  const [libraryView, setLibraryView] = useState<"team" | "my">("team")
-  const [teamFolders, setTeamFolders] = useState<FolderData[]>(testFolders)
-  const [myFolders, setMyFolders] = useState<FolderData[]>([])
+  const {
+    sort,
+    folderOrder,
+    updateFolderOrder,
+    setWatchItem,
+    folders,
+    setFolders,
+    libraryView,
+    setLibraryView,
+    selectedFolders,
+    setSelectedFolders,
+    selectedItems,
+    setSelectedItems,
+    expandedFolders,
+    setExpandedFolders,
+    currentFolderId,
+    setCurrentFolderId,
+    breadcrumbs,
+    setBreadcrumbs,
+  } = useLibraryContext()
 
-  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [activeItem, setActiveItem] = useState<string | null>(null)
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
-
+  // Only keep truly local UI state (modals, etc.)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
   const [importedFolders, setImportedFolders] = useState<Set<string>>(new Set())
   const [importedItems, setImportedItems] = useState<Set<string>>(new Set())
-
   const [folderSortOptions, setFolderSortOptions] = useState<Record<string, { by: string; direction: "asc" | "desc" }>>(
     {},
   )
-
   const [reorderModalOpen, setReorderModalOpen] = useState(false)
   const [reorderTargetId, setReorderTargetId] = useState<string | null>(null)
-
-  const folders = libraryView === "team" ? teamFolders : myFolders
-  const setFolders = libraryView === "team" ? setTeamFolders : setMyFolders
 
   const handleImportComplete = (importedFolders: FolderData[]) => {
     if (importedFolders.length > 0) {
@@ -591,51 +275,43 @@ export function LibraryView() {
 
     const { folderIds, itemIds } = collectAllDescendantIds(folder)
 
-    setSelectedFolders((prev) => {
-      const newSet = new Set(prev)
-      if (selected) {
-        newSet.add(folderId)
-        folderIds.forEach((id) => newSet.add(id))
-      } else {
-        newSet.delete(folderId)
-        folderIds.forEach((id) => newSet.delete(id))
-      }
-      return newSet
-    })
+    const newSelectedFolders = new Set(selectedFolders)
+    if (selected) {
+      newSelectedFolders.add(folderId)
+      folderIds.forEach((id) => newSelectedFolders.add(id))
+    } else {
+      newSelectedFolders.delete(folderId)
+      folderIds.forEach((id) => newSelectedFolders.delete(id))
+    }
+    setSelectedFolders(newSelectedFolders)
 
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev)
-      if (selected) {
-        itemIds.forEach((id) => newSet.add(id))
-      } else {
-        itemIds.forEach((id) => newSet.delete(id))
-      }
-      return newSet
-    })
+    const newSelectedItems = new Set(selectedItems)
+    if (selected) {
+      itemIds.forEach((id) => newSelectedItems.add(id))
+    } else {
+      itemIds.forEach((id) => newSelectedItems.delete(id))
+    }
+    setSelectedItems(newSelectedItems)
   }
 
   const handleSelectItem = (itemId: string, selected: boolean) => {
-    setSelectedItems((prev) => {
-      const newSet = new Set(prev)
-      if (selected) {
-        newSet.add(itemId)
-      } else {
-        newSet.delete(itemId)
-      }
-      return newSet
-    })
+    const newSet = new Set(selectedItems)
+    if (selected) {
+      newSet.add(itemId)
+    } else {
+      newSet.delete(itemId)
+    }
+    setSelectedItems(newSet)
   }
 
   const handleToggleExpand = (folderId: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(folderId)) {
-        newSet.delete(folderId)
-      } else {
-        newSet.add(folderId)
-      }
-      return newSet
-    })
+    const newSet = new Set(expandedFolders)
+    if (newSet.has(folderId)) {
+      newSet.delete(folderId)
+    } else {
+      newSet.add(folderId)
+    }
+    setExpandedFolders(newSet)
   }
 
   const handleRenameFolder = (folderId: string, newName: string) => {
@@ -701,7 +377,6 @@ export function LibraryView() {
     setReorderModalOpen(true)
   }
 
-  // Open handler for Watch page navigation
   const handleOpenItem = useCallback(
     (itemId: string) => {
       setWatchItem(itemId)

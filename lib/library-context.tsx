@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import type { FolderData } from "@/components/folder"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -9,16 +10,65 @@ export interface Column {
   id: string
   label: string
   visible: boolean
-  width: number // Pixel width
+  width: number
   align?: "left" | "center" | "right"
-  fixed?: boolean // Cannot be reordered
+  fixed?: boolean
+}
+
+const generateMockFolders = (): FolderData[] => {
+  const folders: FolderData[] = []
+  for (let i = 1; i <= 15; i++) {
+    folders.push({
+      id: `folder-${i}`,
+      name: `Folder ${i}`,
+      dateModified: "Oct 24, 2024",
+      createdDate: "Jan 1, 2024",
+      items: [],
+      children: [
+        {
+          id: `subfolder-${i}-1`,
+          name: `Subfolder ${i}.1`,
+          dateModified: "Oct 25, 2024",
+          createdDate: "Jan 2, 2024",
+          children: [],
+          items: Array.from({ length: 5 }).map((_, j) => ({
+            id: `item-${i}-${j}`,
+            name: `Game Clip ${i}-${j}`,
+            type: "video",
+            dateModified: "Oct 26, 2024",
+            createdDate: "Jan 3, 2024",
+            duration: "00:45",
+            size: "120 MB",
+            hasData: j % 2 === 0,
+            itemCount: 1,
+            angles: 2,
+            comments: 5,
+            thumbnailUrl: "/football-field.png",
+          })),
+        },
+      ],
+    })
+  }
+  return folders
 }
 
 interface LibraryContextType {
+  // Config
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
   folderOrder: Record<string, string[]>
   activeWatchItemId: string | null
+
+  // Data State (moved from LibraryView)
+  folders: FolderData[]
+  libraryView: "team" | "my"
+  selectedFolders: Set<string>
+  selectedItems: Set<string>
+  expandedFolders: Set<string>
+  currentFolderId: string | null
+  breadcrumbs: Array<{ id: string; name: string }>
+
+  // Setters
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -26,6 +76,15 @@ interface LibraryContextType {
   resizeColumn: (columnId: string, width: number) => void
   moveColumn: (dragIndex: number, hoverIndex: number) => void
   setWatchItem: (itemId: string | null) => void
+
+  // Data Setters
+  setFolders: React.Dispatch<React.SetStateAction<FolderData[]>>
+  setLibraryView: (view: "team" | "my") => void
+  setSelectedFolders: (ids: Set<string>) => void
+  setSelectedItems: (ids: Set<string>) => void
+  setExpandedFolders: (ids: Set<string>) => void
+  setCurrentFolderId: (id: string | null) => void
+  setBreadcrumbs: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>
 }
 
 const defaultColumns: Column[] = [
@@ -44,6 +103,7 @@ const defaultColumns: Column[] = [
 const LibraryContext = createContext<LibraryContextType | undefined>(undefined)
 
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
+  // Config State
   const [columns, setColumns] = useState<Column[]>(defaultColumns)
   const [sort, setSortState] = useState<{ columnId: string; direction: SortDirection }>({
     columnId: "",
@@ -53,6 +113,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
 
+  const [folders, setFolders] = useState<FolderData[]>(generateMockFolders())
+  const [libraryView, setLibraryView] = useState<"team" | "my">("team")
+  const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
+
   useEffect(() => {
     try {
       const savedColumnOrder = localStorage.getItem("library_column_order")
@@ -60,24 +128,16 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
       if (savedColumnOrder) {
         const orderIds = JSON.parse(savedColumnOrder) as string[]
-
-        // Reconstruct: Sort defaultColumns based on saved IDs
-        // This keeps the default widths but applies the saved order
         const reordered: Column[] = []
-
-        // 1. Add columns found in saved order
         orderIds.forEach((id) => {
           const def = defaultColumns.find((c) => c.id === id)
           if (def) reordered.push({ ...def })
         })
-
-        // 2. Append any new default columns not in saved order
         defaultColumns.forEach((def) => {
           if (!reordered.find((c) => c.id === def.id)) {
             reordered.push({ ...def })
           }
         })
-
         setColumns(reordered)
       } else {
         setColumns(defaultColumns.map((c) => ({ ...c })))
@@ -137,10 +197,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       const newCols = [...prev]
       const targetCol = newCols[hoverIndex]
       const draggedCol = newCols[dragIndex]
-
-      // Cannot move fixed columns or drop onto fixed columns
       if (targetCol.fixed || draggedCol.fixed) return prev
-
       const [removed] = newCols.splice(dragIndex, 1)
       newCols.splice(hoverIndex, 0, removed)
       return newCols
@@ -154,10 +211,20 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   return (
     <LibraryContext.Provider
       value={{
+        // Config
         columns,
         sort,
         folderOrder,
         activeWatchItemId,
+        // Data State
+        folders,
+        libraryView,
+        selectedFolders,
+        selectedItems,
+        expandedFolders,
+        currentFolderId,
+        breadcrumbs,
+        // Config Setters
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -165,6 +232,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         resizeColumn,
         moveColumn,
         setWatchItem,
+        // Data Setters
+        setFolders,
+        setLibraryView,
+        setSelectedFolders,
+        setSelectedItems,
+        setExpandedFolders,
+        setCurrentFolderId,
+        setBreadcrumbs,
       }}
     >
       {children}

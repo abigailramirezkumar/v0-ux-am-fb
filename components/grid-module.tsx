@@ -19,8 +19,8 @@ export function GridModule() {
   }, [plays.length, setPlays])
 
   return (
-    <div className="h-full w-full flex flex-col bg-background border-t border-border">
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-muted/30">
+    <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-2 border-none">
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between pt-2 pb-2">
         <h3 className="font-semibold text-sm text-foreground">Play Data</h3>
         <span className="text-xs text-muted-foreground">{plays.length} Events</span>
       </div>

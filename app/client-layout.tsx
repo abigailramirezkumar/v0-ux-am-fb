@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { Suspense, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { HudlSidebar } from "@/components/hudl-sidebar"
 import { Header } from "@/components/header"
 import { Analytics } from "@vercel/analytics/react"
@@ -16,7 +17,11 @@ export default function ClientLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const pathname = usePathname()
+  const router = useRouter()
   const [searchValue, setSearchValue] = useState("")
+
+  const isWatchPage = pathname === "/watch"
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -25,11 +30,11 @@ export default function ClientLayout({
           <LibraryProvider>
             <SidebarProvider defaultOpen={true}>
               <div className="h-screen w-full flex bg-sidebar">
-                <HudlSidebar />
+                {!isWatchPage && <HudlSidebar />}
 
                 <SidebarInset className="flex-1 flex flex-col bg-sidebar">
                   <Header
-                    title="Component Library"
+                    title={isWatchPage ? "Watch" : "Library"}
                     searchValue={searchValue}
                     onSearchChange={setSearchValue}
                     searchPlaceholder="Search components..."
@@ -37,9 +42,11 @@ export default function ClientLayout({
                     onShareClick={() => console.log("Share clicked")}
                     onDownloadClick={() => console.log("Download clicked")}
                     className="bg-sidebar border-b border-sidebar-border"
+                    showBack={isWatchPage}
+                    onBackClick={() => router.push("/library")}
                   />
 
-                  <main className="flex-1 overflow-hidden p-2 px-0 pt-0 pr-2">
+                  <main className={`flex-1 overflow-hidden p-2 pt-0 pr-2 ${isWatchPage ? "pl-2" : "px-0"}`}>
                     <Suspense fallback={null}>{children}</Suspense>
                   </main>
                 </SidebarInset>

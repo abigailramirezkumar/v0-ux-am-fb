@@ -64,9 +64,9 @@ export function LibraryView() {
     setCurrentFolderId,
     breadcrumbs,
     setBreadcrumbs,
+    setRenamingId,
   } = useLibraryContext()
 
-  // Only keep truly local UI state (modals, etc.)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
   const [importedFolders, setImportedFolders] = useState<Set<string>>(new Set())
@@ -208,8 +208,9 @@ export function LibraryView() {
   }
 
   const createFolder = () => {
+    const newFolderId = `folder-${Date.now()}`
     const newFolder: FolderData = {
-      id: `folder-${Date.now()}`,
+      id: newFolderId,
       name: `New Folder`,
       children: [],
       items: [],
@@ -239,7 +240,48 @@ export function LibraryView() {
       }
       setFolders(addToFolder(folders))
     }
+
+    setRenamingId(newFolderId)
   }
+
+  const handleCreateSubfolder = useCallback(
+    (parentId: string) => {
+      const newFolderId = `folder-${Date.now()}`
+      const newFolder: FolderData = {
+        id: newFolderId,
+        name: `New Folder`,
+        children: [],
+        items: [],
+        createdDate: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+      }
+
+      const addSubfolder = (folders: FolderData[]): FolderData[] => {
+        return folders.map((folder) => {
+          if (folder.id === parentId) {
+            return {
+              ...folder,
+              children: [...(folder.children || []), newFolder],
+            }
+          }
+          if (folder.children) {
+            return {
+              ...folder,
+              children: addSubfolder(folder.children),
+            }
+          }
+          return folder
+        })
+      }
+
+      setFolders(addSubfolder(folders))
+
+      setExpandedFolders((prev) => new Set([...prev, parentId]))
+
+      setRenamingId(newFolderId)
+    },
+    [folders, setFolders, setExpandedFolders, setRenamingId],
+  )
 
   const currentFolder = useMemo(
     () => (currentFolderId === null ? null : findFolderById(folders, currentFolderId)),
@@ -723,6 +765,7 @@ export function LibraryView() {
                     onReorderChildren={(id) => handleOpenReorder(id)}
                     onMove={handleMove}
                     onOpen={handleOpenItem}
+                    onCreateSubfolder={handleCreateSubfolder}
                   />
                 )
               } else {

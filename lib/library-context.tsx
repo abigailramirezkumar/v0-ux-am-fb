@@ -58,6 +58,7 @@ interface LibraryContextType {
   sort: { columnId: string; direction: SortDirection }
   folderOrder: Record<string, string[]>
   activeWatchItemId: string | null
+  renamingId: string | null
 
   // Data State (moved from LibraryView)
   folders: FolderData[]
@@ -76,6 +77,7 @@ interface LibraryContextType {
   resizeColumn: (columnId: string, width: number) => void
   moveColumn: (dragIndex: number, hoverIndex: number) => void
   setWatchItem: (itemId: string | null) => void
+  setRenamingId: (id: string | null) => void
 
   // Data Setters
   setFolders: React.Dispatch<React.SetStateAction<FolderData[]>>
@@ -112,6 +114,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderOrder, setFolderOrder] = useState<Record<string, string[]>>({})
   const [isLoaded, setIsLoaded] = useState(false)
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
 
   const [folders, setFolders] = useState<FolderData[]>(generateMockFolders())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
@@ -216,6 +219,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         sort,
         folderOrder,
         activeWatchItemId,
+        renamingId,
         // Data State
         folders,
         libraryView,
@@ -232,6 +236,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         resizeColumn,
         moveColumn,
         setWatchItem,
+        setRenamingId,
         // Data Setters
         setFolders,
         setLibraryView,

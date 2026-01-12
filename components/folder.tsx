@@ -9,7 +9,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
@@ -52,6 +52,7 @@ interface FolderProps {
   folderSortOptions?: Record<string, { by: string; direction: "asc" | "desc" }>
   onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
   onOpen?: (itemId: string) => void
+  onCreateSubfolder?: (parentId: string) => void
 }
 
 export function Folder({
@@ -76,6 +77,7 @@ export function Folder({
   folderSortOptions,
   onMove,
   onOpen,
+  onCreateSubfolder,
 }: FolderProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -84,7 +86,15 @@ export function Folder({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
-  const { columns } = useLibraryContext()
+  const { columns, renamingId, setRenamingId } = useLibraryContext()
+
+  useEffect(() => {
+    if (renamingId === folder.id) {
+      setIsRenaming(true)
+      setRenameName(folder.name)
+      setRenamingId(null)
+    }
+  }, [renamingId, folder.id, folder.name, setRenamingId])
 
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
@@ -376,6 +386,15 @@ export function Folder({
           <ContextMenuItem
             onSelect={(e) => {
               e.preventDefault()
+              onCreateSubfolder?.(folder.id)
+            }}
+          >
+            New Folder
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
               handleRenameStart()
             }}
           >
@@ -431,6 +450,7 @@ export function Folder({
               folderSortOptions={folderSortOptions}
               onMove={onMove}
               onOpen={onOpen}
+              onCreateSubfolder={onCreateSubfolder}
             />
           ))}
 

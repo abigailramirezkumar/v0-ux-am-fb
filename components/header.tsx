@@ -3,6 +3,7 @@ import { Icon } from "@/components/icon"
 import { Button } from "@/components/button"
 import { Input } from "@/components/input"
 import { cn } from "@/lib/utils"
+import { ArrowLeft } from "lucide-react"
 
 interface HeaderProps {
   className?: string
@@ -13,6 +14,8 @@ interface HeaderProps {
   searchValue?: string
   onSearchChange?: (value: string) => void
   searchPlaceholder?: string
+  showBack?: boolean
+  onBackClick?: () => void
 }
 
 export function Header({
@@ -24,23 +27,28 @@ export function Header({
   searchValue,
   onSearchChange,
   searchPlaceholder = "Search or filter...",
+  showBack,
+  onBackClick,
 }: HeaderProps) {
   return (
     <header className={cn("bg-sidebar border-b-0 border-border px-4 py-3 font-sans border-none", className)}>
       <div className="flex items-center gap-4">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2">
+        {showBack ? (
+          <button onClick={onBackClick} className="p-1 hover:bg-muted rounded transition-colors -ml-1">
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+          </button>
+        ) : (
           <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />
-          <span className="text-foreground font-medium">{title}</span>
-        </div>
+        )}
+
+        <span className="text-foreground font-medium">{title}</span>
 
         {/* Filter Button */}
         <button onClick={onFilterClick} className="p-1 hover:bg-muted rounded transition-colors" aria-label="Filter">
           <Icon name="filter" className="w-5 h-5 text-muted-foreground" />
         </button>
 
-        {/* Search Input */}
-        <div className="flex-1 max-w-md relative">
+        <div className="flex-1 relative">
           <Input
             type="text"
             placeholder={searchPlaceholder}

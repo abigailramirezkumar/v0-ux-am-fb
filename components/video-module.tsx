@@ -27,29 +27,27 @@ export function VideoModule() {
     if (inputValue) setVideoUrl(inputValue)
   }
 
+  const getEmbedUrl = () => {
+    if (!videoUrl) return ""
+
+    const url = videoUrl
+    const separator = url.includes("?") ? "&" : "?"
+
+    // Autoplay + Start time
+    const startTime = currentPlay?.startTime || 0
+    return `${url}${separator}autoplay=1&start=${startTime}&controls=1&rel=0&modestbranding=1`
+  }
+
   return (
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden group rounded-xl shadow-sm">
       {videoUrl ? (
-        <>
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            className="h-full w-full object-contain border-none"
-            controls
-            playsInline
-          />
-          {/* Play Overlay Info */}
-          <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none">
-            {currentPlay ? `Play #${currentPlay.playNumber} | Q${currentPlay.quarter}` : "Full Video"}
-          </div>
-
-          {/* Change Video Input (Hidden by default, shown on hover) */}
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setVideoUrl("")}>
-              Change Video Source
-            </Button>
-          </div>
-        </>
+        <iframe
+          key={currentPlay?.id} // Force re-render on play change to ensure seek works reliably
+          src={getEmbedUrl()}
+          className="h-full w-full border-none"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
       ) : (
         <div className="h-full w-full flex flex-col items-center justify-center gap-6 p-8 bg-zinc-950 text-white">
           <div className="text-center space-y-2">
@@ -67,6 +65,12 @@ export function VideoModule() {
               Load
             </Button>
           </form>
+        </div>
+      )}
+
+      {currentPlay && (
+        <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none backdrop-blur-sm">
+          Play #{currentPlay.playNumber} | Q{currentPlay.quarter} | {currentPlay.game}
         </div>
       )}
     </div>

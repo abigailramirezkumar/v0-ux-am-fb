@@ -1,880 +1,531 @@
 import type { FolderData } from "@/components/folder"
+import type { LibraryItemData } from "@/components/library-item"
+
+// Helper to generate random library items for leaf nodes
+const generateLeafItems = (year: number, folderId: string, count = 2): LibraryItemData[] => {
+  const items: LibraryItemData[] = []
+
+  // NFL-style dates (approximate regular season start)
+  const baseMonth = 9 // September
+  const baseDay = 8
+
+  for (let i = 0; i < count; i++) {
+    const month = baseMonth + Math.floor(Math.random() * 4)
+    const day = baseDay + i * 7
+    const dateStr = `${String(month).padStart(2, "0")} ${String(day).padStart(2, "0")} ${year.toString().slice(-2)}`
+
+    // Randomize some metadata
+    const durationMin = 20 + Math.floor(Math.random() * 100)
+    const sizeGB = (1 + Math.random() * 4).toFixed(1)
+
+    items.push({
+      id: `item-${folderId}-${i}`,
+      name: `${dateStr} Sample Game`,
+      type: "video",
+      dateModified: `Oct ${10 + i}, ${year}`,
+      createdDate: `Sep ${day}, ${year}`,
+      hasData: Math.random() > 0.3,
+      itemCount: Math.floor(Math.random() * 150) + 50, // Clip count
+      duration: `${Math.floor(durationMin / 60)}:${String(durationMin % 60).padStart(2, "0")}:00`,
+      size: `${sizeGB} GB`,
+      angles: 2 + Math.floor(Math.random() * 3),
+      comments: Math.floor(Math.random() * 20),
+    })
+  }
+
+  return items
+}
+
+// --- Structure Generators ---
+
+function createSelfScoutSubfolderStructure(year: number, parentId: string): FolderData[] {
+  const baseId = `${parentId}-sub`
+
+  const structure: { name: string; children?: { name: string }[] }[] = [
+    { name: "Masters Work" },
+    { name: "Masters" },
+    { name: "Practice Masters" },
+    { name: "Offensive Reporting" },
+    { name: "Defensive Reporting" },
+    { name: "Special Team Reporting" },
+    {
+      name: "Offense Share",
+      children: [
+        { name: "Games" },
+        { name: "Preseason Games" },
+        { name: "Cutups" },
+        { name: "Hot Folder" },
+        { name: "Meetings" },
+        { name: "Practice Drills" },
+        { name: "Player Profiles" },
+        { name: "Situational Masters" },
+      ],
+    },
+    { name: "Defense Share" },
+    { name: "Special Teams Share" },
+    { name: "Gameday" },
+    { name: "Temp Plane Work" },
+    { name: "Work" },
+  ]
+
+  return structure.map((f, i) => {
+    const id = `${baseId}-${i}`
+    const children = f.children
+      ? f.children.map((c, j) => ({
+          id: `${id}-${j}`,
+          name: c.name,
+          dateModified: `Dec ${10 + j}, ${year}`,
+          items: generateLeafItems(year, `${id}-${j}`),
+        }))
+      : undefined
+
+    return {
+      id,
+      name: f.name,
+      dateModified: `Dec ${5 + i}, ${year}`,
+      children,
+      items: children ? undefined : generateLeafItems(year, id),
+    }
+  })
+}
+
+function createTrainingCampStructure(year: number, parentId: string): FolderData[] {
+  const baseId = `${parentId}-tc`
+
+  const structure: { name: string; children?: { name: string }[] }[] = [
+    { name: "Masters Work" },
+    { name: "Meeting Masters" },
+    {
+      name: "Practice Masters",
+      children: [{ name: "Practice Masters Today" }],
+    },
+    { name: "Offense Share" },
+    { name: "Defense Share" },
+    { name: "Special Teams Share" },
+    { name: "Work" },
+  ]
+
+  return structure.map((f, i) => {
+    const id = `${baseId}-${i}`
+    const children = f.children
+      ? f.children.map((c, j) => ({
+          id: `${id}-${j}`,
+          name: c.name,
+          dateModified: `Jul 25, ${year}`,
+          items: generateLeafItems(year, `${id}-${j}`),
+        }))
+      : undefined
+
+    return {
+      id,
+      name: f.name,
+      dateModified: `Jul ${15 + i}, ${year}`,
+      children,
+      items: children ? undefined : generateLeafItems(year, id),
+    }
+  })
+}
+
+function createOffseasonStudiesStructure(year: number, parentId: string): FolderData[] {
+  const baseId = `${parentId}-off`
+
+  const structure: { name: string; children?: { name: string }[] }[] = [
+    {
+      name: "Offense Share",
+      children: [
+        { name: "Hot Folder" },
+        { name: "13 GB OFF PFF Cutups" },
+        { name: `${year} LaFleur Cutups` },
+        { name: `${year.toString().slice(-2)} CIN OFF PFF Cutups` },
+        { name: `${year.toString().slice(-2)} LA OFF PFF Cutups` },
+      ],
+    },
+    { name: "Defense Share" },
+    { name: "Special Teams Share" },
+    { name: "Work" },
+  ]
+
+  return structure.map((f, i) => {
+    const id = `${baseId}-${i}`
+    const children = f.children
+      ? f.children.map((c, j) => ({
+          id: `${id}-${j}`,
+          name: c.name,
+          dateModified: `Feb ${5 + j}, ${year}`,
+          items: generateLeafItems(year, `${id}-${j}`),
+        }))
+      : undefined
+
+    return {
+      id,
+      name: f.name,
+      dateModified: `Jan ${10 + i}, ${year}`,
+      children,
+      items: children ? undefined : generateLeafItems(year, id),
+    }
+  })
+}
+
+function createMiniCampOTAStructure(year: number, parentId: string): FolderData[] {
+  const baseId = `${parentId}-ota`
+
+  const structure: { name: string; children?: { name: string }[] }[] = [
+    { name: "Masters Work" },
+    { name: "Meeting Masters" },
+    { name: "Practice Masters" },
+    {
+      name: "Offense Share",
+      children: [
+        { name: "Mini Camp OTA Installs" },
+        { name: "Hot Folder" },
+        { name: "Workouts" },
+        { name: "Meetings" },
+        { name: "Cutups" },
+        { name: "Phase 1 Field Work Week 01" },
+        { name: "Phase 1 Field Work Week 02" },
+        { name: "Phase 2 Practice Week 01" },
+        { name: "Phase 2 Practice Week 02" },
+        { name: "Phase 3 Practice Week 01" },
+        { name: "Mauicamp Practice" },
+        { name: "Practice Drills" },
+      ],
+    },
+    { name: "Defense Share" },
+    { name: "Special Teams Share" },
+    { name: "Work" },
+  ]
+
+  return structure.map((f, i) => {
+    const id = `${baseId}-${i}`
+    const children = f.children
+      ? f.children.map((c, j) => ({
+          id: `${id}-${j}`,
+          name: c.name,
+          dateModified: `May ${25 + j}, ${year}`,
+          items: generateLeafItems(year, `${id}-${j}`),
+        }))
+      : undefined
+
+    return {
+      id,
+      name: f.name,
+      dateModified: `May ${15 + i}, ${year}`,
+      children,
+      items: children ? undefined : generateLeafItems(year, id),
+    }
+  })
+}
+
+function createSelfScoutYearFolders(): FolderData[] {
+  const yearFolders: FolderData[] = []
+
+  // Create folders for years 2020-2025 (Reduced range for performance, can extend to 2006)
+  for (let year = 2025; year >= 2020; year--) {
+    const yearId = `self-scout-${year}`
+    yearFolders.push({
+      id: yearId,
+      name: year.toString(),
+      dateModified: `Dec 31, ${year}`,
+      children: [
+        {
+          id: `${yearId}-offseason`,
+          name: "Offseason Studies",
+          children: createOffseasonStudiesStructure(year, `${yearId}-offseason`),
+        },
+        {
+          id: `${yearId}-minicamp`,
+          name: "Mini-Camp OTA",
+          children: createMiniCampOTAStructure(year, `${yearId}-minicamp`),
+        },
+        {
+          id: `${yearId}-training-camp`,
+          name: "Training Camp",
+          children: createTrainingCampStructure(year, `${yearId}-training-camp`),
+        },
+        {
+          id: `${yearId}-self-scout`,
+          name: "Self Scout",
+          children: createSelfScoutSubfolderStructure(year, `${yearId}-self-scout`),
+        },
+      ],
+    })
+  }
+
+  return yearFolders
+}
+
+function createDetailedOpponentStructure(year: number, teamName: string, parentId: string): FolderData[] {
+  const teamSlug = teamName.toLowerCase().replace(/\s+/g, "-")
+  const baseId = `${parentId}-${year}-${teamSlug}`
+
+  const createStandardSubfolders = (sectionId: string) =>
+    [
+      { name: "Games" },
+      { name: "Breakdown Games" },
+      { name: "Cutups" },
+      { name: "Meetings" },
+      { name: "Practice 01" },
+      { name: "Practice 02" },
+      { name: "Practice 03" },
+    ].map((f, i) => ({
+      id: `${sectionId}-${i}`,
+      name: f.name,
+      dateModified: `Dec 14, ${year}`,
+      items: generateLeafItems(year, `${sectionId}-${i}`),
+    }))
+
+  const structure: { name: string; children?: FolderData[] }[] = [
+    { name: "Masters Work" },
+    { name: "Meeting Masters" },
+    { name: "Practice Masters" },
+    { name: "Offensive Reporting" },
+    { name: "Special Teams Reporting" },
+    {
+      name: "Offense Share",
+      children: createStandardSubfolders(`${baseId}-off`),
+    },
+    {
+      name: "Defense Share",
+      children: createStandardSubfolders(`${baseId}-def`),
+    },
+    {
+      name: "Special Teams Share",
+      children: createStandardSubfolders(`${baseId}-st`),
+    },
+    { name: "Work" },
+  ]
+
+  return structure.map((f, i) => {
+    const id = `${baseId}-${i}`
+
+    return {
+      id,
+      name: f.name,
+      dateModified: `Dec 14, ${year}`,
+      children: f.children,
+      items: f.children ? undefined : generateLeafItems(year, id),
+    }
+  })
+}
+
+function createTeamStructure(teamName: string, teamNickname: string): FolderData {
+  const years: FolderData[] = []
+  const teamId = teamName.toLowerCase().replace(/\s+/g, "-")
+
+  // Create year folders from 2022-2025
+  for (let year = 2022; year <= 2025; year++) {
+    const yearId = `${teamId}-${year}`
+    years.push({
+      id: yearId,
+      name: `${year} ${teamNickname}`,
+      dateModified: `Dec 14, ${year}`,
+      children: createDetailedOpponentStructure(year, teamNickname, yearId),
+    })
+  }
+
+  return {
+    id: teamId,
+    name: teamName,
+    dateModified: "Dec 14, 2024",
+    children: years,
+  }
+}
+
+function createCollegeScoutingStructure(yearRange: string): FolderData[] {
+  const parentId = `scouting-${yearRange}`
+  const endYear = Number.parseInt(yearRange.split("-")[1])
+
+  const createAlphabetFolders = (prefix: string) => {
+    const schools = [
+      "A Schools",
+      "C Schools",
+      "D Schools",
+      "F Schools",
+      "G Schools",
+      "H Schools",
+      "I Schools",
+      "K Schools",
+      "L Schools",
+      "M Schools",
+      "N Schools",
+      "O Schools",
+      "P Schools",
+      "R Schools",
+      "S Schools",
+      "T Schools",
+      "U Schools",
+      "V Schools",
+      "W Schools",
+    ]
+    return schools.map((school, i) => ({
+      id: `${prefix}-${i}`,
+      name: school,
+      dateModified: "Feb 15, 2025",
+      items: generateLeafItems(endYear, `${prefix}-${i}`, 3),
+    }))
+  }
+
+  interface ScoutingFolder {
+    name: string
+    items?: boolean
+    children?: ScoutingFolder[]
+  }
+
+  const structure: ScoutingFolder[] = [
+    { name: "Masters", items: true },
+    { name: "Masters Working", items: true },
+    {
+      name: "College Games",
+      children: [{ name: "Division I" }, { name: "Division II - Others" }],
+    },
+    {
+      name: "All Star Games",
+      children: [
+        {
+          name: "Senior Bowl",
+          children: [
+            { name: "Hot Folder", items: true },
+            { name: "Game", items: true },
+            { name: "American Team Practice", items: true },
+            { name: "National Team Practice", items: true },
+            { name: "TV Content", items: true },
+          ],
+        },
+        {
+          name: "East-West Shrine Bowl",
+          children: [
+            { name: "Hot Folder", items: true },
+            { name: "Game", items: true },
+            { name: "East Team Practice", items: true },
+            { name: "West Team Practice", items: true },
+          ],
+        },
+        { name: "Hula Bowl", items: true },
+        { name: "Tropical Bowl", items: true },
+      ],
+    },
+    {
+      name: "Combine",
+      children: [
+        { name: "Informal Interviews", items: true },
+        { name: "Position Workouts", items: true },
+        { name: "TV Broadcast", items: true },
+      ],
+    },
+    { name: "Pro Days", items: true },
+    { name: "NFL Games", items: true },
+  ]
+
+  const processChildren = (children: ScoutingFolder[], parentPrefix: string): FolderData[] => {
+    return children.map((c, j) => {
+      const childId = `${parentPrefix}-${j}`
+      let processedChildren: FolderData[] | undefined = undefined
+
+      if (c.name === "Division I" || c.name === "Division II - Others") {
+        processedChildren = createAlphabetFolders(childId)
+      } else if (c.children) {
+        processedChildren = processChildren(c.children, childId)
+      }
+
+      return {
+        id: childId,
+        name: c.name,
+        dateModified: "Feb 10, 2025",
+        items: c.items ? generateLeafItems(endYear, childId) : undefined,
+        children: processedChildren,
+      }
+    })
+  }
+
+  return structure.map((f, i) => {
+    const id = `${parentId}-${i}`
+
+    return {
+      id,
+      name: f.name,
+      dateModified: "Feb 8, 2025",
+      items: f.items ? generateLeafItems(endYear, id) : undefined,
+      children: f.children ? processChildren(f.children, id) : undefined,
+    }
+  })
+}
+
+// --- Main Data Export ---
 
 export const mockCatapultData: FolderData[] = [
   {
-    id: "catapult-folder-1",
-    name: "Offensive Game Film",
+    id: "self-scout",
+    name: "Self Scout",
     dateModified: "Dec 15, 2024",
-    createdDate: "Sep 1, 2024",
-    children: [
-      {
-        id: "catapult-subfolder-1-1",
-        name: "Red Zone Plays",
-        dateModified: "Dec 14, 2024",
-        createdDate: "Sep 5, 2024",
-        children: [
-          {
-            id: "catapult-subsubfolder-1-1-1",
-            name: "Week 1-4",
-            dateModified: "Oct 28, 2024",
-            createdDate: "Sep 10, 2024",
-            items: [
-              {
-                id: "item-1-1-1-1",
-                name: "RZ TD vs Cowboys",
-                type: "video",
-                dateModified: "Oct 15, 2024",
-                createdDate: "Oct 15, 2024",
-                hasData: true,
-                clipCount: 45,
-                duration: "12:34",
-                size: "256 MB",
-                angleCount: 4,
-                commentCount: 12,
-              },
-              {
-                id: "item-1-1-1-2",
-                name: "RZ FG vs Eagles",
-                type: "video",
-                dateModified: "Oct 22, 2024",
-                createdDate: "Oct 22, 2024",
-                hasData: true,
-                clipCount: 23,
-                duration: "8:15",
-                size: "178 MB",
-                angleCount: 3,
-                commentCount: 5,
-              },
-              {
-                id: "item-1-1-1-3",
-                name: "RZ Turnover vs Giants",
-                type: "video",
-                dateModified: "Oct 28, 2024",
-                createdDate: "Oct 28, 2024",
-                hasData: false,
-                clipCount: 18,
-                duration: "6:42",
-                size: "145 MB",
-                angleCount: 2,
-                commentCount: 28,
-              },
-            ],
-          },
-          {
-            id: "catapult-subsubfolder-1-1-2",
-            name: "Week 5-8",
-            dateModified: "Nov 25, 2024",
-            createdDate: "Nov 1, 2024",
-            items: [
-              {
-                id: "item-1-1-2-1",
-                name: "RZ Success vs 49ers",
-                type: "video",
-                dateModified: "Nov 12, 2024",
-                createdDate: "Nov 12, 2024",
-                hasData: true,
-                clipCount: 67,
-                duration: "18:22",
-                size: "412 MB",
-                angleCount: 5,
-                commentCount: 34,
-              },
-              {
-                id: "item-1-1-2-2",
-                name: "RZ Breakdown vs Seahawks",
-                type: "video",
-                dateModified: "Nov 25, 2024",
-                createdDate: "Nov 19, 2024",
-                hasData: true,
-                clipCount: 31,
-                duration: "9:45",
-                size: "198 MB",
-                angleCount: 4,
-                commentCount: 8,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-1-2",
-        name: "Third Down Conversions",
-        dateModified: "Dec 10, 2024",
-        createdDate: "Sep 8, 2024",
-        children: [
-          {
-            id: "catapult-subsubfolder-1-2-1",
-            name: "Short Yardage",
-            dateModified: "Dec 10, 2024",
-            createdDate: "Sep 15, 2024",
-            items: [
-              {
-                id: "item-1-2-1-1",
-                name: "3rd & 2 QB Sneak",
-                type: "video",
-                dateModified: "Nov 5, 2024",
-                createdDate: "Nov 5, 2024",
-                hasData: true,
-                clipCount: 89,
-                duration: "24:15",
-                size: "534 MB",
-                angleCount: 6,
-                commentCount: 45,
-              },
-              {
-                id: "item-1-2-1-2",
-                name: "3rd & 1 Power Run",
-                type: "video",
-                dateModified: "Nov 18, 2024",
-                createdDate: "Nov 18, 2024",
-                hasData: true,
-                clipCount: 156,
-                duration: "42:30",
-                size: "892 MB",
-                angleCount: 5,
-                commentCount: 67,
-              },
-              {
-                id: "item-1-2-1-3",
-                name: "3rd & 3 Play Action",
-                type: "video",
-                dateModified: "Dec 2, 2024",
-                createdDate: "Dec 2, 2024",
-                hasData: false,
-                clipCount: 42,
-                duration: "11:18",
-                size: "245 MB",
-                angleCount: 4,
-                commentCount: 15,
-              },
-              {
-                id: "item-1-2-1-4",
-                name: "3rd & 2 RPO Success",
-                type: "video",
-                dateModified: "Dec 10, 2024",
-                createdDate: "Dec 10, 2024",
-                hasData: true,
-                clipCount: 78,
-                duration: "21:45",
-                size: "478 MB",
-                angleCount: 5,
-                commentCount: 23,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-1-3",
-        name: "Two Minute Drill",
-        children: [
-          {
-            id: "catapult-subsubfolder-1-3-1",
-            name: "End of Half",
-            items: [
-              { id: "item-1-3-1-1", name: "2min Drill vs Patriots", type: "video" },
-              { id: "item-1-3-1-2", name: "2min Drill vs Bills", type: "video" },
-              { id: "item-1-3-1-3", name: "2min Drill vs Dolphins", type: "video" },
-              { id: "item-1-3-1-4", name: "2min Drill vs Jets", type: "video" },
-              { id: "item-1-3-1-5", name: "2min Drill vs Ravens", type: "video" },
-            ],
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-1-4",
-        name: "Play Action Passes",
-        children: [
-          {
-            id: "catapult-subsubfolder-1-4-1",
-            name: "Deep Shots",
-            items: [
-              { id: "item-1-4-1-1", name: "PA Deep Ball TD", type: "video" },
-              { id: "item-1-4-1-2", name: "PA Seam Route", type: "video" },
-            ],
-          },
-        ],
-      },
-    ],
+    createdDate: "Sep 1, 2010",
+    children: createSelfScoutYearFolders(),
   },
   {
-    id: "catapult-folder-2",
-    name: "Defensive Schemes",
-    dateModified: "Dec 12, 2024",
-    createdDate: "Sep 3, 2024",
-    children: [
-      {
-        id: "catapult-subfolder-2-1",
-        name: "Blitz Packages",
-        dateModified: "Dec 8, 2024",
-        createdDate: "Sep 12, 2024",
-        items: [
-          {
-            id: "item-2-1-1",
-            name: "Zone Blitz Concepts",
-            type: "video",
-            dateModified: "Nov 15, 2024",
-            createdDate: "Nov 15, 2024",
-            hasData: true,
-            clipCount: 234,
-            duration: "1:02:15",
-            size: "1.2 GB",
-            angleCount: 8,
-            commentCount: 89,
-          },
-          {
-            id: "item-2-1-2",
-            name: "A-Gap Pressure",
-            type: "video",
-            dateModified: "Nov 28, 2024",
-            createdDate: "Nov 28, 2024",
-            hasData: true,
-            clipCount: 145,
-            duration: "38:42",
-            size: "845 MB",
-            angleCount: 6,
-            commentCount: 56,
-          },
-          {
-            id: "item-2-1-3",
-            name: "Edge Rush Techniques",
-            type: "video",
-            dateModified: "Dec 8, 2024",
-            createdDate: "Dec 5, 2024",
-            hasData: false,
-            clipCount: 98,
-            duration: "26:18",
-            size: "578 MB",
-            angleCount: 5,
-            commentCount: 34,
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-2-2",
-        name: "Coverage Schemes",
-        dateModified: "Dec 12, 2024",
-        createdDate: "Sep 18, 2024",
-        items: [
-          {
-            id: "item-2-2-1",
-            name: "Cover 2 Variations",
-            type: "video",
-            dateModified: "Dec 1, 2024",
-            createdDate: "Dec 1, 2024",
-            hasData: true,
-            clipCount: 312,
-            duration: "1:24:30",
-            size: "1.8 GB",
-            angleCount: 7,
-            commentCount: 124,
-          },
-          {
-            id: "item-2-2-2",
-            name: "Man Coverage Drills",
-            type: "video",
-            dateModified: "Dec 12, 2024",
-            createdDate: "Dec 8, 2024",
-            hasData: true,
-            clipCount: 187,
-            duration: "49:15",
-            size: "1.1 GB",
-            angleCount: 6,
-            commentCount: 78,
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-2-3",
-        name: "Run Defense",
-        children: [
-          {
-            id: "catapult-subsubfolder-2-3-1",
-            name: "Gap Control",
-            items: [
-              { id: "item-2-3-1-1", name: "A Gap Stuff", type: "video" },
-              { id: "item-2-3-1-2", name: "B Gap TFL", type: "video" },
-              { id: "item-2-3-1-3", name: "C Gap Pursuit", type: "video" },
-            ],
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-2-4",
-        name: "Third Down Defense",
-        children: [
-          {
-            id: "catapult-subsubfolder-2-4-1",
-            name: "Nickel Package",
-            items: [
-              { id: "item-2-4-1-1", name: "Nickel Sack", type: "video" },
-              { id: "item-2-4-1-2", name: "Nickel Stop", type: "video" },
-              { id: "item-2-4-1-3", name: "Nickel Coverage", type: "video" },
-              { id: "item-2-4-1-4", name: "Nickel Pressure", type: "video" },
-              { id: "item-2-4-1-5", name: "Nickel Success", type: "video" },
-              { id: "item-2-4-1-6", name: "Nickel Adjustment", type: "video" },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "catapult-folder-3",
-    name: "Special Teams",
-    dateModified: "Dec 5, 2024",
-    createdDate: "Sep 6, 2024",
-    items: [
-      {
-        id: "item-3-1",
-        name: "Punt Coverage Analysis",
-        type: "video",
-        dateModified: "Nov 20, 2024",
-        createdDate: "Nov 20, 2024",
-        hasData: true,
-        clipCount: 156,
-        duration: "41:30",
-        size: "912 MB",
-        angleCount: 4,
-        commentCount: 45,
-      },
-      {
-        id: "item-3-2",
-        name: "Kickoff Return Schemes",
-        type: "video",
-        dateModified: "Nov 30, 2024",
-        createdDate: "Nov 30, 2024",
-        hasData: false,
-        clipCount: 89,
-        duration: "23:45",
-        size: "524 MB",
-        angleCount: 3,
-        commentCount: 22,
-      },
-      {
-        id: "item-3-3",
-        name: "Field Goal Protection",
-        type: "video",
-        dateModified: "Dec 5, 2024",
-        createdDate: "Dec 5, 2024",
-        hasData: true,
-        clipCount: 67,
-        duration: "17:55",
-        size: "398 MB",
-        angleCount: 5,
-        commentCount: 18,
-      },
-    ],
-  },
-  {
-    id: "catapult-folder-4",
-    name: "Scout Reports",
+    id: "opponent-scout",
+    name: "Opponent Scout",
     dateModified: "Dec 14, 2024",
-    createdDate: "Sep 2, 2024",
     children: [
-      {
-        id: "catapult-subfolder-4-1",
-        name: "NFC East",
-        dateModified: "Dec 14, 2024",
-        createdDate: "Sep 10, 2024",
-        items: [
-          {
-            id: "item-4-1-1",
-            name: "Cowboys Offensive Tendencies",
-            type: "video",
-            dateModified: "Dec 10, 2024",
-            createdDate: "Dec 10, 2024",
-            hasData: true,
-            clipCount: 456,
-            duration: "2:05:30",
-            size: "2.8 GB",
-            angleCount: 1,
-            commentCount: 234,
-          },
-          {
-            id: "item-4-1-2",
-            name: "Eagles Defensive Breakdown",
-            type: "video",
-            dateModified: "Dec 12, 2024",
-            createdDate: "Dec 12, 2024",
-            hasData: true,
-            clipCount: 389,
-            duration: "1:48:15",
-            size: "2.4 GB",
-            angleCount: 1,
-            commentCount: 189,
-          },
-          {
-            id: "item-4-1-3",
-            name: "Giants Special Teams Review",
-            type: "video",
-            dateModified: "Dec 14, 2024",
-            createdDate: "Dec 14, 2024",
-            hasData: false,
-            clipCount: 123,
-            duration: "32:40",
-            size: "723 MB",
-            angleCount: 1,
-            commentCount: 56,
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-4-2",
-        name: "NFC West",
-        dateModified: "Dec 11, 2024",
-        createdDate: "Sep 14, 2024",
-        items: [
-          {
-            id: "item-4-2-1",
-            name: "49ers Run Game Analysis",
-            type: "video",
-            dateModified: "Dec 8, 2024",
-            createdDate: "Dec 8, 2024",
-            hasData: true,
-            clipCount: 567,
-            duration: "2:32:45",
-            size: "3.2 GB",
-            angleCount: 1,
-            commentCount: 312,
-          },
-          {
-            id: "item-4-2-2",
-            name: "Seahawks Pass Rush Study",
-            type: "video",
-            dateModified: "Dec 11, 2024",
-            createdDate: "Dec 11, 2024",
-            hasData: true,
-            clipCount: 298,
-            duration: "1:18:20",
-            size: "1.7 GB",
-            angleCount: 1,
-            commentCount: 145,
-          },
-        ],
-      },
+      createTeamStructure("Arizona Cardinals", "Cardinals"),
+      createTeamStructure("Atlanta Falcons", "Falcons"),
+      createTeamStructure("Baltimore Ravens", "Ravens"),
+      createTeamStructure("Buffalo Bills", "Bills"),
+      createTeamStructure("Chicago Bears", "Bears"),
+      createTeamStructure("Dallas Cowboys", "Cowboys"),
+      createTeamStructure("Denver Broncos", "Broncos"),
+      createTeamStructure("Detroit Lions", "Lions"),
+      createTeamStructure("Green Bay Packers", "Packers"),
+      createTeamStructure("Kansas City Chiefs", "Chiefs"),
+      createTeamStructure("Los Angeles Rams", "Rams"),
+      createTeamStructure("Minnesota Vikings", "Vikings"),
+      createTeamStructure("New England Patriots", "Patriots"),
+      createTeamStructure("New Orleans Saints", "Saints"),
+      createTeamStructure("New York Giants", "Giants"),
+      createTeamStructure("Philadelphia Eagles", "Eagles"),
+      createTeamStructure("San Francisco 49ers", "49ers"),
+      createTeamStructure("Seattle Seahawks", "Seahawks"),
     ],
   },
   {
-    id: "catapult-folder-5",
-    name: "Practice Film",
+    id: "scouting",
+    name: "Scouting",
     dateModified: "Dec 13, 2024",
-    createdDate: "Sep 4, 2024",
     children: [
       {
-        id: "catapult-subfolder-5-1",
-        name: "Training Camp",
-        dateModified: "Aug 30, 2024",
-        createdDate: "Jul 25, 2024",
-        items: [
-          {
-            id: "item-5-1-1",
-            name: "Day 1 Full Pads",
-            type: "video",
-            dateModified: "Jul 28, 2024",
-            createdDate: "Jul 28, 2024",
-            hasData: true,
-            clipCount: 234,
-            duration: "3:15:00",
-            size: "4.2 GB",
-            angleCount: 8,
-            commentCount: 89,
-          },
-          {
-            id: "item-5-1-2",
-            name: "Week 2 7-on-7",
-            type: "video",
-            dateModified: "Aug 5, 2024",
-            createdDate: "Aug 5, 2024",
-            hasData: true,
-            clipCount: 178,
-            duration: "2:45:30",
-            size: "3.5 GB",
-            angleCount: 6,
-            commentCount: 67,
-          },
-          {
-            id: "item-5-1-3",
-            name: "Final Scrimmage",
-            type: "video",
-            dateModified: "Aug 30, 2024",
-            createdDate: "Aug 30, 2024",
-            hasData: true,
-            clipCount: 345,
-            duration: "4:12:15",
-            size: "5.1 GB",
-            angleCount: 8,
-            commentCount: 156,
-          },
-        ],
+        id: "scouting-2023-2024",
+        name: "2023-2024",
+        dateModified: "May 15, 2024",
+        children: createCollegeScoutingStructure("2023-2024"),
       },
       {
-        id: "catapult-subfolder-5-2",
-        name: "Weekly Practice",
-        dateModified: "Dec 13, 2024",
-        createdDate: "Sep 4, 2024",
-        items: [
-          {
-            id: "item-5-2-1",
-            name: "Week 14 Wednesday",
-            type: "video",
-            dateModified: "Dec 11, 2024",
-            createdDate: "Dec 11, 2024",
-            hasData: true,
-            clipCount: 189,
-            duration: "2:30:00",
-            size: "3.1 GB",
-            angleCount: 7,
-            commentCount: 45,
-          },
-          {
-            id: "item-5-2-2",
-            name: "Week 14 Thursday",
-            type: "video",
-            dateModified: "Dec 12, 2024",
-            createdDate: "Dec 12, 2024",
-            hasData: true,
-            clipCount: 156,
-            duration: "2:15:45",
-            size: "2.8 GB",
-            angleCount: 7,
-            commentCount: 38,
-          },
-          {
-            id: "item-5-2-3",
-            name: "Week 14 Friday Walkthrough",
-            type: "video",
-            dateModified: "Dec 13, 2024",
-            createdDate: "Dec 13, 2024",
-            hasData: false,
-            clipCount: 78,
-            duration: "1:05:30",
-            size: "1.3 GB",
-            angleCount: 4,
-            commentCount: 12,
-          },
-        ],
+        id: "scouting-2024-2025",
+        name: "2024-2025",
+        dateModified: "May 15, 2025",
+        children: createCollegeScoutingStructure("2024-2025"),
+      },
+      {
+        id: "scouting-2025-2026",
+        name: "2025-2026",
+        dateModified: "May 15, 2026",
+        children: createCollegeScoutingStructure("2025-2026"),
       },
     ],
   },
   {
-    id: "catapult-folder-6",
-    name: "Player Development",
-    dateModified: "Dec 9, 2024",
-    createdDate: "Sep 7, 2024",
-    items: [
-      {
-        id: "item-6-1",
-        name: "QB Mechanics Review",
-        type: "video",
-        dateModified: "Nov 25, 2024",
-        createdDate: "Nov 25, 2024",
-        hasData: true,
-        clipCount: 234,
-        duration: "58:30",
-        size: "1.3 GB",
-        angleCount: 6,
-        commentCount: 89,
-      },
-      {
-        id: "item-6-2",
-        name: "WR Route Running Drills",
-        type: "video",
-        dateModified: "Dec 2, 2024",
-        createdDate: "Dec 2, 2024",
-        hasData: true,
-        clipCount: 312,
-        duration: "1:15:45",
-        size: "1.6 GB",
-        angleCount: 5,
-        commentCount: 134,
-      },
-      {
-        id: "item-6-3",
-        name: "OL Pass Protection Sets",
-        type: "video",
-        dateModified: "Dec 9, 2024",
-        createdDate: "Dec 9, 2024",
-        hasData: false,
-        clipCount: 178,
-        duration: "45:20",
-        size: "987 MB",
-        angleCount: 4,
-        commentCount: 67,
-      },
-    ],
-  },
-  {
-    id: "catapult-folder-7",
-    name: "Game Day Film",
-    dateModified: "Dec 15, 2024",
-    createdDate: "Sep 1, 2024",
-    children: [
-      {
-        id: "catapult-subfolder-7-1",
-        name: "Home Games",
-        dateModified: "Dec 8, 2024",
-        createdDate: "Sep 8, 2024",
-        items: [
-          {
-            id: "item-7-1-1",
-            name: "Week 1 vs Panthers",
-            type: "video",
-            dateModified: "Sep 8, 2024",
-            createdDate: "Sep 8, 2024",
-            hasData: true,
-            clipCount: 145,
-            duration: "3:24:15",
-            size: "4.1 GB",
-            angleCount: 8,
-            commentCount: 234,
-          },
-          {
-            id: "item-7-1-2",
-            name: "Week 5 vs Cardinals",
-            type: "video",
-            dateModified: "Oct 6, 2024",
-            createdDate: "Oct 6, 2024",
-            hasData: true,
-            clipCount: 167,
-            duration: "3:18:30",
-            size: "3.9 GB",
-            angleCount: 8,
-            commentCount: 198,
-          },
-          {
-            id: "item-7-1-3",
-            name: "Week 10 vs Broncos",
-            type: "video",
-            dateModified: "Nov 10, 2024",
-            createdDate: "Nov 10, 2024",
-            hasData: true,
-            clipCount: 189,
-            duration: "3:32:45",
-            size: "4.3 GB",
-            angleCount: 8,
-            commentCount: 267,
-          },
-          {
-            id: "item-7-1-4",
-            name: "Week 14 vs Rams",
-            type: "video",
-            dateModified: "Dec 8, 2024",
-            createdDate: "Dec 8, 2024",
-            hasData: true,
-            clipCount: 201,
-            duration: "3:45:00",
-            size: "4.6 GB",
-            angleCount: 8,
-            commentCount: 312,
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-7-2",
-        name: "Away Games",
-        dateModified: "Dec 15, 2024",
-        createdDate: "Sep 15, 2024",
-        items: [
-          {
-            id: "item-7-2-1",
-            name: "Week 2 @ Falcons",
-            type: "video",
-            dateModified: "Sep 15, 2024",
-            createdDate: "Sep 15, 2024",
-            hasData: true,
-            clipCount: 156,
-            duration: "3:28:30",
-            size: "4.2 GB",
-            angleCount: 8,
-            commentCount: 245,
-          },
-          {
-            id: "item-7-2-2",
-            name: "Week 8 @ Bears",
-            type: "video",
-            dateModified: "Oct 27, 2024",
-            createdDate: "Oct 27, 2024",
-            hasData: true,
-            clipCount: 178,
-            duration: "3:35:15",
-            size: "4.4 GB",
-            angleCount: 8,
-            commentCount: 289,
-          },
-          {
-            id: "item-7-2-3",
-            name: "Week 15 @ Cowboys",
-            type: "video",
-            dateModified: "Dec 15, 2024",
-            createdDate: "Dec 15, 2024",
-            hasData: false,
-            clipCount: 212,
-            duration: "3:52:00",
-            size: "4.8 GB",
-            angleCount: 8,
-            commentCount: 345,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "catapult-folder-8",
-    name: "Opponent Tendencies",
-    dateModified: "Dec 14, 2024",
-    createdDate: "Sep 5, 2024",
-    items: [
-      {
-        id: "item-8-1",
-        name: "Red Zone Defense Trends",
-        type: "video",
-        dateModified: "Dec 10, 2024",
-        createdDate: "Dec 10, 2024",
-        hasData: true,
-        clipCount: 423,
-        duration: "1:52:30",
-        size: "2.4 GB",
-        angleCount: 1,
-        commentCount: 178,
-      },
-      {
-        id: "item-8-2",
-        name: "3rd Down Conversion Rates",
-        type: "video",
-        dateModified: "Dec 12, 2024",
-        createdDate: "Dec 12, 2024",
-        hasData: true,
-        clipCount: 356,
-        duration: "1:38:45",
-        size: "2.1 GB",
-        angleCount: 1,
-        commentCount: 145,
-      },
-      {
-        id: "item-8-3",
-        name: "Turnover Analysis",
-        type: "video",
-        dateModified: "Dec 14, 2024",
-        createdDate: "Dec 14, 2024",
-        hasData: true,
-        clipCount: 234,
-        duration: "1:05:20",
-        size: "1.4 GB",
-        angleCount: 1,
-        commentCount: 98,
-      },
-    ],
-  },
-  {
-    id: "catapult-folder-9",
-    name: "Coaching Materials",
+    id: "practice",
+    name: "Practice",
     dateModified: "Dec 11, 2024",
-    createdDate: "Aug 15, 2024",
-    children: [
-      {
-        id: "catapult-subfolder-9-1",
-        name: "Playbook Updates",
-        dateModified: "Dec 11, 2024",
-        createdDate: "Aug 20, 2024",
-        items: [
-          {
-            id: "item-9-1-1",
-            name: "New Run Concepts",
-            type: "pdf",
-            dateModified: "Nov 15, 2024",
-            createdDate: "Nov 15, 2024",
-            size: "12 MB",
-          },
-          {
-            id: "item-9-1-2",
-            name: "Pass Protection Adjustments",
-            type: "pdf",
-            dateModified: "Dec 1, 2024",
-            createdDate: "Dec 1, 2024",
-            size: "8 MB",
-          },
-          {
-            id: "item-9-1-3",
-            name: "Red Zone Package Updates",
-            type: "pdf",
-            dateModified: "Dec 11, 2024",
-            createdDate: "Dec 11, 2024",
-            size: "15 MB",
-          },
-        ],
-      },
-      {
-        id: "catapult-subfolder-9-2",
-        name: "Meeting Presentations",
-        dateModified: "Dec 10, 2024",
-        createdDate: "Sep 1, 2024",
-        items: [
-          {
-            id: "item-9-2-1",
-            name: "Week 14 Game Plan",
-            type: "document",
-            dateModified: "Dec 10, 2024",
-            createdDate: "Dec 10, 2024",
-            size: "45 MB",
-          },
-          {
-            id: "item-9-2-2",
-            name: "Defensive Adjustments",
-            type: "document",
-            dateModified: "Dec 8, 2024",
-            createdDate: "Dec 8, 2024",
-            size: "32 MB",
-          },
-        ],
-      },
-    ],
+    items: generateLeafItems(2024, "practice"),
   },
   {
-    id: "catapult-folder-10",
-    name: "Draft Prospects",
+    id: "special-projects",
+    name: "Special Projects",
+    dateModified: "Dec 8, 2024",
+    items: generateLeafItems(2024, "special-projects"),
+  },
+  {
+    id: "analytics",
+    name: "Performance Analytics",
     dateModified: "Dec 6, 2024",
-    createdDate: "Nov 1, 2024",
-    items: [
-      {
-        id: "item-10-1",
-        name: "Top QB Prospects 2025",
-        type: "video",
-        dateModified: "Dec 2, 2024",
-        createdDate: "Dec 2, 2024",
-        hasData: false,
-        clipCount: 567,
-        duration: "2:45:30",
-        size: "3.4 GB",
-        angleCount: 1,
-        commentCount: 234,
-      },
-      {
-        id: "item-10-2",
-        name: "Edge Rushers Analysis",
-        type: "video",
-        dateModified: "Dec 4, 2024",
-        createdDate: "Dec 4, 2024",
-        hasData: false,
-        clipCount: 423,
-        duration: "2:12:15",
-        size: "2.7 GB",
-        angleCount: 1,
-        commentCount: 178,
-      },
-      {
-        id: "item-10-3",
-        name: "Offensive Line Prospects",
-        type: "video",
-        dateModified: "Dec 6, 2024",
-        createdDate: "Dec 6, 2024",
-        hasData: false,
-        clipCount: 389,
-        duration: "1:58:45",
-        size: "2.5 GB",
-        angleCount: 1,
-        commentCount: 156,
-      },
-    ],
+    items: generateLeafItems(2024, "analytics"),
   },
 ]

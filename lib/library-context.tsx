@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import type { FolderData } from "@/components/folder"
+import type { LibraryItemData } from "@/components/library-item"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -15,41 +16,201 @@ export interface Column {
   fixed?: boolean
 }
 
-const generateMockFolders = (): FolderData[] => {
-  const folders: FolderData[] = []
-  for (let i = 1; i <= 15; i++) {
-    folders.push({
-      id: `folder-${i}`,
-      name: `Folder ${i}`,
-      dateModified: "Oct 24, 2024",
-      createdDate: "Jan 1, 2024",
-      items: [],
+// Helper to generate random library items for leaf nodes
+const generateLeafItems = (year: number, folderId: string, count = 2): LibraryItemData[] => {
+  const items: LibraryItemData[] = []
+
+  // NFL-style dates (approximate regular season start)
+  const baseMonth = 9 // September
+  const baseDay = 8
+
+  for (let i = 0; i < count; i++) {
+    const month = baseMonth + Math.floor(Math.random() * 4)
+    const day = baseDay + i * 7
+    const dateStr = `${String(month).padStart(2, "0")} ${String(day).padStart(2, "0")} ${year.toString().slice(-2)}`
+
+    // Randomize some metadata
+    const durationMin = 20 + Math.floor(Math.random() * 100)
+    const sizeGB = (1 + Math.random() * 4).toFixed(1)
+
+    items.push({
+      id: `item-${folderId}-${i}`,
+      name: `${dateStr} Sample Game`,
+      type: "video",
+      dateModified: `Oct ${10 + i}, ${year}`,
+      createdDate: `Sep ${day}, ${year}`,
+      hasData: Math.random() > 0.3,
+      itemCount: Math.floor(Math.random() * 150) + 50,
+      duration: `${Math.floor(durationMin / 60)}:${String(durationMin % 60).padStart(2, "0")}:00`,
+      size: `${sizeGB} GB`,
+      angles: 2 + Math.floor(Math.random() * 3),
+      comments: Math.floor(Math.random() * 20),
+      thumbnailUrl: "/football-field.png",
+    })
+  }
+
+  return items
+}
+
+function createSelfScoutYearFolders(): FolderData[] {
+  const yearFolders: FolderData[] = []
+
+  // Create folders for years 2020-2025
+  for (let year = 2025; year >= 2020; year--) {
+    const yearId = `self-scout-${year}`
+    yearFolders.push({
+      id: yearId,
+      name: year.toString(),
+      dateModified: `Dec 31, ${year}`,
       children: [
         {
-          id: `subfolder-${i}-1`,
-          name: `Subfolder ${i}.1`,
-          dateModified: "Oct 25, 2024",
-          createdDate: "Jan 2, 2024",
-          children: [],
-          items: Array.from({ length: 5 }).map((_, j) => ({
-            id: `item-${i}-${j}`,
-            name: `Game Clip ${i}-${j}`,
-            type: "video",
-            dateModified: "Oct 26, 2024",
-            createdDate: "Jan 3, 2024",
-            duration: "00:45",
-            size: "120 MB",
-            hasData: j % 2 === 0,
-            itemCount: 1,
-            angles: 2,
-            comments: 5,
-            thumbnailUrl: "/football-field.png",
-          })),
+          id: `${yearId}-offseason`,
+          name: "Offseason Studies",
+          items: generateLeafItems(year, `${yearId}-offseason`),
+        },
+        {
+          id: `${yearId}-minicamp`,
+          name: "Mini-Camp OTA",
+          items: generateLeafItems(year, `${yearId}-minicamp`),
+        },
+        {
+          id: `${yearId}-training-camp`,
+          name: "Training Camp",
+          items: generateLeafItems(year, `${yearId}-training-camp`),
+        },
+        {
+          id: `${yearId}-self-scout`,
+          name: "Self Scout",
+          items: generateLeafItems(year, `${yearId}-self-scout`),
         },
       ],
     })
   }
-  return folders
+
+  return yearFolders
+}
+
+function createTeamStructure(teamName: string, teamNickname: string): FolderData {
+  const years: FolderData[] = []
+  const teamId = teamName.toLowerCase().replace(/\s+/g, "-")
+
+  // Create year folders from 2023-2025
+  for (let year = 2023; year <= 2025; year++) {
+    const yearId = `${teamId}-${year}`
+    years.push({
+      id: yearId,
+      name: `${year} ${teamNickname}`,
+      dateModified: `Dec 14, ${year}`,
+      children: [
+        { name: "Offense Share", items: generateLeafItems(year, `${yearId}-off`) },
+        { name: "Defense Share", items: generateLeafItems(year, `${yearId}-def`) },
+        { name: "Special Teams Share", items: generateLeafItems(year, `${yearId}-st`) },
+      ].map((sub, i) => ({
+        id: `${yearId}-sub-${i}`,
+        name: sub.name,
+        dateModified: `Dec 14, ${year}`,
+        items: sub.items,
+      })),
+    })
+  }
+
+  return {
+    id: teamId,
+    name: teamName,
+    dateModified: "Dec 14, 2024",
+    children: years,
+  }
+}
+
+function createCollegeScoutingStructure(yearRange: string): FolderData[] {
+  const parentId = `scouting-${yearRange}`
+  const year = Number.parseInt(yearRange.split("-")[1])
+
+  return [
+    { name: "Masters", items: true },
+    { name: "Masters Working", items: true },
+    { name: "College Games", children: [{ name: "Division I" }, { name: "Division II" }] },
+    { name: "All Star Games", children: [{ name: "Senior Bowl" }, { name: "Shrine Bowl" }] },
+    { name: "Combine", items: true },
+    { name: "Pro Days", items: true },
+  ].map((f, i) => {
+    const id = `${parentId}-${i}`
+    return {
+      id,
+      name: f.name,
+      dateModified: `Feb 8, ${year}`,
+      items: f.items ? generateLeafItems(year, id) : undefined,
+      children: f.children
+        ? f.children.map((c, j) => ({
+            id: `${id}-child-${j}`,
+            name: c.name,
+            dateModified: `Feb 8, ${year}`,
+            items: generateLeafItems(year, `${id}-child-${j}`),
+          }))
+        : undefined,
+    }
+  })
+}
+
+const generateRamsLibrary = (): FolderData[] => {
+  return [
+    {
+      id: "self-scout",
+      name: "Self Scout",
+      dateModified: "Dec 15, 2024",
+      createdDate: "Sep 1, 2010",
+      children: createSelfScoutYearFolders(),
+    },
+    {
+      id: "opponent-scout",
+      name: "Opponent Scout",
+      dateModified: "Dec 14, 2024",
+      children: [
+        createTeamStructure("Arizona Cardinals", "Cardinals"),
+        createTeamStructure("San Francisco 49ers", "49ers"),
+        createTeamStructure("Seattle Seahawks", "Seahawks"),
+        createTeamStructure("Dallas Cowboys", "Cowboys"),
+        createTeamStructure("Green Bay Packers", "Packers"),
+      ],
+    },
+    {
+      id: "scouting",
+      name: "Scouting",
+      dateModified: "Dec 13, 2024",
+      children: [
+        {
+          id: "scouting-2024-2025",
+          name: "2024-2025",
+          dateModified: "May 15, 2025",
+          children: createCollegeScoutingStructure("2024-2025"),
+        },
+        {
+          id: "scouting-2025-2026",
+          name: "2025-2026",
+          dateModified: "May 15, 2026",
+          children: createCollegeScoutingStructure("2025-2026"),
+        },
+      ],
+    },
+    {
+      id: "practice",
+      name: "Practice",
+      dateModified: "Dec 11, 2024",
+      items: generateLeafItems(2024, "practice"),
+    },
+    {
+      id: "special-projects",
+      name: "Special Projects",
+      dateModified: "Dec 8, 2024",
+      items: generateLeafItems(2024, "special-projects"),
+    },
+    {
+      id: "analytics",
+      name: "Performance Analytics",
+      dateModified: "Dec 6, 2024",
+      items: generateLeafItems(2024, "analytics"),
+    },
+  ]
 }
 
 interface LibraryContextType {
@@ -116,7 +277,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
 
-  const [folders, setFolders] = useState<FolderData[]>(generateMockFolders())
+  const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())

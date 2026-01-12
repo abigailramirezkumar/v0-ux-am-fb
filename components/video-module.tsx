@@ -31,7 +31,13 @@ export function VideoModule() {
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden group rounded-xl shadow-sm">
       {videoUrl ? (
         <>
-          <video ref={videoRef} src={videoUrl} className="group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full border-none" controls playsInline />
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            className="h-full w-full object-contain border-none"
+            controls
+            playsInline
+          />
           {/* Play Overlay Info */}
           <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none">
             {currentPlay ? `Play #${currentPlay.playNumber} | Q${currentPlay.quarter}` : "Full Video"}

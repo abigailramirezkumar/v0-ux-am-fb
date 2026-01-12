@@ -10,13 +10,16 @@ import { cn } from "@/lib/utils"
 export function GridModule() {
   const { plays, setPlays, seekToPlay, currentPlay } = useWatchContext()
 
-  // Parse data on mount
   useEffect(() => {
     if (plays.length === 0) {
       const parsed = parseXchange(MOCK_XCHANGE_DATA)
       setPlays(parsed)
+      // Auto-select the first play to load and start video
+      if (parsed.length > 0) {
+        seekToPlay(parsed[0])
+      }
     }
-  }, [plays.length, setPlays])
+  }, [plays.length, setPlays, seekToPlay])
 
   return (
     <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-2 border-none">

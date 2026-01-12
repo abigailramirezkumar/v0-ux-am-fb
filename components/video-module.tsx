@@ -30,24 +30,53 @@ export function VideoModule() {
   const getEmbedUrl = () => {
     if (!videoUrl) return ""
 
+    // If it's already an embed URL, append params
     const url = videoUrl
     const separator = url.includes("?") ? "&" : "?"
 
     // Autoplay + Start time
     const startTime = currentPlay?.startTime || 0
-    return `${url}${separator}autoplay=1&start=${startTime}&controls=1&rel=0&modestbranding=1`
+
+    // Params explanation:
+    // autoplay=1: Start playing immediately
+    // start={time}: Seek to specific second
+    // controls=0: Hide bottom player controls (playbar, volume, etc)
+    // mute=1: Start muted (required for many browsers to allow autoplay)
+    // modestbranding=1: Remove YouTube logo from control bar
+    // rel=0: Show related videos from same channel only (or none)
+    // showinfo=0: Deprecated but sometimes hides title
+    // iv_load_policy=3: Hide annotations
+    // fs=0: Disable fullscreen button
+    // disablekb=1: Disable keyboard shortcuts to prevent interfering with app
+
+    const params = [
+      "autoplay=1",
+      `start=${startTime}`,
+      "controls=0",
+      "mute=1",
+      "modestbranding=1",
+      "rel=0",
+      "showinfo=0",
+      "iv_load_policy=3",
+      "fs=0",
+      "disablekb=1",
+    ].join("&")
+
+    return `${url}${separator}${params}`
   }
 
   return (
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden group rounded-xl shadow-sm">
       {videoUrl ? (
-        <iframe
-          key={currentPlay?.id} // Force re-render on play change to ensure seek works reliably
-          src={getEmbedUrl()}
-          className="h-full w-full border-none"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
+        <div className="relative w-full h-full">
+          <iframe
+            key={currentPlay?.id} // Force re-render on play change to ensure seek works reliably
+            src={getEmbedUrl()}
+            className="h-full w-full border-none pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
       ) : (
         <div className="h-full w-full flex flex-col items-center justify-center gap-6 p-8 bg-zinc-950 text-white">
           <div className="text-center space-y-2">
@@ -69,7 +98,7 @@ export function VideoModule() {
       )}
 
       {currentPlay && (
-        <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none backdrop-blur-sm">
+        <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none backdrop-blur-sm z-10">
           Play #{currentPlay.playNumber} | Q{currentPlay.quarter} | {currentPlay.game}
         </div>
       )}

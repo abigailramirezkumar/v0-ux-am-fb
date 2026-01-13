@@ -65,6 +65,8 @@ export function LibraryView() {
     breadcrumbs,
     setBreadcrumbs,
     setRenamingId,
+    viewMode,
+    scheduleFolders,
   } = useLibraryContext()
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -592,12 +594,22 @@ export function LibraryView() {
     return items
   }
 
+  const activeData = useMemo(() => {
+    if (viewMode === "schedule") {
+      return scheduleFolders
+    }
+    return sortedFolders
+  }, [viewMode, scheduleFolders, sortedFolders])
+
   let visibleFlatList: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
 
-  if (currentFolderId === null) {
-    visibleFlatList = getFlattenedVisibleItems(sortedFolders, 0)
+  if (viewMode === "schedule") {
+    // In schedule view, always show from root
+    visibleFlatList = getFlattenedVisibleItems(activeData, 0)
+  } else if (currentFolderId === null) {
+    visibleFlatList = getFlattenedVisibleItems(activeData, 0)
   } else {
-    const currentFolderData = sortedFolders.find((f) => f.id === currentFolderId)
+    const currentFolderData = activeData.find((f) => f.id === currentFolderId)
     if (currentFolderData) {
       if (currentFolderData.children) {
         visibleFlatList.push(...getFlattenedVisibleItems(currentFolderData.children, 0))

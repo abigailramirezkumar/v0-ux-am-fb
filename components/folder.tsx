@@ -13,7 +13,14 @@ import { useState, useEffect } from "react"
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
-import { FolderIcon, FolderFilledIcon, ChevronRightIcon, ChevronDownIcon } from "@/components/icon"
+import {
+  FolderIcon,
+  FolderFilledIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+  CalendarIcon,
+  UserIcon,
+} from "@/components/icon"
 import { LibraryItem, type LibraryItemData } from "@/components/library-item"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/input"
@@ -35,18 +42,9 @@ export interface FolderData {
   children?: FolderData[]
   items?: LibraryItemData[]
   color?: string
+  icon?: "calendar" | "user" | "folder"
+  isSystemGroup?: boolean
 }
-
-const TAG_COLORS = [
-  "#C91A1A", // Red
-  "#FF9000", // Orange
-  "#E3C000", // Yellow
-  "#55A734", // Green
-  "#00C6D4", // Cyan
-  "#2D83C9", // Blue
-  "#9B29E5", // Purple
-  "#FF4CA2", // Pink
-]
 
 interface FolderProps {
   folder: FolderData
@@ -210,6 +208,31 @@ export function Folder({
     }
   }
 
+  const getFolderIcon = () => {
+    const iconClass = cn(isSelected ? "text-white" : !folder.color && "text-foreground")
+    const iconStyle = !isSelected && folder.color ? { color: folder.color } : undefined
+
+    if (folder.icon === "calendar") {
+      return <CalendarIcon size={20} className={iconClass} style={iconStyle} />
+    }
+    if (folder.icon === "user") {
+      return <UserIcon size={20} className={iconClass} style={iconStyle} />
+    }
+
+    if (isHovered && hasChildren) {
+      return isExpanded ? (
+        <ChevronDownIcon size={20} className={iconClass} style={iconStyle} />
+      ) : (
+        <ChevronRightIcon size={20} className={iconClass} style={iconStyle} />
+      )
+    }
+    return isExpanded ? (
+      <FolderFilledIcon size={20} className={iconClass} style={iconStyle} />
+    ) : (
+      <FolderIcon size={20} className={iconClass} style={iconStyle} />
+    )
+  }
+
   const renderCell = (columnId: string) => {
     switch (columnId) {
       case "name":
@@ -219,33 +242,16 @@ export function Folder({
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
             <div className="flex-shrink-0 w-6">
-              {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+              {!isImported && !folder.isSystemGroup && (
+                <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />
+              )}
             </div>
 
             <div
               className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0"
               style={!isSelected && folder.color ? { color: folder.color } : undefined}
             >
-              {isHovered && hasChildren ? (
-                isExpanded ? (
-                  <ChevronDownIcon
-                    size={20}
-                    className={cn(isSelected ? "text-white" : !folder.color && "text-foreground")}
-                  />
-                ) : (
-                  <ChevronRightIcon
-                    size={20}
-                    className={cn(isSelected ? "text-white" : !folder.color && "text-foreground")}
-                  />
-                )
-              ) : isExpanded ? (
-                <FolderFilledIcon
-                  size={20}
-                  className={cn(isSelected ? "text-white" : !folder.color && "text-foreground")}
-                />
-              ) : (
-                <FolderIcon size={20} className={cn(isSelected ? "text-white" : !folder.color && "text-foreground")} />
-              )}
+              {getFolderIcon()}
             </div>
 
             <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
@@ -409,121 +415,123 @@ export function Folder({
     </div>
   )
 
+  const contextMenuContent = !folder.isSystemGroup ? (
+    <ContextMenuContent>
+      <ContextMenuLabel>Tags</ContextMenuLabel>
+      <ContextMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          onCreateSubfolder?.(folder.id)
+        }}
+      >
+        New Folder
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          handleRenameStart()
+        }}
+      >
+        Rename Folder
+      </ContextMenuItem>
+
+      {folder.children && folder.children.length > 0 && (
+        <ContextMenuItem
+          onSelect={(e) => {
+            e.preventDefault()
+            onReorderChildren?.(folder.id)
+          }}
+        >
+          Set Folder Order
+        </ContextMenuItem>
+      )}
+
+      <ContextMenuSeparator />
+
+      <ContextMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          copyFolder(folder.id, "full")
+        }}
+      >
+        Copy Folder and Contents
+      </ContextMenuItem>
+
+      <ContextMenuItem
+        disabled={!clipboard || clipboard.mode !== "full"}
+        onSelect={(e) => {
+          e.preventDefault()
+          pasteFolder(folder.id)
+        }}
+      >
+        Paste Folder and Contents
+      </ContextMenuItem>
+
+      <ContextMenuSeparator />
+
+      <ContextMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          copyFolder(folder.id, "structure")
+        }}
+      >
+        Copy Folder Structure
+      </ContextMenuItem>
+
+      <ContextMenuItem
+        disabled={!clipboard || clipboard.mode !== "structure"}
+        onSelect={(e) => {
+          e.preventDefault()
+          pasteFolder(folder.id)
+        }}
+      >
+        Paste Folder Structure
+      </ContextMenuItem>
+
+      <ContextMenuSeparator />
+      <ContextMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+        Tags
+      </ContextMenuLabel>
+      <div className="px-2 py-1 flex flex-wrap gap-2">
+        {["#C91A1A", "#FF9000", "#E3C000", "#55A734", "#00C6D4", "#2D83C9", "#9B29E5", "#FF4CA2"].map((color) => {
+          const isActive = folder.color === color
+          return (
+            <button
+              key={color}
+              onClick={(e) => {
+                e.stopPropagation()
+                setFolderColor(folder.id, isActive ? null : color)
+              }}
+              className={cn(
+                "w-5 h-5 rounded-full border border-transparent hover:scale-110 transition-transform",
+                isActive && "ring-2 ring-offset-2 ring-offset-background ring-black dark:ring-white border-white/20",
+              )}
+              style={{ backgroundColor: color }}
+              title={color}
+            />
+          )
+        })}
+      </div>
+
+      <ContextMenuSeparator />
+      <ContextMenuItem
+        className="text-[#e81c00] focus:text-[#e81c00]"
+        onSelect={(e) => {
+          e.preventDefault()
+          handleDelete()
+        }}
+      >
+        Delete Folder
+      </ContextMenuItem>
+    </ContextMenuContent>
+  ) : null
+
   return (
     <div>
       <ContextMenu>
         <ContextMenuTrigger asChild>{folderRow}</ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuLabel>Tags</ContextMenuLabel>
-          <ContextMenuItem
-            onSelect={(e) => {
-              e.preventDefault()
-              onCreateSubfolder?.(folder.id)
-            }}
-          >
-            New Folder
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onSelect={(e) => {
-              e.preventDefault()
-              handleRenameStart()
-            }}
-          >
-            Rename Folder
-          </ContextMenuItem>
-
-          {hasChildFolders && (
-            <ContextMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                onReorderChildren?.(folder.id)
-              }}
-            >
-              Set Folder Order
-            </ContextMenuItem>
-          )}
-
-          <ContextMenuSeparator />
-
-          <ContextMenuItem
-            onSelect={(e) => {
-              e.preventDefault()
-              copyFolder(folder.id, "full")
-            }}
-          >
-            Copy Folder and Contents
-          </ContextMenuItem>
-
-          <ContextMenuItem
-            disabled={!clipboard || clipboard.mode !== "full"}
-            onSelect={(e) => {
-              e.preventDefault()
-              pasteFolder(folder.id)
-            }}
-          >
-            Paste Folder and Contents
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-
-          <ContextMenuItem
-            onSelect={(e) => {
-              e.preventDefault()
-              copyFolder(folder.id, "structure")
-            }}
-          >
-            Copy Folder Structure
-          </ContextMenuItem>
-
-          <ContextMenuItem
-            disabled={!clipboard || clipboard.mode !== "structure"}
-            onSelect={(e) => {
-              e.preventDefault()
-              pasteFolder(folder.id)
-            }}
-          >
-            Paste Folder Structure
-          </ContextMenuItem>
-
-          <ContextMenuSeparator />
-          <ContextMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-            Tags
-          </ContextMenuLabel>
-          <div className="px-2 py-1 flex flex-wrap gap-2">
-            {TAG_COLORS.map((color) => {
-              const isActive = folder.color === color
-              return (
-                <button
-                  key={color}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    // Toggle: if clicking active color, remove it. Else set color.
-                    setFolderColor(folder.id, isActive ? null : color)
-                  }}
-                  className={cn(
-                    "w-5 h-5 rounded-full border border-transparent hover:scale-110 transition-transform",
-                    isActive &&
-                      "ring-2 ring-offset-2 ring-offset-background ring-black dark:ring-white border-white/20",
-                  )}
-                  style={{ backgroundColor: color }}
-                  title={color}
-                />
-              )
-            })}
-          </div>
-
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            className="text-[#e81c00] focus:text-[#e81c00]"
-            onSelect={(e) => {
-              e.preventDefault()
-              handleDelete()
-            }}
-          >
-            Delete Folder
-          </ContextMenuItem>
-        </ContextMenuContent>
+        {contextMenuContent}
       </ContextMenu>
 
       {!isFlattened && isExpanded && hasChildren && (

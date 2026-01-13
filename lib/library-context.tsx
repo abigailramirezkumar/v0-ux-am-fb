@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, useMemo } from "react"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
 
@@ -707,6 +707,8 @@ interface LibraryContextType {
   currentFolderId: string | null
   breadcrumbs: Array<{ id: string; name: string }>
   clipboard: { mode: "full" | "structure"; data: FolderData } | null
+  viewMode: "folder" | "schedule"
+  scheduleFolders: FolderData[]
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -725,6 +727,7 @@ interface LibraryContextType {
   copyFolder: (id: string, mode: "full" | "structure") => void
   pasteFolder: (targetId: string) => void
   setFolderColor: (folderId: string, color: string | null) => void
+  setViewMode: (mode: "folder" | "schedule") => void
 }
 
 const defaultColumns: Column[] = [
@@ -762,6 +765,129 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
+  const [viewMode, setViewMode] = useState<"folder" | "schedule">("folder")
+
+  const scheduleFolders = useMemo(() => {
+    // 1. Flatten all items first
+    const allItems: LibraryItemData[] = []
+    const traverse = (nodes: FolderData[]) => {
+      nodes.forEach((node) => {
+        if (node.items) allItems.push(...node.items)
+        if (node.children) traverse(node.children)
+      })
+    }
+    traverse(folders)
+
+    // 2. Group by Season (Year from createdDate) -> Opponent -> Category
+    const seasons: Record<string, Record<string, Record<string, LibraryItemData[]>>> = {}
+
+    allItems.forEach((item) => {
+      // Parse year from createdDate or name
+      let year = 2024
+      if (item.createdDate) {
+        const parsed = new Date(item.createdDate)
+        if (!isNaN(parsed.getTime())) {
+          year = parsed.getFullYear()
+        }
+      } else if (item.name) {
+        // Try parsing from name like "08/15/24 BUF @ MIA"
+        const match = item.name.match(/\/(\d{2})\s/)
+        if (match) {
+          const twoDigitYear = Number.parseInt(match[1], 10)
+          year = twoDigitYear > 50 ? 1900 + twoDigitYear : 2000 + twoDigitYear
+        }
+      }
+      const seasonKey = `${year}-${year + 1}`
+
+      // Attempt to parse opponent from name "BUF @ MIA" or "08/15/24 BUF @ MIA"
+      let opponent = "Unknown Opponent"
+      if (item.name.includes("@")) {
+        const parts = item.name.split("@")
+        // Get the away team (before @)
+        const awayPart = parts[0].trim()
+        const awayWords = awayPart.split(" ")
+        opponent = awayWords[awayWords.length - 1] || "Opponent"
+      } else if (item.name.toLowerCase().includes("vs")) {
+        const parts = item.name.toLowerCase().split("vs")
+        opponent = parts[1]?.trim().toUpperCase() || "Opponent"
+      }
+
+      // Map Type to Category based on item name/type
+      let category = "Game Footage"
+      if (item.name.toLowerCase().includes("practice")) {
+        category = "Practice"
+      } else if (item.type === "playlist") {
+        category = "Playlists"
+      }
+
+      if (!seasons[seasonKey]) seasons[seasonKey] = {}
+      if (!seasons[seasonKey][opponent]) {
+        seasons[seasonKey][opponent] = {
+          "Game Footage": [],
+          Practice: [],
+          "Opponent Scout": [],
+          Playlists: [],
+        }
+      }
+
+      seasons[seasonKey][opponent][category].push(item)
+    })
+
+    // 3. Build Folder Structure
+    const result: FolderData[] = Object.entries(seasons)
+      .sort()
+      .reverse()
+      .map(([season, opponents]) => ({
+        id: `season-${season}`,
+        name: season,
+        icon: "calendar",
+        isSystemGroup: true,
+        children: Object.entries(opponents)
+          .filter(([, categories]) => {
+            // Only include opponents that have at least one item
+            return Object.values(categories).some((items) => items.length > 0)
+          })
+          .map(([opponent, categories]) => ({
+            id: `opp-${season}-${opponent}`,
+            name: opponent,
+            icon: "user",
+            isSystemGroup: true,
+            children: Object.entries(categories)
+              .filter(([, items]) => items.length > 0)
+              .map(([cat, items]) => ({
+                id: `cat-${season}-${opponent}-${cat}`,
+                name: cat,
+                icon: "folder",
+                isSystemGroup: true,
+                items: items,
+              })),
+          })),
+      }))
+
+    // 4. Add "Other Items" section
+    result.push({
+      id: "other-items",
+      name: "Other Items",
+      icon: "folder",
+      isSystemGroup: true,
+      children: [
+        { id: "analysis", name: "End of Season Analysis", isSystemGroup: true, items: [] },
+        { id: "clinics", name: "Clinics", isSystemGroup: true, items: [] },
+        { id: "misc", name: "Misc", isSystemGroup: true, items: [] },
+      ],
+    })
+
+    // 5. Add "Mobile Uploads" section
+    result.push({
+      id: "mobile-uploads",
+      name: "Mobile Uploads",
+      icon: "folder",
+      isSystemGroup: true,
+      items: [],
+    })
+
+    return result
+  }, [folders])
 
   useEffect(() => {
     try {
@@ -973,6 +1099,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         currentFolderId,
         breadcrumbs,
         clipboard,
+        viewMode,
+        scheduleFolders,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -991,6 +1119,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         copyFolder,
         pasteFolder,
         setFolderColor,
+        setViewMode,
       }}
     >
       {children}

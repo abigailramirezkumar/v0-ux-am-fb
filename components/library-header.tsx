@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button"
 import { CatapultImportV1 } from "@/components/catapult-import-v1"
 import { useCatapultImportContext } from "@/lib/catapult-import-context"
+import { useLibraryContext } from "@/lib/library-context"
 import type { FolderData } from "@/components/folder"
 
 interface LibraryHeaderProps {
@@ -20,8 +21,8 @@ export function LibraryHeader({
   onImportComplete,
   showImportButton = true,
 }: LibraryHeaderProps) {
-  const [orientation, setOrientation] = useState("folder")
-  const [viewMode, setViewMode] = useState("grid")
+  const { viewMode, setViewMode } = useLibraryContext()
+  const [displayViewMode, setDisplayViewMode] = useState("grid")
   const [useDropdown, setUseDropdown] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -34,7 +35,20 @@ export function LibraryHeader({
     { value: "team", label: "By Team" },
   ]
 
+  const orientation = viewMode === "schedule" ? "schedule" : "folder"
   const currentOrientation = orientations.find((item) => item.value === orientation)
+
+  const handleOrientationChange = (value: string) => {
+    if (value === "schedule") {
+      setViewMode("schedule")
+    } else if (value === "folder") {
+      setViewMode("folder")
+    }
+    // "date" and "team" are placeholders for now, default to folder
+    if (value === "date" || value === "team") {
+      setViewMode("folder")
+    }
+  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -71,7 +85,7 @@ export function LibraryHeader({
               {orientations.map((item) => (
                 <DropdownMenuItem
                   key={item.value}
-                  onClick={() => setOrientation(item.value)}
+                  onClick={() => handleOrientationChange(item.value)}
                   className={orientation === item.value ? "bg-accent" : ""}
                 >
                   {item.label}
@@ -84,7 +98,7 @@ export function LibraryHeader({
             {orientations.map((item) => (
               <button
                 key={item.value}
-                onClick={() => setOrientation(item.value)}
+                onClick={() => handleOrientationChange(item.value)}
                 className={`rounded-full transition-colors text-sm px-4 font-semibold whitespace-nowrap py-1.5 ${
                   orientation === item.value
                     ? "bg-[#1a1a1a] dark:bg-[#343434] text-white dark:text-white"
@@ -110,7 +124,11 @@ export function LibraryHeader({
             </div>
           )}
 
-          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
+          <ToggleGroup
+            type="single"
+            value={displayViewMode}
+            onValueChange={(value) => value && setDisplayViewMode(value)}
+          >
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <Icon name="viewGrid" className="w-5 h-5" />
             </ToggleGroupItem>

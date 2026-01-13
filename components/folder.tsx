@@ -31,6 +31,14 @@ import {
   ContextMenuSeparator,
   ContextMenuLabel,
 } from "@/components/ui/context-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 
@@ -350,10 +358,121 @@ export function Folder({
     }
   }
 
+  const renderDropdownMenuItems = () => (
+    <>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          onCreateSubfolder?.(folder.id)
+        }}
+      >
+        New Folder
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          handleRenameStart()
+        }}
+      >
+        Rename Folder
+      </DropdownMenuItem>
+
+      {folder.children && folder.children.length > 0 && (
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.stopPropagation()
+            onReorderChildren?.(folder.id)
+          }}
+        >
+          Set Folder Order
+        </DropdownMenuItem>
+      )}
+
+      <DropdownMenuSeparator />
+
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          copyFolder(folder.id, "full")
+        }}
+      >
+        Copy Folder and Contents
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        disabled={!clipboard || clipboard.mode !== "full"}
+        onClick={(e) => {
+          e.stopPropagation()
+          pasteFolder(folder.id)
+        }}
+      >
+        Paste Folder and Contents
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
+
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          copyFolder(folder.id, "structure")
+        }}
+      >
+        Copy Folder Structure
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        disabled={!clipboard || clipboard.mode !== "structure"}
+        onClick={(e) => {
+          e.stopPropagation()
+          pasteFolder(folder.id)
+        }}
+      >
+        Paste Folder Structure
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+        Tags
+      </DropdownMenuLabel>
+      <div className="px-2 py-1 flex flex-wrap gap-2">
+        {["#C91A1A", "#FF9000", "#E3C000", "#55A734", "#00C6D4", "#2D83C9", "#9B29E5", "#FF4CA2"].map((color) => {
+          const isActive = folder.color === color
+          return (
+            <button
+              key={color}
+              onClick={(e) => {
+                e.stopPropagation()
+                setFolderColor(folder.id, isActive ? null : color)
+              }}
+              className={cn(
+                "w-5 h-5 rounded-full border border-transparent hover:scale-110 transition-transform",
+                isActive && "ring-2 ring-offset-2 ring-offset-background ring-black dark:ring-white border-white/20",
+              )}
+              style={{ backgroundColor: color }}
+              title={color}
+            />
+          )
+        })}
+      </div>
+
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        className="text-[#e81c00] focus:text-[#e81c00]"
+        onClick={(e) => {
+          e.stopPropagation()
+          handleDelete()
+        }}
+      >
+        Delete Folder
+      </DropdownMenuItem>
+    </>
+  )
+
   const folderRow = (
     <div
       className={cn(
-        `flex items-center ${spacing.py} cursor-pointer transition-colors`,
+        `flex items-center ${spacing.py} cursor-pointer transition-colors relative`,
         isSelected && !isHovered && "bg-[#0273e3]",
         isSelected && isHovered && "bg-[#0273e3]",
         !isSelected && isHovered && "bg-muted",
@@ -361,7 +480,7 @@ export function Folder({
         !isSelected && !isHovered && !isAlternate && "bg-background",
         isDragOver && "bg-accent border border-primary/50",
       )}
-      style={{ minWidth: totalRowWidth }}
+      style={{ minWidth: "100%" }}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -371,7 +490,7 @@ export function Folder({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex items-center flex-shrink-0 pl-4">
+      <div className="flex items-center flex-1 min-w-0 pl-4">
         {columns.map((column, idx) =>
           column.visible ? (
             <div
@@ -388,31 +507,54 @@ export function Folder({
             </div>
           ) : null,
         )}
+      </div>
 
-        {/* Actions - fixed width */}
-        <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-          {isImported ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs bg-transparent"
-              onClick={(e) => {
-                e.stopPropagation()
-                onUpdateImported?.(folder.id, "folder")
-              }}
-            >
-              Update
-            </Button>
-          ) : (
-            isHovered && (
-              <div className="flex gap-1">
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-              </div>
-            )
-          )}
-        </div>
+      <div
+        className={cn(
+          "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 mr-0 transition-colors z-10",
+          isSelected ? "bg-[#0273e3]" : isHovered ? "bg-muted" : isAlternate ? "bg-muted/20" : "bg-background",
+          isDragOver && "bg-accent",
+        )}
+      >
+        {isImported ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs bg-transparent border-primary/30"
+            onClick={(e) => {
+              e.stopPropagation()
+              onUpdateImported?.(folder.id, "folder")
+            }}
+          >
+            Update
+          </Button>
+        ) : (
+          (isHovered || isSelected) &&
+          !folder.isSystemGroup && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "h-6 w-6 flex items-center justify-center rounded-md transition-colors",
+                    isSelected
+                      ? "hover:bg-white/20 text-white"
+                      : "bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground",
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex gap-0.5">
+                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {renderDropdownMenuItems()}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        )}
       </div>
     </div>
   )

@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/checkbox"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 
@@ -317,21 +318,21 @@ export function LibraryItem({
     <TooltipProvider>
       <div
         className={cn(
-          `flex items-center ${spacing.py} cursor-pointer transition-colors`,
+          `flex items-center ${spacing.py} cursor-pointer transition-colors relative`,
           isSelected && !isHovered && "bg-[#0273e3]",
           isSelected && isHovered && "bg-[#0273e3]",
           !isSelected && isHovered && "bg-muted",
           !isSelected && !isHovered && isAlternate && "bg-muted/20",
           !isSelected && !isHovered && !isAlternate && "bg-background",
         )}
-        style={{ minWidth: totalRowWidth }}
+        style={{ minWidth: "100%" }}
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         draggable
         onDragStart={handleDragStart}
       >
-        <div className="flex items-center flex-shrink-0 pl-4">
+        <div className="flex items-center flex-1 min-w-0 pl-4">
           {columns.map((column, idx) =>
             column.visible ? (
               <div
@@ -348,38 +349,59 @@ export function LibraryItem({
               </div>
             ) : null,
           )}
+        </div>
 
-          {/* Actions - fixed width */}
-          <div className="w-8 flex-shrink-0 flex items-center justify-center ml-3 mr-4">
-            {isImported ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onUpdateImported?.(item.id, "item")
-                }}
-              >
-                Update
-              </Button>
-            ) : (
-              isHovered && (
-                <button
-                  className="flex-shrink-0 p-1 hover:bg-muted/50 rounded"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  <div className="flex gap-1">
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                    <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-white" : "bg-foreground")} />
-                  </div>
-                </button>
-              )
-            )}
-          </div>
+        <div
+          className={cn(
+            "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 mr-0 transition-colors z-10",
+            isSelected ? "bg-[#0273e3]" : isHovered ? "bg-muted" : isAlternate ? "bg-muted/20" : "bg-background",
+          )}
+        >
+          {isImported ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={(e) => {
+                e.stopPropagation()
+                onUpdateImported?.(item.id, "item")
+              }}
+            >
+              Update
+            </Button>
+          ) : (
+            (isHovered || isSelected) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      "h-6 w-6 flex items-center justify-center rounded-md transition-colors",
+                      isSelected
+                        ? "hover:bg-white/20 text-white"
+                        : "bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground",
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex gap-0.5">
+                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpen?.(item.id)
+                    }}
+                  >
+                    Open
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          )}
         </div>
       </div>
     </TooltipProvider>

@@ -778,115 +778,118 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     }
     traverse(folders)
 
-    // 2. Group by Season (Year from createdDate) -> Opponent -> Category
-    const seasons: Record<string, Record<string, Record<string, LibraryItemData[]>>> = {}
+    // 2. Generate Seasons (last 3 years)
+    const seasons = [2025, 2024, 2023]
 
-    allItems.forEach((item) => {
-      // Parse year from createdDate or name
-      let year = 2024
-      if (item.createdDate) {
-        const parsed = new Date(item.createdDate)
-        if (!isNaN(parsed.getTime())) {
-          year = parsed.getFullYear()
+    // 3. Use a seeded shuffle for consistent ordering per session
+    const shuffleArray = <T,>(arr: T[], seed: number): T[] => {
+      const result = [...arr]
+      let m = result.length
+      while (m) {
+        const i = Math.floor(((seed = (seed * 9301 + 49297) % 233280) / 233280) * m--)
+        ;[result[m], result[i]] = [result[i], result[m]]
+      }
+      return result
+    }
+
+    const seasonFolders = seasons.map((year) => {
+      const seasonName = `${year}-${year + 1}`
+
+      // 4. Generate exactly 18 Opponents per season using shuffled TEAMS
+      const seasonOpponents = shuffleArray([...TEAMS], year).slice(0, 18)
+
+      const opponentFolders = seasonOpponents.map((team, index) => {
+        const weekNum = index + 1
+        const opponentName = `Week ${weekNum} vs ${team}`
+
+        // 5. Find items that match this Year AND Team
+        const relevantItems = allItems.filter((item) => {
+          // Check Year (match year in createdDate or name)
+          const yearStr = year.toString()
+          const shortYear = yearStr.slice(-2)
+          const itemYear =
+            item.createdDate?.includes(yearStr) ||
+            item.createdDate?.includes(`, ${year}`) ||
+            item.name.includes(`/${shortYear} `) ||
+            item.name.includes(`/${shortYear}`)
+
+          // Check Team Name (does item name contain the team abbreviation?)
+          const itemTeam = item.name.includes(team)
+
+          return itemYear && itemTeam
+        })
+
+        // 6. Create the 4 Mandatory Sub-folders (always present, even if empty)
+        const categories = [
+          { name: "Game Footage", typeMatch: "Game" },
+          { name: "Practice", typeMatch: "Practice" },
+          { name: "Opponent Scout", typeMatch: "Scout" },
+          { name: "Playlists", typeMatch: "Playlist" },
+        ]
+
+        const categoryFolders: FolderData[] = categories.map((cat) => {
+          // Filter items for this specific category
+          const catItems = relevantItems.filter((item) => {
+            if (cat.typeMatch === "Game") {
+              return !item.name.toLowerCase().includes("practice") && item.type !== "playlist"
+            }
+            if (cat.typeMatch === "Practice") {
+              return item.name.toLowerCase().includes("practice")
+            }
+            if (cat.typeMatch === "Scout") {
+              return item.type === "scout"
+            }
+            if (cat.typeMatch === "Playlist") {
+              return item.type === "playlist"
+            }
+            return false
+          })
+
+          return {
+            id: `cat-${seasonName}-${team}-${cat.name.replace(/\s+/g, "-").toLowerCase()}`,
+            name: cat.name,
+            icon: "folder" as const,
+            isSystemGroup: true,
+            items: catItems.slice(0, 10),
+            dateModified: `Sep ${10 + index}, ${year}`,
+          }
+        })
+
+        return {
+          id: `opp-${seasonName}-${team}`,
+          name: opponentName,
+          icon: "user" as const,
+          isSystemGroup: true,
+          children: categoryFolders,
+          dateModified: `Sep ${10 + index}, ${year}`,
         }
-      } else if (item.name) {
-        // Try parsing from name like "08/15/24 BUF @ MIA"
-        const match = item.name.match(/\/(\d{2})\s/)
-        if (match) {
-          const twoDigitYear = Number.parseInt(match[1], 10)
-          year = twoDigitYear > 50 ? 1900 + twoDigitYear : 2000 + twoDigitYear
-        }
-      }
-      const seasonKey = `${year}-${year + 1}`
+      })
 
-      // Attempt to parse opponent from name "BUF @ MIA" or "08/15/24 BUF @ MIA"
-      let opponent = "Unknown Opponent"
-      if (item.name.includes("@")) {
-        const parts = item.name.split("@")
-        // Get the away team (before @)
-        const awayPart = parts[0].trim()
-        const awayWords = awayPart.split(" ")
-        opponent = awayWords[awayWords.length - 1] || "Opponent"
-      } else if (item.name.toLowerCase().includes("vs")) {
-        const parts = item.name.toLowerCase().split("vs")
-        opponent = parts[1]?.trim().toUpperCase() || "Opponent"
+      return {
+        id: `season-${seasonName}`,
+        name: seasonName,
+        icon: "calendar" as const,
+        isSystemGroup: true,
+        children: opponentFolders,
+        dateModified: `Aug 01, ${year}`,
       }
-
-      // Map Type to Category based on item name/type
-      let category = "Game Footage"
-      if (item.name.toLowerCase().includes("practice")) {
-        category = "Practice"
-      } else if (item.type === "playlist") {
-        category = "Playlists"
-      }
-
-      if (!seasons[seasonKey]) seasons[seasonKey] = {}
-      if (!seasons[seasonKey][opponent]) {
-        seasons[seasonKey][opponent] = {
-          "Game Footage": [],
-          Practice: [],
-          "Opponent Scout": [],
-          Playlists: [],
-        }
-      }
-
-      seasons[seasonKey][opponent][category].push(item)
     })
 
-    // 3. Build Folder Structure
-    const result: FolderData[] = Object.entries(seasons)
-      .sort()
-      .reverse()
-      .map(([season, opponents]) => ({
-        id: `season-${season}`,
-        name: season,
-        icon: "calendar",
-        isSystemGroup: true,
-        children: Object.entries(opponents)
-          .filter(([, categories]) => {
-            // Only include opponents that have at least one item
-            return Object.values(categories).some((items) => items.length > 0)
-          })
-          .map(([opponent, categories]) => ({
-            id: `opp-${season}-${opponent}`,
-            name: opponent,
-            icon: "user",
-            isSystemGroup: true,
-            children: Object.entries(categories)
-              .filter(([, items]) => items.length > 0)
-              .map(([cat, items]) => ({
-                id: `cat-${season}-${opponent}-${cat}`,
-                name: cat,
-                icon: "folder",
-                isSystemGroup: true,
-                items: items,
-              })),
-          })),
-      }))
-
-    // 4. Add "Other Items" section
-    result.push({
+    // 7. Add "Other Items" Group at the end
+    const otherItemsFolder: FolderData = {
       id: "other-items",
       name: "Other Items",
-      icon: "folder",
+      icon: "folder" as const,
       isSystemGroup: true,
       children: [
-        { id: "analysis", name: "End of Season Analysis", isSystemGroup: true, items: [] },
-        { id: "clinics", name: "Clinics", isSystemGroup: true, items: [] },
-        { id: "misc", name: "Misc", isSystemGroup: true, items: [] },
+        { id: "end-season", name: "End of Season Analysis", icon: "folder" as const, isSystemGroup: true, items: [] },
+        { id: "clinics", name: "Clinics", icon: "folder" as const, isSystemGroup: true, items: [] },
+        { id: "misc", name: "Misc", icon: "folder" as const, isSystemGroup: true, items: [] },
+        { id: "mobile", name: "Mobile Uploads", icon: "folder" as const, isSystemGroup: true, items: [] },
       ],
-    })
+    }
 
-    // 5. Add "Mobile Uploads" section
-    result.push({
-      id: "mobile-uploads",
-      name: "Mobile Uploads",
-      icon: "folder",
-      isSystemGroup: true,
-      items: [],
-    })
-
-    return result
+    return [...seasonFolders, otherItemsFolder]
   }, [folders])
 
   useEffect(() => {

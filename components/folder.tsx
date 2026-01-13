@@ -20,7 +20,6 @@ import { Input } from "@/components/input"
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from "@/components/ui/context-menu"
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
-import { toast } from "@/components/ui/use-toast"
 
 export interface FolderData {
   id: string
@@ -419,11 +418,6 @@ export function Folder({
             onSelect={(e) => {
               e.preventDefault()
               copyFolder(folder.id, "full")
-              toast({
-                title: "Copied to Clipboard",
-                description: "Folder copied successfully.",
-                duration: 2000,
-              })
             }}
           >
             Copy Folder and Contents
@@ -434,11 +428,6 @@ export function Folder({
             onSelect={(e) => {
               e.preventDefault()
               pasteFolder(folder.id)
-              toast({
-                title: "Pasted Successfully",
-                description: "Folder pasted into destination.",
-                duration: 2000,
-              })
             }}
           >
             Paste Folder and Contents
@@ -450,11 +439,6 @@ export function Folder({
             onSelect={(e) => {
               e.preventDefault()
               copyFolder(folder.id, "structure")
-              toast({
-                title: "Structure Copied",
-                description: "Folder structure copied successfully.",
-                duration: 2000,
-              })
             }}
           >
             Copy Folder Structure
@@ -465,11 +449,6 @@ export function Folder({
             onSelect={(e) => {
               e.preventDefault()
               pasteFolder(folder.id)
-              toast({
-                title: "Structure Pasted",
-                description: "Folder structure pasted into destination.",
-                duration: 2000,
-              })
             }}
           >
             Paste Folder Structure

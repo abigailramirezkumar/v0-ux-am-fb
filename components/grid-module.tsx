@@ -3,20 +3,88 @@
 import { useWatchContext } from "@/components/watch/watch-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { Icon } from "@/components/icon"
+import { Button } from "@/components/ui/button"
 
 export function GridModule() {
-  const { plays, seekToPlay, currentPlay } = useWatchContext()
+  const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
+    useWatchContext()
+
+  if (!activeDataset) {
+    return (
+      <div className="h-full w-full flex items-center justify-center text-muted-foreground bg-background rounded-xl border border-border">
+        No Data Selected
+      </div>
+    )
+  }
 
   return (
-    <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-2 border-none">
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between pt-2 pb-2">
-        <h3 className="font-semibold text-sm text-foreground">Play Data</h3>
-        <span className="text-xs text-muted-foreground">{plays.length} Events</span>
+    <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-0 border-none">
+      <div className="flex items-center gap-1 p-1 bg-muted/30 border-b border-border overflow-x-auto no-scrollbar">
+        {tabs.map((tab) => {
+          const isActive = tab.id === activeTabId
+          const isPlaying = tab.id === playingTabId
+
+          return (
+            <div
+              key={tab.id}
+              onClick={() => activateTab(tab.id)}
+              className={cn(
+                "group flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all min-w-[140px] max-w-[200px] border select-none relative",
+                isActive
+                  ? "bg-background text-foreground border-border shadow-sm"
+                  : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50",
+              )}
+            >
+              {/* Playing Indicator - Green dot */}
+              <div
+                className={cn(
+                  "w-2 h-2 rounded-full shrink-0 transition-colors",
+                  isPlaying ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-transparent",
+                )}
+              />
+
+              <span className="truncate flex-1">{tab.name}</span>
+
+              {/* Close Button (Visible on Hover or Active) */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={cn(
+                  "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted",
+                  isActive && "opacity-100",
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  closeTab(tab.id)
+                }}
+              >
+                <Icon name="x" className="w-3 h-3" />
+              </Button>
+
+              {/* Active Stripe Bottom */}
+              {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
+            </div>
+          )
+        })}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
+        <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
+          {activeDataset.name}
+          {activeTabId === playingTabId && (
+            <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
+              LIVE
+            </span>
+          )}
+        </h3>
+        <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+      </div>
+
+      {/* --- GRID TABLE --- */}
+      <div className="flex-1 overflow-auto bg-background">
         <Table>
-          <TableHeader className="sticky top-0 bg-background z-10">
+          <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
               <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 #
@@ -66,14 +134,15 @@ export function GridModule() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {plays.map((play) => {
-              const isActive = currentPlay?.id === play.id
+            {activeDataset.plays.map((play) => {
+              const isPlaying = currentPlay?.id === play.id && activeTabId === playingTabId
+
               return (
                 <TableRow
                   key={play.id}
                   className={cn(
                     "cursor-pointer transition-colors border-b border-border/50",
-                    isActive ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" : "hover:bg-muted/50",
+                    isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" : "hover:bg-muted/50",
                   )}
                   onClick={() => seekToPlay(play)}
                 >
@@ -90,7 +159,7 @@ export function GridModule() {
                     className={cn(
                       "text-center py-1.5",
                       play.gainLoss === "Gn" ? "text-green-600" : "text-red-500",
-                      isActive && "text-white",
+                      isPlaying && "text-white",
                     )}
                   >
                     {play.gainLoss}

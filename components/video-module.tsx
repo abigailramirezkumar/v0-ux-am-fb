@@ -28,7 +28,8 @@ declare global {
 }
 
 export function VideoModule() {
-  const { currentPlay, videoUrl, setVideoUrl } = useWatchContext()
+  const { currentPlay, playingDataset } = useWatchContext()
+  const videoUrl = playingDataset?.videoUrl || null
 
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)

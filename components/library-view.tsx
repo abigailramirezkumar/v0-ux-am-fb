@@ -369,11 +369,6 @@ export function LibraryView() {
       })
     }
     setFolders(renameInFolders(folders))
-    toast({
-      title: "Folder Renamed",
-      description: "Successfully renamed folder.",
-      duration: 2000,
-    })
   }
 
   const handleDeleteFolderStart = (folderId: string) => {
@@ -398,11 +393,6 @@ export function LibraryView() {
     setFolders(deleteFromFolders(folders))
     setDeleteModalOpen(false)
     setFolderToDelete(null)
-    toast({
-      title: "Folder Deleted",
-      description: "Folder and contents permanently deleted.",
-      duration: 2000,
-    })
   }
 
   const handleUpdateImported = (id: string, type: "folder" | "item") => {
@@ -720,7 +710,6 @@ export function LibraryView() {
           toast({
             title: "Moved Successfully",
             description: `Moved to ${targetFolder?.name || "folder"}`,
-            duration: 2000,
           })
           return newStructure
         } else {

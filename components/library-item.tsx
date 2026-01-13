@@ -110,6 +110,7 @@ export function LibraryItem({
   onOpen,
 }: LibraryItemProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isSelected = selectedItems.has(item.id)
   const isImported = importedItems.has(item.id)
 
@@ -314,6 +315,8 @@ export function LibraryItem({
     }
   }
 
+  const showActions = isHovered || isSelected || isMenuOpen
+
   return (
     <TooltipProvider>
       <div
@@ -353,8 +356,14 @@ export function LibraryItem({
 
         <div
           className={cn(
-            "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 mr-0 transition-colors z-10",
-            isSelected ? "bg-[#0273e3]" : isHovered ? "bg-muted" : isAlternate ? "bg-muted/20" : "bg-background",
+            "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 z-10",
+            isSelected || isMenuOpen
+              ? "bg-[#0273e3]"
+              : isHovered
+                ? "bg-muted"
+                : isAlternate
+                  ? "bg-muted/20"
+                  : "bg-background",
           )}
         >
           {isImported ? (
@@ -370,22 +379,33 @@ export function LibraryItem({
               Update
             </Button>
           ) : (
-            (isHovered || isSelected) && (
-              <DropdownMenu>
+            <div
+              className={cn(
+                "transition-opacity duration-200",
+                showActions ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+              )}
+            >
+              <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <button
                     className={cn(
                       "h-6 w-6 flex items-center justify-center rounded-md transition-colors",
-                      isSelected
+                      isSelected || isMenuOpen
                         ? "hover:bg-white/20 text-white"
                         : "bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground",
                     )}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex gap-0.5">
-                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
-                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
-                      <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
                     </div>
                   </button>
                 </DropdownMenuTrigger>
@@ -400,7 +420,7 @@ export function LibraryItem({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )
+            </div>
           )}
         </div>
       </div>

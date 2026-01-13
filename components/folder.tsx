@@ -107,6 +107,7 @@ export function Folder({
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameName, setRenameName] = useState(folder.name)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
@@ -242,6 +243,9 @@ export function Folder({
   }
 
   const showCheckbox = !isImported && (!folder.isSystemGroup || folder.icon === "folder")
+
+  const showActions = isHovered || isSelected || isMenuOpen
+  const showMenuButton = !isImported && !folder.isSystemGroup
 
   const renderCell = (columnId: string) => {
     switch (columnId) {
@@ -435,7 +439,7 @@ export function Folder({
       <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
         Tags
       </DropdownMenuLabel>
-      <div className="px-2 py-1 flex flex-wrap gap-2">
+      <div className="px-2 py-1 flex flex-wrap gap-1">
         {["#C91A1A", "#FF9000", "#E3C000", "#55A734", "#00C6D4", "#2D83C9", "#9B29E5", "#FF4CA2"].map((color) => {
           const isActive = folder.color === color
           return (
@@ -511,8 +515,14 @@ export function Folder({
 
       <div
         className={cn(
-          "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 mr-0 transition-colors z-10",
-          isSelected ? "bg-[#0273e3]" : isHovered ? "bg-muted" : isAlternate ? "bg-muted/20" : "bg-background",
+          "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 z-10",
+          isSelected || isMenuOpen
+            ? "bg-[#0273e3]"
+            : isHovered
+              ? "bg-muted"
+              : isAlternate
+                ? "bg-muted/20"
+                : "bg-background",
           isDragOver && "bg-accent",
         )}
       >
@@ -529,30 +539,42 @@ export function Folder({
             Update
           </Button>
         ) : (
-          (isHovered || isSelected) &&
-          !folder.isSystemGroup && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn(
-                    "h-6 w-6 flex items-center justify-center rounded-md transition-colors",
-                    isSelected
-                      ? "hover:bg-white/20 text-white"
-                      : "bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground",
-                  )}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex gap-0.5">
-                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
-                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
-                    <div className={cn("w-0.5 h-0.5 rounded-full", isSelected ? "bg-white" : "bg-current")} />
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {renderDropdownMenuItems()}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          showMenuButton && (
+            <div
+              className={cn(
+                "transition-opacity duration-200",
+                showActions ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+              )}
+            >
+              <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      "h-6 w-6 flex items-center justify-center rounded-md transition-colors",
+                      isSelected || isMenuOpen
+                        ? "hover:bg-white/20 text-white"
+                        : "bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground",
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex gap-0.5">
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
+                      <div
+                        className={cn("w-0.5 h-0.5 rounded-full", isSelected || isMenuOpen ? "bg-white" : "bg-current")}
+                      />
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {renderDropdownMenuItems()}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )
         )}
       </div>

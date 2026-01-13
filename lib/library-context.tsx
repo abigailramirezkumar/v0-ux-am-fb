@@ -724,6 +724,7 @@ interface LibraryContextType {
   setBreadcrumbs: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>
   copyFolder: (id: string, mode: "full" | "structure") => void
   pasteFolder: (targetId: string) => void
+  setFolderColor: (folderId: string, color: string | null) => void
 }
 
 const defaultColumns: Column[] = [
@@ -752,6 +753,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
+  const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
@@ -765,6 +767,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedColumnOrder = localStorage.getItem("library_column_order")
       const savedFolderOrder = localStorage.getItem("library_folder_order")
+      const savedFolderColors = localStorage.getItem("library_folder_colors")
 
       if (savedColumnOrder) {
         const orderIds = JSON.parse(savedColumnOrder) as string[]
@@ -786,6 +789,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       if (savedFolderOrder) {
         setFolderOrder(JSON.parse(savedFolderOrder))
       }
+
+      if (savedFolderColors) {
+        setFolderColors(JSON.parse(savedFolderColors))
+      }
     } catch (e) {
       console.error("Failed to load library settings", e)
     }
@@ -797,8 +804,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       const orderIds = columns.map((c) => c.id)
       localStorage.setItem("library_column_order", JSON.stringify(orderIds))
       localStorage.setItem("library_folder_order", JSON.stringify(folderOrder))
+      localStorage.setItem("library_folder_colors", JSON.stringify(folderColors))
     }
-  }, [columns, folderOrder, isLoaded])
+  }, [columns, folderOrder, folderColors, isLoaded])
 
   const setSort = (columnId: string) => {
     setSortState((prev) => {
@@ -932,6 +940,23 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setExpandedFolders((prev) => new Set(prev).add(targetId))
   }
 
+  const setFolderColor = (folderId: string, color: string | null) => {
+    setFolders((prevFolders) => {
+      const updateRecursive = (nodes: FolderData[]): FolderData[] => {
+        return nodes.map((node) => {
+          if (node.id === folderId) {
+            return { ...node, color: color === null ? undefined : color }
+          }
+          if (node.children) {
+            return { ...node, children: updateRecursive(node.children) }
+          }
+          return node
+        })
+      }
+      return updateRecursive(prevFolders)
+    })
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -965,6 +990,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setBreadcrumbs,
         copyFolder,
         pasteFolder,
+        setFolderColor,
       }}
     >
       {children}

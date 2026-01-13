@@ -573,6 +573,25 @@ export function LibraryView() {
     return target ? [target] : []
   }, [folders, folderSortOptions, currentFolderId, sort, folderOrder])
 
+  const sortedScheduleFolders = useMemo(() => {
+    // 1. Recursively sort children (Opponents, Categories, Items)
+    const recursiveSorted = scheduleFolders.map(sortFolderChildren)
+
+    const folderSortApplicable = ["name", "dateModified", "createdDate", "type", "itemCount"].includes(sort.columnId)
+
+    // 2. Sort the root level (Seasons) if a global sort is active
+    if (sort.columnId && sort.direction && folderSortApplicable) {
+      const withCounts = recursiveSorted.map((f) => ({
+        ...f,
+        itemCount: (f.children?.length || 0) + (f.items?.length || 0),
+      }))
+      return withCounts.sort((a, b) => compareItems(a, b, sort.columnId, sort.direction!))
+    }
+
+    // Default order (as defined in data generation)
+    return recursiveSorted
+  }, [scheduleFolders, sort, folderSortOptions, folderOrder])
+
   const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
     const items: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
 
@@ -596,10 +615,10 @@ export function LibraryView() {
 
   const activeData = useMemo(() => {
     if (viewMode === "schedule") {
-      return scheduleFolders
+      return sortedScheduleFolders
     }
     return sortedFolders
-  }, [viewMode, scheduleFolders, sortedFolders])
+  }, [viewMode, sortedScheduleFolders, sortedFolders])
 
   let visibleFlatList: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
 

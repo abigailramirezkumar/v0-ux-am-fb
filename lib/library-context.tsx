@@ -658,6 +658,7 @@ interface LibraryContextType {
   expandedFolders: Set<string>
   currentFolderId: string | null
   breadcrumbs: Array<{ id: string; name: string }>
+  clipboard: { mode: "full" | "structure"; data: FolderData } | null
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -673,6 +674,8 @@ interface LibraryContextType {
   setExpandedFolders: (ids: Set<string>) => void
   setCurrentFolderId: (id: string | null) => void
   setBreadcrumbs: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>
+  copyFolder: (id: string, mode: "full" | "structure") => void
+  pasteFolder: (targetId: string) => void
 }
 
 const defaultColumns: Column[] = [
@@ -700,6 +703,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false)
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
   const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
@@ -796,6 +800,90 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setActiveWatchItemId(itemId)
   }
 
+  const copyFolder = (id: string, mode: "full" | "structure") => {
+    // Recursive finder
+    const findFolder = (nodes: FolderData[]): FolderData | null => {
+      for (const node of nodes) {
+        if (node.id === id) return node
+        if (node.children) {
+          const found = findFolder(node.children)
+          if (found) return found
+        }
+      }
+      return null
+    }
+
+    const folderToCopy = findFolder(folders)
+    if (!folderToCopy) return
+
+    // Deep Clone
+    const clone = JSON.parse(JSON.stringify(folderToCopy)) as FolderData
+
+    // If Structure mode, strip items recursively
+    if (mode === "structure") {
+      const stripItems = (node: FolderData) => {
+        node.items = []
+        if (node.children) {
+          node.children.forEach(stripItems)
+        }
+      }
+      stripItems(clone)
+    }
+
+    setClipboard({ mode, data: clone })
+  }
+
+  const pasteFolder = (targetId: string) => {
+    if (!clipboard) return
+
+    // Recursive ID Regenerator to avoid duplicates
+    const regenerateIds = (node: FolderData): FolderData => {
+      const newNode = { ...node }
+      newNode.id = `folder-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+      if (newNode.items) {
+        newNode.items = newNode.items.map((item) => ({
+          ...item,
+          id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        }))
+      }
+
+      if (newNode.children) {
+        newNode.children = newNode.children.map(regenerateIds)
+      }
+      return newNode
+    }
+
+    const payload = regenerateIds(clipboard.data)
+    // Append "Copy" to top level name to distinguish
+    payload.name = `${clipboard.data.name} (Copy)`
+
+    // Insert into folders tree
+    setFolders((prev) => {
+      const newFolders = JSON.parse(JSON.stringify(prev)) as FolderData[]
+
+      const insertInto = (nodes: FolderData[]): boolean => {
+        for (const node of nodes) {
+          if (node.id === targetId) {
+            node.children = node.children || []
+            node.children.push(payload)
+            return true
+          }
+          if (node.children) {
+            if (insertInto(node.children)) return true
+          }
+        }
+        return false
+      }
+
+      insertInto(newFolders)
+      return newFolders
+    })
+
+    // Auto-expand the target folder
+    setExpandedFolders((prev) => new Set(prev).add(targetId))
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -811,6 +899,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         expandedFolders,
         currentFolderId,
         breadcrumbs,
+        clipboard,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -826,6 +915,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setExpandedFolders,
         setCurrentFolderId,
         setBreadcrumbs,
+        copyFolder,
+        pasteFolder,
       }}
     >
       {children}

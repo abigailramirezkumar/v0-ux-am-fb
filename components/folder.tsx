@@ -86,7 +86,7 @@ export function Folder({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
-  const { columns, renamingId, setRenamingId } = useLibraryContext()
+  const { columns, renamingId, setRenamingId, copyFolder, pasteFolder, clipboard } = useLibraryContext()
 
   useEffect(() => {
     if (renamingId === folder.id) {
@@ -411,6 +411,48 @@ export function Folder({
               Set Folder Order
             </ContextMenuItem>
           )}
+
+          <ContextMenuSeparator />
+
+          <ContextMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              copyFolder(folder.id, "full")
+            }}
+          >
+            Copy Folder and Contents
+          </ContextMenuItem>
+
+          <ContextMenuItem
+            disabled={!clipboard || clipboard.mode !== "full"}
+            onSelect={(e) => {
+              e.preventDefault()
+              pasteFolder(folder.id)
+            }}
+          >
+            Paste Folder and Contents
+          </ContextMenuItem>
+
+          <ContextMenuSeparator />
+
+          <ContextMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              copyFolder(folder.id, "structure")
+            }}
+          >
+            Copy Folder Structure
+          </ContextMenuItem>
+
+          <ContextMenuItem
+            disabled={!clipboard || clipboard.mode !== "structure"}
+            onSelect={(e) => {
+              e.preventDefault()
+              pasteFolder(folder.id)
+            }}
+          >
+            Paste Folder Structure
+          </ContextMenuItem>
 
           <ContextMenuSeparator />
           <ContextMenuItem

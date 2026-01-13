@@ -233,6 +233,8 @@ export function Folder({
     )
   }
 
+  const showCheckbox = !isImported && (!folder.isSystemGroup || folder.icon === "folder")
+
   const renderCell = (columnId: string) => {
     switch (columnId) {
       case "name":
@@ -241,11 +243,11 @@ export function Folder({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            <div className="flex-shrink-0 w-6">
-              {!isImported && !folder.isSystemGroup && (
+            {showCheckbox && (
+              <div className="flex-shrink-0 w-6">
                 <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />
-              )}
-            </div>
+              </div>
+            )}
 
             <div
               className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0"

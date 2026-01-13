@@ -117,7 +117,7 @@ export function LibraryItem({
   const { columns } = useLibraryContext()
 
   const isAlternate = index % 2 === 1
-  const indentMargin = level * spacing.indent
+  const indentMargin = level * spacing.indent + 12
   const isVideo = item.type === "video"
 
   const totalRowWidth =

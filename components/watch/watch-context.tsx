@@ -2,66 +2,104 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, type PlayData, type Dataset } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, type PlayData, type Dataset } from "@/lib/mock-datasets"
+import type { FolderData } from "@/components/folder"
 
 interface WatchContextType {
   // Tab State
   tabs: Dataset[]
-  activeTabId: string | null // What data we are looking at
-  playingTabId: string | null // What video is playing
+  activeTabId: string | null
+  playingTabId: string | null
 
   // Derived Data
   activeDataset: Dataset | null
   playingDataset: Dataset | null
   currentPlay: PlayData | null
 
+  videoUrl: string | null
+  frameRate: number
+
   // Actions
   activateTab: (tabId: string) => void
   closeTab: (tabId: string) => void
   playTab: (tabId: string) => void
   seekToPlay: (play: PlayData) => void
+  setVideoUrl: (url: string) => void
 }
 
 const WatchContext = createContext<WatchContextType | undefined>(undefined)
 
+function findItemNameById(folders: FolderData[], itemId: string): string | null {
+  for (const folder of folders) {
+    // Check items in this folder
+    if (folder.items) {
+      const foundItem = folder.items.find((i) => i.id === itemId)
+      if (foundItem) return foundItem.name
+    }
+    // Check children folders
+    if (folder.children) {
+      const foundInChild = findItemNameById(folder.children, itemId)
+      if (foundInChild) return foundInChild
+    }
+  }
+  return null
+}
+
 export function WatchProvider({ children }: { children: ReactNode }) {
-  const { activeWatchItemId } = useLibraryContext()
+  const { activeWatchItemId, folders } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [playingTabId, setPlayingTabId] = useState<string | null>(null)
   const [currentPlay, setCurrentPlay] = useState<PlayData | null>(null)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const frameRate = 30
+
+  const playRandomVideo = () => {
+    setVideoUrl((prev) => getRandomVideoUrl(prev))
+  }
 
   useEffect(() => {
     if (!activeWatchItemId) return
 
     setTabs((prevTabs) => {
-      const newDataset = getDatasetForItem(activeWatchItemId)
+      // 1. Check if already open
+      const existing = prevTabs.find((t) => t.id === activeWatchItemId)
 
-      // Check if already open by video URL
-      const isAlreadyOpen = prevTabs.some((t) => t.videoUrl === newDataset.videoUrl)
-
-      if (isAlreadyOpen) {
-        // Just switch to it
-        const target = prevTabs.find((t) => t.videoUrl === newDataset.videoUrl)
-        if (target) setActiveTabId(target.id)
+      if (existing) {
+        // Just switch the GRID to it. Do not change video.
+        setActiveTabId(existing.id)
         return prevTabs
       }
 
-      // Add to front with consistent ID
-      const datasetWithId = { ...newDataset, id: activeWatchItemId }
+      // 2. New Tab Logic
+      const newDataset = getDatasetForItem(activeWatchItemId)
 
+      const realName = findItemNameById(folders, activeWatchItemId)
+
+      const datasetWithId = {
+        ...newDataset,
+        id: activeWatchItemId,
+        name: realName || newDataset.name, // Use real name or fallback to mock name
+      }
+
+      // Make it active in Grid
       setActiveTabId(datasetWithId.id)
 
-      // If this is the first tab, play it too
-      if (prevTabs.length === 0) {
-        setPlayingTabId(datasetWithId.id)
-        if (datasetWithId.plays.length > 0) setCurrentPlay(datasetWithId.plays[0])
+      // Also make it the Playing Tab (Auto-play behavior for new items)
+      setPlayingTabId(datasetWithId.id)
+
+      // Pick a random video to start
+      playRandomVideo()
+
+      // Set first play as current
+      if (datasetWithId.plays.length > 0) {
+        setCurrentPlay(datasetWithId.plays[0])
       }
 
       return [datasetWithId, ...prevTabs]
     })
-  }, [activeWatchItemId])
+  }, [activeWatchItemId, folders]) // Added folders to dependency array
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)
@@ -69,28 +107,31 @@ export function WatchProvider({ children }: { children: ReactNode }) {
 
   const playTab = (tabId: string) => {
     setPlayingTabId(tabId)
+    playRandomVideo()
   }
 
   const closeTab = (tabId: string) => {
     setTabs((prev) => {
       const newTabs = prev.filter((t) => t.id !== tabId)
-      // If we closed the active tab, switch to the first one available
       if (activeTabId === tabId && newTabs.length > 0) {
         setActiveTabId(newTabs[0].id)
-      }
-      // If we closed the playing tab, switch playback to active or first available
-      if (playingTabId === tabId && newTabs.length > 0) {
-        setPlayingTabId(activeTabId !== tabId ? activeTabId : newTabs[0].id)
       }
       return newTabs
     })
   }
 
   const seekToPlay = (play: PlayData) => {
-    // When a user clicks a play, we MUST ensure the video player switches to this tab
+    console.log("Play selected:", play.playNumber)
+
+    // 1. Ensure the video player knows we are now playing from the Active Grid Tab
     if (activeTabId && activeTabId !== playingTabId) {
       setPlayingTabId(activeTabId)
     }
+
+    // 2. Pick a NEW random video for this clip
+    playRandomVideo()
+
+    // 3. Set the play data
     setCurrentPlay(play)
   }
 
@@ -106,10 +147,13 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         activeDataset,
         playingDataset,
         currentPlay,
+        videoUrl,
+        frameRate,
         activateTab,
         closeTab,
         playTab,
         seekToPlay,
+        setVideoUrl,
       }}
     >
       {children}

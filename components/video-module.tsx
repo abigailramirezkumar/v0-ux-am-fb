@@ -28,9 +28,7 @@ declare global {
 }
 
 export function VideoModule() {
-  const { currentPlay, playingDataset } = useWatchContext()
-  const videoUrl = playingDataset?.videoUrl || null
-
+  const { currentPlay, videoUrl } = useWatchContext()
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -40,7 +38,7 @@ export function VideoModule() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(100)
-  const [isMuted, setIsMuted] = useState(true) // Start muted for autoplay
+  const [isMuted, setIsMuted] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(false)
   const [isPlayerReady, setIsPlayerReady] = useState(false)
@@ -54,14 +52,16 @@ export function VideoModule() {
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
     }
 
-    // Initialize Player when API is ready
     const initPlayer = () => {
       const videoId = extractVideoId(videoUrl)
       if (!videoId) return
 
-      // If player exists, just load new video
+      // If player exists, load new video
       if (playerRef.current && playerRef.current.loadVideoById) {
-        playerRef.current.loadVideoById(videoId)
+        playerRef.current.loadVideoById({
+          videoId: videoId,
+          startSeconds: 0,
+        })
         return
       }
 
@@ -72,24 +72,22 @@ export function VideoModule() {
         videoId: videoId,
         playerVars: {
           autoplay: 1,
-          controls: 0, // Hide default controls
-          disablekb: 1, // Disable keyboard controls
-          fs: 0, // Hide fullscreen button
-          iv_load_policy: 3, // Hide annotations
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          iv_load_policy: 3,
           modestbranding: 1,
           rel: 0,
-          mute: 1, // Start muted
+          mute: 1,
         },
         events: {
           onReady: (event: any) => {
             setIsPlayerReady(true)
             setDuration(event.target.getDuration())
-            // Sync initial state
             if (event.target.isMuted()) setIsMuted(true)
             setVolume(event.target.getVolume())
           },
           onStateChange: (event: any) => {
-            // YT.PlayerState.PLAYING = 1
             setIsPlaying(event.data === 1)
           },
         },
@@ -102,7 +100,6 @@ export function VideoModule() {
       window.onYouTubeIframeAPIReady = initPlayer
     }
 
-    // Cleanup
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
@@ -114,7 +111,6 @@ export function VideoModule() {
         if (playerRef.current && playerRef.current.getCurrentTime) {
           const time = playerRef.current.getCurrentTime()
           setCurrentTime(time)
-          // Also update duration occasionally in case of loading
           if (duration === 0) setDuration(playerRef.current.getDuration())
         }
       }, 500)
@@ -125,15 +121,6 @@ export function VideoModule() {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
   }, [isPlaying, isPlayerReady, duration])
-
-  useEffect(() => {
-    if (currentPlay && playerRef.current && isPlayerReady) {
-      playerRef.current.seekTo(currentPlay.startTime, true)
-      playerRef.current.playVideo()
-    }
-  }, [currentPlay, isPlayerReady])
-
-  // --- Controls Handlers ---
 
   const togglePlay = useCallback(() => {
     if (!playerRef.current) return
@@ -197,14 +184,10 @@ export function VideoModule() {
       {videoUrl ? (
         <>
           <div className="relative flex-1 bg-black">
-            {/* We use a unique ID for the player target */}
             <div id="youtube-player" className="h-full w-full" />
-
-            {/* Invisible Overlay to capture clicks for Play/Pause */}
             <div className="absolute inset-0 bg-transparent" onClick={togglePlay} onDoubleClick={toggleFullscreen} />
           </div>
 
-          {/* Info Overlay */}
           <div
             className={cn(
               "absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none transition-opacity duration-300 backdrop-blur-sm z-10",
@@ -220,7 +203,6 @@ export function VideoModule() {
               showControls ? "opacity-100" : "opacity-0",
             )}
           >
-            {/* Seek Bar */}
             <Slider
               value={[currentTime]}
               min={0}

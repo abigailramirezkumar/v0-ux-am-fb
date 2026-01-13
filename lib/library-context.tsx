@@ -16,25 +16,72 @@ export interface Column {
   fixed?: boolean
 }
 
-// --- DATA GENERATORS (Ported from useAuth.ts) ---
+// --- DATA GENERATORS ---
 
-// Helper to generate random library items for leaf nodes so the UI isn't empty
-const generateLeafItems = (year: number, folderId: string, count = 2): LibraryItemData[] => {
+const TEAMS = [
+  "ARI",
+  "ATL",
+  "BAL",
+  "BUF",
+  "CAR",
+  "CHI",
+  "CIN",
+  "CLE",
+  "DAL",
+  "DEN",
+  "DET",
+  "GB",
+  "HOU",
+  "IND",
+  "JAX",
+  "KC",
+  "LV",
+  "LAC",
+  "LAR",
+  "MIA",
+  "MIN",
+  "NE",
+  "NO",
+  "NYG",
+  "NYJ",
+  "PHI",
+  "PIT",
+  "SF",
+  "SEA",
+  "TB",
+  "TEN",
+  "WAS",
+]
+
+const generateLeafItems = (year: number, folderId: string): LibraryItemData[] => {
+  // 1. Random count between 1 and 10
+  const count = Math.floor(Math.random() * 10) + 1
+
   const items: LibraryItemData[] = []
-
-  const baseMonth = 9
-  const baseDay = 8
+  const baseMonth = 8 // August (Preseason/Start)
 
   for (let i = 0; i < count; i++) {
-    const month = baseMonth + Math.floor(Math.random() * 4)
-    const day = baseDay + i * 7
-    const dateStr = `${String(month).padStart(2, "0")} ${String(day).padStart(2, "0")} ${year.toString().slice(-2)}`
+    const month = baseMonth + Math.floor(Math.random() * 5)
+    const day = Math.floor(Math.random() * 28) + 1
+    const dateStr = `${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}/${year.toString().slice(-2)}`
+
+    // 2. Generate Unique Name with home/away teams
+    const home = TEAMS[Math.floor(Math.random() * TEAMS.length)]
+    let away = TEAMS[Math.floor(Math.random() * TEAMS.length)]
+    while (away === home) {
+      away = TEAMS[Math.floor(Math.random() * TEAMS.length)]
+    }
+
+    const type = Math.random() > 0.7 ? "Practice" : "Game"
+    const name = type === "Game" ? `${dateStr} ${away} @ ${home}` : `${dateStr} ${home} Practice ${i + 1}`
+
+    // Randomize metadata
     const durationMin = 20 + Math.floor(Math.random() * 100)
     const sizeGB = (1 + Math.random() * 4).toFixed(1)
 
     items.push({
       id: `item-${folderId}-${i}`,
-      name: `${dateStr} Sample Game`,
+      name: name,
       type: "video",
       dateModified: `Oct ${10 + i}, ${year}`,
       createdDate: `Sep ${day}, ${year}`,
@@ -598,47 +645,48 @@ const generateRamsLibrary = (): FolderData[] => {
       dateModified: "Dec 13, 2024",
       children: createScoutingFolders(),
     },
+    // --- EMPTY ROOT FOLDERS (No items, just structure) ---
     {
       id: "visitor-share",
       name: "Visitor Share",
       dateModified: "Dec 12, 2024",
-      items: generateLeafItems(2024, "visitor-share"),
+      items: [], // Removed items
     },
     {
       id: "practice",
       name: "Practice",
       dateModified: "Dec 11, 2024",
-      items: generateLeafItems(2024, "practice"),
+      items: [], // Removed items
     },
     {
       id: "cge-network",
       name: "CGE Network",
       dateModified: "Dec 10, 2024",
-      items: generateLeafItems(2024, "cge"),
+      items: [], // Removed items
     },
     {
       id: "coaches-project",
       name: "Coaches Project",
       dateModified: "Dec 9, 2024",
-      items: generateLeafItems(2024, "coaches"),
+      items: [], // Removed items
     },
     {
       id: "special-projects",
       name: "Special Projects",
       dateModified: "Dec 8, 2024",
-      items: generateLeafItems(2024, "special-projects"),
+      items: [], // Removed items
     },
     {
       id: "offense-play-concepts",
       name: "99-05_OFFENSE Play Concepts",
       dateModified: "Dec 7, 2024",
-      items: generateLeafItems(2024, "play-concepts"),
+      items: [], // Removed items
     },
     {
       id: "analytics",
       name: "PERFORMANCE ANALYTICS",
       dateModified: "Dec 6, 2024",
-      items: generateLeafItems(2024, "analytics"),
+      items: [], // Removed items
     },
   ]
 }

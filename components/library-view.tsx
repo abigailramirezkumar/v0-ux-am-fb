@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
@@ -67,7 +67,50 @@ export function LibraryView() {
     setRenamingId,
     viewMode,
     scheduleFolders,
+    activeWatchItemId,
   } = useLibraryContext()
+
+  useEffect(() => {
+    if (activeWatchItemId) {
+      // 1. Select the item
+      setSelectedItems(new Set([activeWatchItemId]))
+
+      // 2. Find and expand parent folders
+      const parentIds = new Set<string>()
+
+      const findParents = (nodes: FolderData[], targetId: string, path: string[] = []): boolean => {
+        for (const node of nodes) {
+          // Check if item is in this folder
+          if (node.items?.some((item) => item.id === targetId)) {
+            // Add this folder and all ancestors to parents
+            path.forEach((id) => parentIds.add(id))
+            parentIds.add(node.id)
+            return true
+          }
+
+          // Recursive check for children folders
+          if (node.children) {
+            if (findParents(node.children, targetId, [...path, node.id])) {
+              return true
+            }
+          }
+        }
+        return false
+      }
+
+      // Search in the active data source (either flat folders or schedule view)
+      const sourceData = viewMode === "schedule" ? scheduleFolders : folders
+      findParents(sourceData, activeWatchItemId)
+
+      if (parentIds.size > 0) {
+        setExpandedFolders((prev) => {
+          const next = new Set(prev)
+          parentIds.forEach((id) => next.add(id))
+          return next
+        })
+      }
+    }
+  }, [activeWatchItemId, folders, scheduleFolders, viewMode, setSelectedItems, setExpandedFolders])
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)

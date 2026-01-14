@@ -1,13 +1,18 @@
 "use client"
 
-import type React from "react"
-
+import { useState, useEffect, useRef } from "react"
 import { useLibraryContext } from "@/lib/library-context"
+import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { useRouter } from "next/navigation"
 import type { FolderData } from "@/components/folder"
-import { useState, useEffect, useRef } from "react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 export function LibraryActionBar() {
   const {
@@ -27,20 +32,53 @@ export function LibraryActionBar() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isCompact, setIsCompact] = useState(false)
 
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIsCompact(entry.contentRect.width < 640)
+      }
+    })
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+    return () => observer.disconnect()
+  }, [])
+
   const numFolders = selectedFolders.size
   const numItems = selectedItems.size
   const totalSelected = numFolders + numItems
 
-  useEffect(() => {
-    const checkWidth = () => {
-      if (containerRef.current) {
-        setIsCompact(containerRef.current.offsetWidth < 600)
+  const calculateTotalHours = () => {
+    let totalMinutes = 0
+
+    const findItems = (nodes: FolderData[]) => {
+      for (const node of nodes) {
+        if (node.items) {
+          for (const item of node.items) {
+            if (selectedItems.has(item.id)) {
+              const parts = item.duration?.split(":").map(Number) || []
+              if (parts.length === 3) {
+                totalMinutes += parts[0] * 60 + parts[1] + parts[2] / 60
+              } else if (parts.length === 2) {
+                totalMinutes += parts[0] + parts[1] / 60
+              }
+            }
+          }
+        }
+        if (node.children) {
+          findItems(node.children)
+        }
       }
     }
-    checkWidth()
-    window.addEventListener("resize", checkWidth)
-    return () => window.removeEventListener("resize", checkWidth)
-  }, [])
+
+    findItems(folders)
+
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = Math.floor(totalMinutes % 60)
+    return `${hours}h ${minutes}m`
+  }
+
+  const totalDuration = numItems > 0 ? calculateTotalHours() : null
 
   if (totalSelected === 0) return null
 
@@ -93,152 +131,139 @@ export function LibraryActionBar() {
     handleClear()
   }
 
-  const handleMove = () => {
-    // Placeholder for move functionality
-  }
+  const isSingleItem = numFolders === 0 && numItems === 1
+  const isMultipleItems = numFolders === 0 && numItems > 1
+  const isSingleFolder = numFolders === 1 && numItems === 0
+  const isMultipleFolders = numFolders > 1 && numItems === 0
+  const isMixed = numFolders > 0 && numItems > 0
 
-  const estimatedHours = (numItems * 1.04).toFixed(1)
-
-  const ActionButton = ({
-    onClick,
-    variant,
-    children,
-  }: {
-    onClick?: () => void
-    variant: "primary" | "secondary" | "danger"
-    children: React.ReactNode
-  }) => {
-    const baseClasses = "px-4 py-1.5 rounded text-sm font-medium transition-colors"
-    const variantClasses = {
-      primary: "bg-[#3B82A0] hover:bg-[#3B82A0]/90 text-white",
-      secondary: "bg-[#4A5568] hover:bg-[#4A5568]/90 text-white",
-      danger: "bg-[#C53030] hover:bg-[#C53030]/90 text-white",
-    }
-    return (
-      <button onClick={onClick} className={`${baseClasses} ${variantClasses[variant]}`}>
-        {children}
-      </button>
-    )
-  }
-
-  const renderActions = () => {
-    const actions = []
-
-    // Play action (items only)
-    if (numFolders === 0 && numItems > 0) {
-      actions.push({
-        key: "play",
-        label: numItems === 1 ? "Play" : "Play",
-        icon: "play",
-        onClick: handlePlay,
-        variant: "primary" as const,
-        isPrimary: true,
-      })
-    }
-
-    // Open action (single folder only)
-    if (numFolders === 1 && numItems === 0) {
-      actions.push({
-        key: "open",
-        label: "Open",
-        onClick: handleOpenFolder,
-        variant: "primary" as const,
-        isPrimary: true,
-      })
-    }
-
-    // Move action
-    actions.push({
-      key: "move",
-      label: "Move",
-      onClick: handleMove,
-      variant: "secondary" as const,
-    })
-
-    // Copy action
-    if (numFolders > 0) {
-      actions.push({
-        key: "copy",
-        label: "Copy",
-        onClick: handleCopy,
-        variant: "secondary" as const,
-      })
-    }
-
-    // Delete action
-    actions.push({
-      key: "delete",
-      label: "Delete",
-      onClick: handleDelete,
-      variant: "danger" as const,
-    })
-
-    if (isCompact) {
-      const primaryAction = actions.find((a) => a.isPrimary)
-      const secondaryActions = actions.filter((a) => !a.isPrimary)
-
+  const renderPrimary = () => {
+    if (isSingleItem || isMultipleItems) {
       return (
-        <div className="flex items-center gap-2">
-          {primaryAction && (
-            <ActionButton onClick={primaryAction.onClick} variant={primaryAction.variant}>
-              {primaryAction.icon && <Icon name={primaryAction.icon} className="w-4 h-4 mr-1.5 inline" />}
-              {primaryAction.label}
-            </ActionButton>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 rounded hover:bg-gray-200 transition-colors">
-                <Icon name="more" className="w-5 h-5 text-gray-600" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[120px]">
-              {secondaryActions.map((action) => (
-                <DropdownMenuItem
-                  key={action.key}
-                  onClick={action.onClick}
-                  className={action.variant === "danger" ? "text-red-600 focus:text-red-600" : ""}
-                >
-                  {action.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <Button
+          size="sm"
+          onClick={handlePlay}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 border-0 font-semibold whitespace-nowrap"
+        >
+          <Icon name="play" className="w-4 h-4 mr-2" />
+          {isSingleItem ? "Play" : "Play all"}
+        </Button>
+      )
+    }
+    if (isSingleFolder) {
+      return (
+        <Button
+          size="sm"
+          onClick={handleOpenFolder}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 border-0 font-semibold"
+        >
+          Open
+        </Button>
+      )
+    }
+    return null
+  }
+
+  const renderSecondaryActions = (mode: "inline" | "dropdown") => {
+    const actions: { label: string; action: () => void }[] = []
+
+    // View Reports for items
+    if (isSingleItem || isMultipleItems) {
+      actions.push({ label: "View Reports", action: () => {} })
+    }
+
+    // Copy for folders or mixed
+    if (isSingleFolder || isMultipleFolders || isMixed) {
+      actions.push({ label: "Copy Folder and Contents", action: handleCopy })
+    }
+
+    // Move (always available)
+    actions.push({ label: "Move", action: () => {} })
+
+    if (mode === "dropdown") {
+      return (
+        <>
+          {actions.map((act, i) => (
+            <DropdownMenuItem key={i} onClick={act.action}>
+              {act.label}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+            Delete
+          </DropdownMenuItem>
+        </>
       )
     }
 
     return (
-      <div className="flex items-center gap-2">
-        {actions.map((action) => (
-          <ActionButton key={action.key} onClick={action.onClick} variant={action.variant}>
-            {action.icon && <Icon name={action.icon} className="w-4 h-4 mr-1.5 inline" />}
-            {action.label}
-          </ActionButton>
+      <>
+        {actions.map((act, i) => (
+          <Button
+            key={i}
+            size="sm"
+            variant="ghost"
+            onClick={act.action}
+            className="text-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            {act.label}
+          </Button>
         ))}
-      </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleDelete}
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          Delete
+        </Button>
+      </>
     )
   }
 
   return (
     <div
       ref={containerRef}
-      className="flex items-center justify-between w-full py-2 px-4 bg-[#F7FAFC] border border-gray-200 rounded-md"
+      className="flex items-center justify-between w-full py-2 bg-content-emphasis-background-default text-foreground px-4 rounded-none overflow-hidden"
     >
-      <div className="flex items-center gap-3">
-        <span className="font-semibold text-sm text-gray-900">
-          {totalSelected} Item{totalSelected !== 1 ? "s" : ""} Selected
-        </span>
-        {numItems > 0 && <span className="text-sm text-gray-500">({estimatedHours} hrs)</span>}
-        <button
-          onClick={handleClear}
-          className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <Icon name="close" className="w-4 h-4" />
-          <span>Clear</span>
+      {/* Left side: Close button and selection info */}
+      <div className="flex items-center gap-4 min-w-0 flex-1">
+        <button onClick={handleClear} className="hover:text-foreground/80 transition-colors flex-shrink-0">
+          <Icon name="close" className="w-5 h-5" />
         </button>
+        <div className="flex items-baseline gap-2 overflow-hidden">
+          <span className="font-medium text-sm truncate">{totalSelected} Selected</span>
+          {!isCompact && totalDuration && (
+            <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">({totalDuration})</span>
+          )}
+        </div>
       </div>
 
-      {renderActions()}
+      {/* Right side: Context-aware action buttons */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {renderPrimary()}
+
+        {isCompact ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-foreground hover:bg-accent hover:text-accent-foreground h-8 w-8"
+              >
+                <div className="flex flex-col gap-0.5 items-center justify-center">
+                  <div className="w-1 h-1 rounded-full bg-foreground" />
+                  <div className="w-1 h-1 rounded-full bg-foreground" />
+                  <div className="w-1 h-1 rounded-full bg-foreground" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">{renderSecondaryActions("dropdown")}</DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          renderSecondaryActions("inline")
+        )}
+      </div>
     </div>
   )
 }

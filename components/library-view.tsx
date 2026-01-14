@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
 import { LibraryTableHeader } from "@/components/library-table-header"
+import { LibraryActionBar } from "@/components/library-action-bar"
 import { Folder, type FolderData } from "@/components/folder"
 import { LibraryItem, type LibraryItemData } from "@/components/library-item"
 import { useCatapultImport } from "@/lib/catapult-import-context"
@@ -799,12 +800,18 @@ export function LibraryView() {
     <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none min-w-0">
       <div className="px-4 pt-1 shrink-0 border-b border-border">
         <LibraryHeader onImportComplete={handleImportComplete} />
-        <LibrarySubheader
-          breadcrumbs={breadcrumbs}
-          onNavigate={handleNavigate}
-          onCreateFolder={createFolder}
-          onReorderFolders={() => handleOpenReorder(null)}
-        />
+        {selectedFolders.size > 0 || selectedItems.size > 0 ? (
+          <div className="px-0 pb-3">
+            <LibraryActionBar />
+          </div>
+        ) : (
+          <LibrarySubheader
+            breadcrumbs={breadcrumbs}
+            onNavigate={handleNavigate}
+            onCreateFolder={createFolder}
+            onReorderFolders={() => handleOpenReorder(null)}
+          />
+        )}
       </div>
 
       <div className="flex-1 overflow-auto min-h-0">

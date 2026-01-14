@@ -46,7 +46,7 @@ function findItemNameById(folders: FolderData[], itemId: string): string | null 
 }
 
 export function WatchProvider({ children }: { children: ReactNode }) {
-  const { activeWatchItemId, folders } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -99,7 +99,46 @@ export function WatchProvider({ children }: { children: ReactNode }) {
 
       return [datasetWithId, ...prevTabs]
     })
-  }, [activeWatchItemId, folders]) // Added folders to dependency array
+  }, [activeWatchItemId, folders])
+
+  useEffect(() => {
+    if (!activeWatchItems || activeWatchItems.length === 0) return
+
+    setTabs((prevTabs) => {
+      const newTabs = [...prevTabs]
+      let firstNewId: string | null = null
+
+      activeWatchItems.forEach((itemId) => {
+        // Check if already exists
+        if (newTabs.some((t) => t.id === itemId)) return
+
+        const newDataset = getDatasetForItem(itemId)
+        const realName = findItemNameById(folders, itemId)
+
+        const datasetWithId = {
+          ...newDataset,
+          id: itemId,
+          name: realName || newDataset.name,
+        }
+
+        if (!firstNewId) firstNewId = itemId
+        newTabs.unshift(datasetWithId)
+      })
+
+      if (firstNewId) {
+        setActiveTabId(firstNewId)
+        setPlayingTabId(firstNewId)
+        playRandomVideo()
+        // Set current play for the first new tab
+        const firstDataset = newTabs.find((t) => t.id === firstNewId)
+        if (firstDataset && firstDataset.plays.length > 0) {
+          setCurrentPlay(firstDataset.plays[0])
+        }
+      }
+
+      return newTabs
+    })
+  }, [activeWatchItems, folders])
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)

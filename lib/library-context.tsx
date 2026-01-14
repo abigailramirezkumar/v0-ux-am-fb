@@ -698,6 +698,7 @@ interface LibraryContextType {
   sort: { columnId: string; direction: SortDirection }
   folderOrder: Record<string, string[]>
   activeWatchItemId: string | null
+  activeWatchItems: string[]
   renamingId: string | null
   folders: FolderData[]
   libraryView: "team" | "my"
@@ -716,6 +717,7 @@ interface LibraryContextType {
   resizeColumn: (columnId: string, width: number) => void
   moveColumn: (dragIndex: number, hoverIndex: number) => void
   setWatchItem: (itemId: string | null) => void
+  setWatchItems: (ids: string[]) => void
   setRenamingId: (id: string | null) => void
   setFolders: React.Dispatch<React.SetStateAction<FolderData[]>>
   setLibraryView: (view: "team" | "my") => void
@@ -754,6 +756,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderOrder, setFolderOrder] = useState<Record<string, string[]>>({})
   const [isLoaded, setIsLoaded] = useState(false)
   const [activeWatchItemId, setActiveWatchItemId] = useState<string | null>(null)
+  const [activeWatchItems, setActiveWatchItems] = useState<string[]>([])
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
@@ -985,6 +988,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setActiveWatchItemId(itemId)
   }
 
+  const setWatchItems = (ids: string[]) => {
+    setActiveWatchItems(ids)
+  }
+
   const copyFolder = (id: string, mode: "full" | "structure") => {
     // Recursive finder
     const findFolder = (nodes: FolderData[]): FolderData | null => {
@@ -1093,6 +1100,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         sort,
         folderOrder,
         activeWatchItemId,
+        activeWatchItems,
         renamingId,
         folders,
         libraryView,
@@ -1111,6 +1119,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         resizeColumn,
         moveColumn,
         setWatchItem,
+        setWatchItems,
         setRenamingId,
         setFolders,
         setLibraryView,

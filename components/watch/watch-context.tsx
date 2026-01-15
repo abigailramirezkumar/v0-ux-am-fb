@@ -25,6 +25,14 @@ interface WatchContextType {
   playTab: (tabId: string) => void
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
+
+  // Module Visibility
+  visibleModules: {
+    library: boolean
+    video: boolean
+    grid: boolean
+  }
+  toggleModule: (module: "library" | "video" | "grid") => void
 }
 
 const WatchContext = createContext<WatchContextType | undefined>(undefined)
@@ -54,6 +62,19 @@ export function WatchProvider({ children }: { children: ReactNode }) {
   const [currentPlay, setCurrentPlay] = useState<PlayData | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const frameRate = 30
+
+  const [visibleModules, setVisibleModules] = useState({
+    library: true,
+    video: true,
+    grid: true,
+  })
+
+  const toggleModule = (module: "library" | "video" | "grid") => {
+    setVisibleModules((prev) => ({
+      ...prev,
+      [module]: !prev[module],
+    }))
+  }
 
   const playRandomVideo = () => {
     setVideoUrl((prev) => getRandomVideoUrl(prev))
@@ -193,6 +214,8 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         playTab,
         seekToPlay,
         setVideoUrl,
+        visibleModules,
+        toggleModule,
       }}
     >
       {children}

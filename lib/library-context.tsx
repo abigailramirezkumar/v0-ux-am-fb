@@ -710,6 +710,8 @@ interface LibraryContextType {
   clipboard: { mode: "full" | "structure"; data: FolderData } | null
   viewMode: "folder" | "schedule"
   scheduleFolders: FolderData[]
+  isMoveModalOpen: boolean
+  itemsToMove: MoveItem[]
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -730,6 +732,15 @@ interface LibraryContextType {
   pasteFolder: (targetId: string) => void
   setFolderColor: (folderId: string, color: string | null) => void
   setViewMode: (mode: "folder" | "schedule") => void
+  openMoveModal: (items: MoveItem[]) => void
+  closeMoveModal: () => void
+  moveItemsToFolder: (targetFolderId: string) => void
+  createSubfolderInMove: (parentId: string, name: string) => string
+}
+
+export interface MoveItem {
+  id: string
+  type: "folder" | "item"
 }
 
 const defaultColumns: Column[] = [
@@ -769,6 +780,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
   const [viewMode, setViewMode] = useState<"folder" | "schedule">("folder")
+
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
+  const [itemsToMove, setItemsToMove] = useState<MoveItem[]>([])
 
   const scheduleFolders = useMemo(() => {
     // 1. Flatten all items first
@@ -1093,6 +1107,171 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     })
   }
 
+  const openMoveModal = (items: MoveItem[]) => {
+    setItemsToMove(items)
+    setIsMoveModalOpen(true)
+  }
+
+  const closeMoveModal = () => {
+    setIsMoveModalOpen(false)
+    setItemsToMove([])
+  }
+
+  const moveItemsToFolder = (targetFolderId: string) => {
+    // Deep clone folders for safe mutation
+    const newFolders = JSON.parse(JSON.stringify(folders)) as FolderData[]
+
+    // Check if trying to move a folder into itself or its descendant
+    const isDescendantOf = (parentId: string, targetId: string): boolean => {
+      const findInChildren = (folder: FolderData): boolean => {
+        if (folder.id === targetId) return true
+        if (folder.children) {
+          return folder.children.some(findInChildren)
+        }
+        return false
+      }
+
+      const findFolder = (nodes: FolderData[]): FolderData | null => {
+        for (const node of nodes) {
+          if (node.id === parentId) return node
+          if (node.children) {
+            const found = findFolder(node.children)
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      const parent = findFolder(newFolders)
+      if (!parent || !parent.children) return false
+      return parent.children.some(findInChildren)
+    }
+
+    // 1. Find and remove items from their old locations, collect them
+    const collectedData: (FolderData | LibraryItemData)[] = []
+
+    const removeRecursive = (nodes: FolderData[]) => {
+      for (const node of nodes) {
+        // Remove children folders that are being moved
+        if (node.children) {
+          const foldersToRemove = node.children.filter((child) =>
+            itemsToMove.some((m) => m.type === "folder" && m.id === child.id),
+          )
+          collectedData.push(...foldersToRemove)
+          node.children = node.children.filter(
+            (child) => !itemsToMove.some((m) => m.type === "folder" && m.id === child.id),
+          )
+          removeRecursive(node.children)
+        }
+        // Remove items that are being moved
+        if (node.items) {
+          const itemsToRemoveFromNode = node.items.filter((item) =>
+            itemsToMove.some((m) => m.type === "item" && m.id === item.id),
+          )
+          collectedData.push(...itemsToRemoveFromNode)
+          node.items = node.items.filter((item) => !itemsToMove.some((m) => m.type === "item" && m.id === item.id))
+        }
+      }
+    }
+
+    // Also check root level folders
+    const rootFoldersToMove = newFolders.filter((f) => itemsToMove.some((m) => m.type === "folder" && m.id === f.id))
+    collectedData.push(...rootFoldersToMove)
+    const filteredRoot = newFolders.filter((f) => !itemsToMove.some((m) => m.type === "folder" && m.id === f.id))
+
+    removeRecursive(filteredRoot)
+
+    // Validate: don't move folder into itself or descendant
+    for (const item of itemsToMove) {
+      if (item.type === "folder") {
+        if (item.id === targetFolderId || isDescendantOf(item.id, targetFolderId)) {
+          console.error("Cannot move folder into itself or its descendant")
+          return
+        }
+      }
+    }
+
+    // 2. Find target folder and add items
+    const addToTarget = (nodes: FolderData[]): boolean => {
+      for (const node of nodes) {
+        if (node.id === targetFolderId) {
+          collectedData.forEach((item) => {
+            if (
+              "children" in item ||
+              (item as FolderData).children !== undefined ||
+              !("type" in item) ||
+              (item as any).type === undefined
+            ) {
+              // It's a folder (has children property or no type property like LibraryItemData)
+              if (
+                !("type" in item) ||
+                typeof (item as any).type !== "string" ||
+                !["video", "pdf", "image", "audio", "document"].includes((item as any).type)
+              ) {
+                if (!node.children) node.children = []
+                node.children.push(item as FolderData)
+              } else {
+                // It's an item
+                if (!node.items) node.items = []
+                node.items.push(item as LibraryItemData)
+              }
+            } else {
+              // It's an item
+              if (!node.items) node.items = []
+              node.items.push(item as LibraryItemData)
+            }
+          })
+          return true
+        }
+        if (node.children && addToTarget(node.children)) return true
+      }
+      return false
+    }
+
+    addToTarget(filteredRoot)
+
+    setFolders(filteredRoot)
+    setIsMoveModalOpen(false)
+    setItemsToMove([])
+
+    // Clear selection
+    setSelectedFolders(new Set())
+    setSelectedItems(new Set())
+  }
+
+  const createSubfolderInMove = (parentId: string, name: string): string => {
+    const newFolderId = `folder-${Date.now()}`
+    const newFolder: FolderData = {
+      id: newFolderId,
+      name: name,
+      children: [],
+      items: [],
+      createdDate: new Date().toISOString(),
+      dateModified: new Date().toISOString(),
+    }
+
+    setFolders((prev) => {
+      const newFolders = JSON.parse(JSON.stringify(prev)) as FolderData[]
+
+      const addToParent = (nodes: FolderData[]): boolean => {
+        for (const node of nodes) {
+          if (node.id === parentId) {
+            if (!node.children) node.children = []
+            node.children.push(newFolder)
+            return true
+          }
+          if (node.children && addToParent(node.children)) return true
+        }
+        return false
+      }
+
+      addToParent(newFolders)
+      return newFolders
+    })
+
+    return newFolderId
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -1112,6 +1291,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         clipboard,
         viewMode,
         scheduleFolders,
+        isMoveModalOpen,
+        itemsToMove,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1132,6 +1313,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         pasteFolder,
         setFolderColor,
         setViewMode,
+        openMoveModal,
+        closeMoveModal,
+        moveItemsToFolder,
+        createSubfolderInMove,
       }}
     >
       {children}

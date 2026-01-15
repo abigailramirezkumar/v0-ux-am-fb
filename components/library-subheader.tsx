@@ -1,21 +1,7 @@
 "use client"
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
-import { useDensity } from "@/lib/density-context"
-import { useLibraryContext } from "@/lib/library-context"
 
 interface BreadcrumbItem {
   id: string
@@ -26,7 +12,7 @@ interface LibrarySubheaderProps {
   breadcrumbs: BreadcrumbItem[]
   onNavigate: (folderId: string | null) => void
   onCreateFolder: () => void
-  onReorderFolders: () => void // New prop for reorder modal
+  onReorderFolders?: () => void // Keep prop for compatibility but no longer used here
 }
 
 function LibraryIcon({ className }: { className?: string }) {
@@ -44,7 +30,7 @@ function LibraryIcon({ className }: { className?: string }) {
         fill="currentColor"
       />
       <path
-        d="M7 0.249999C7 0.111927 7.11193 -1.24349e-06 7.25 -1.26763e-06L7.75 -1.35505e-06C7.88807 -1.37919e-06 8 0.111927 8 0.249999L8 11.75C8 11.8881 7.88807 12 7.75 12L7.25 12C7.11193 12 7 11.8881 7 11.75L7 0.249999Z"
+        d="M7 0.249999C7 0.111927 7.11193 -1.24349e-06 7.25 -1.26763e-06L7.75 -1.35505e-06C7.88807 -1.37919e-06 8 0.111927 8 0.249999L8 11.75C8 11.8881 7.88807 12 7.75 12L7.25 12C7.11193 12 7 11.8881 7 11.664L7 0.249999Z"
         fill="currentColor"
       />
       <path
@@ -58,20 +44,6 @@ function LibraryIcon({ className }: { className?: string }) {
 }
 
 export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
-  const { density, setDensity } = useDensity()
-  const { columns, setColumns } = useLibraryContext()
-
-  const toggleColumn = (columnId: string) => {
-    setColumns(
-      columns.map((col) => {
-        if (col.id === columnId) {
-          return { ...col, visible: !col.visible }
-        }
-        return col
-      }),
-    )
-  }
-
   return (
     <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -112,58 +84,6 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
               <Icon name="folder" className="w-4 h-4 mr-2" />
               New Folder
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
-              <Icon name="settings" className="w-5 h-5 text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Show/Hide Columns</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {columns.map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    checked={column.visible}
-                    onCheckedChange={() => toggleColumn(column.id)}
-                    disabled={column.id === "name"}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    {column.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  value={density}
-                  onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
-                >
-                  <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                onReorderFolders()
-              }}
-            >
-              Set Folder Order
-            </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>More Settings...</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

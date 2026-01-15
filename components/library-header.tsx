@@ -3,25 +3,40 @@
 import { useState, useRef, useEffect } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Icon } from "@/components/icon"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu"
 import { CatapultImportV1 } from "@/components/catapult-import-v1"
 import { useCatapultImportContext } from "@/lib/catapult-import-context"
 import { useLibraryContext } from "@/lib/library-context"
+import { useDensity } from "@/lib/density-context"
 import type { FolderData } from "@/components/folder"
 
 interface LibraryHeaderProps {
   showStorageIndicator?: boolean
   onImportComplete?: (folders: FolderData[]) => void
   showImportButton?: boolean
+  onReorderFolders?: () => void
 }
 
 export function LibraryHeader({
   showStorageIndicator = false,
   onImportComplete,
   showImportButton = true,
+  onReorderFolders,
 }: LibraryHeaderProps) {
-  const { viewMode, setViewMode } = useLibraryContext()
+  const { viewMode, setViewMode, columns, setColumns } = useLibraryContext()
+  const { density, setDensity } = useDensity()
   const [displayViewMode, setDisplayViewMode] = useState("grid")
   const [useDropdown, setUseDropdown] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
@@ -48,6 +63,17 @@ export function LibraryHeader({
     if (value === "date" || value === "team") {
       setViewMode("folder")
     }
+  }
+
+  const toggleColumn = (columnId: string) => {
+    setColumns(
+      columns.map((col) => {
+        if (col.id === columnId) {
+          return { ...col, visible: !col.visible }
+        }
+        return col
+      }),
+    )
   }
 
   useEffect(() => {
@@ -137,7 +163,7 @@ export function LibraryHeader({
             </ToggleGroupItem>
           </ToggleGroup>
 
-          {showImportButton && activeVersion === "v1" && (
+          {/* {showImportButton && activeVersion === "v1" && (
             <Button
               onClick={() => setImportModalOpen(true)}
               variant="outline"
@@ -145,10 +171,65 @@ export function LibraryHeader({
             >
               Import
             </Button>
-          )}
+          )} */}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
+                <Icon name="settings" className="w-5 h-5 text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Show/Hide Columns</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {columns.map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.visible}
+                      onCheckedChange={() => toggleColumn(column.id)}
+                      disabled={column.id === "name"}
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {column.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={density}
+                    onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
+                  >
+                    <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {onReorderFolders && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    onReorderFolders()
+                  }}
+                >
+                  Set Folder Order
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled>More Settings...</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
+      {/* Keep Catapult Import modal functionality */}
       {showImportButton && activeVersion === "v1" && onImportComplete && (
         <CatapultImportV1
           open={importModalOpen}

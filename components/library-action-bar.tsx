@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useLibraryContext } from "@/lib/library-context"
+import { useLibraryContext, type MoveItem } from "@/lib/library-context"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { useRouter } from "next/navigation"
@@ -26,6 +26,7 @@ export function LibraryActionBar() {
     copyFolder,
     setFolders,
     folders,
+    openMoveModal,
   } = useLibraryContext()
 
   const router = useRouter()
@@ -131,6 +132,13 @@ export function LibraryActionBar() {
     handleClear()
   }
 
+  const handleMove = () => {
+    const items: MoveItem[] = []
+    selectedFolders.forEach((id) => items.push({ id, type: "folder" }))
+    selectedItems.forEach((id) => items.push({ id, type: "item" }))
+    openMoveModal(items)
+  }
+
   const isSingleItem = numFolders === 0 && numItems === 1
   const isMultipleItems = numFolders === 0 && numItems > 1
   const isSingleFolder = numFolders === 1 && numItems === 0
@@ -177,8 +185,7 @@ export function LibraryActionBar() {
       actions.push({ label: "Copy Folder and Contents", action: handleCopy })
     }
 
-    // Move (always available)
-    actions.push({ label: "Move", action: () => {} })
+    actions.push({ label: "Move", action: handleMove })
 
     if (mode === "dropdown") {
       return (

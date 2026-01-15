@@ -22,6 +22,7 @@ import { useDensity } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 import { FolderReorderModal } from "@/components/folder-reorder-modal"
 import { toast } from "@/components/ui/use-toast"
+import { MoveToModal } from "@/components/move-to-modal"
 
 const parseDuration = (str?: string) => {
   if (!str) return 0
@@ -799,7 +800,7 @@ export function LibraryView() {
   return (
     <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden border-none min-w-0">
       <div className="px-4 pt-1 shrink-0 border-b border-border">
-        <LibraryHeader onImportComplete={handleImportComplete} />
+        <LibraryHeader onImportComplete={handleImportComplete} onReorderFolders={() => handleOpenReorder(null)} />
         {selectedFolders.size > 0 || selectedItems.size > 0 ? (
           <div className="px-0 pb-2">
             <LibraryActionBar />
@@ -907,6 +908,8 @@ export function LibraryView() {
         folders={foldersForReorder}
         onSave={updateFolderOrder}
       />
+
+      <MoveToModal />
     </div>
   )
 }

@@ -129,7 +129,7 @@ export function LibraryItem({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
-  const { columns, openMoveModal } = useLibraryContext()
+  const { columns, openMoveModal, openPermissionsModal } = useLibraryContext()
 
   const isAlternate = index % 2 === 1
   const indentMargin = level * spacing.indent + 12
@@ -446,6 +446,14 @@ export function LibraryItem({
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation()
+                          openPermissionsModal(item.id)
+                        }}
+                      >
+                        Share...
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
                           openMoveModal([{ id: item.id, type: "item" }])
                         }}
                       >
@@ -462,6 +470,7 @@ export function LibraryItem({
       <ContextMenuContent>
         <ContextMenuItem onClick={() => onOpen?.(item.id)}>Open</ContextMenuItem>
         <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => openPermissionsModal(item.id)}>Share...</ContextMenuItem>
         <ContextMenuItem onClick={() => openMoveModal([{ id: item.id, type: "item" }])}>Move</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

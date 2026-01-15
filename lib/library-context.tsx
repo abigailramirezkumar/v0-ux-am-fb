@@ -712,6 +712,8 @@ interface LibraryContextType {
   scheduleFolders: FolderData[]
   isMoveModalOpen: boolean
   itemsToMove: MoveItem[]
+  isPermissionsModalOpen: boolean
+  itemForPermissions: string | null
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -736,6 +738,8 @@ interface LibraryContextType {
   closeMoveModal: () => void
   moveItemsToFolder: (targetFolderId: string) => void
   createSubfolderInMove: (parentId: string, name: string) => string
+  openPermissionsModal: (id: string) => void
+  closePermissionsModal: () => void
 }
 
 export interface MoveItem {
@@ -783,6 +787,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
   const [itemsToMove, setItemsToMove] = useState<MoveItem[]>([])
+
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
+  const [itemForPermissions, setItemForPermissions] = useState<string | null>(null)
 
   const scheduleFolders = useMemo(() => {
     // 1. Flatten all items first
@@ -1272,6 +1279,16 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     return newFolderId
   }
 
+  const openPermissionsModal = (id: string) => {
+    setItemForPermissions(id)
+    setIsPermissionsModalOpen(true)
+  }
+
+  const closePermissionsModal = () => {
+    setIsPermissionsModalOpen(false)
+    setItemForPermissions(null)
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -1293,6 +1310,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         scheduleFolders,
         isMoveModalOpen,
         itemsToMove,
+        isPermissionsModalOpen,
+        itemForPermissions,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1317,6 +1336,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         closeMoveModal,
         moveItemsToFolder,
         createSubfolderInMove,
+        openPermissionsModal,
+        closePermissionsModal,
       }}
     >
       {children}

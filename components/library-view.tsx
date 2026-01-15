@@ -23,6 +23,7 @@ import { useLibraryContext } from "@/lib/library-context"
 import { FolderReorderModal } from "@/components/folder-reorder-modal"
 import { toast } from "@/components/ui/use-toast"
 import { MoveToModal } from "@/components/move-to-modal"
+import { PermissionsModal } from "@/components/permissions-modal"
 
 const parseDuration = (str?: string) => {
   if (!str) return 0
@@ -910,6 +911,7 @@ export function LibraryView() {
       />
 
       <MoveToModal />
+      <PermissionsModal />
     </div>
   )
 }

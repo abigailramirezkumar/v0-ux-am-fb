@@ -13,7 +13,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
 import { CatapultImportV1 } from "@/components/catapult-import-v1"
@@ -221,9 +220,6 @@ export function LibraryHeader({
                   Set Folder Order
                 </DropdownMenuItem>
               )}
-
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>More Settings...</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

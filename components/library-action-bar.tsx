@@ -27,6 +27,7 @@ export function LibraryActionBar() {
     setFolders,
     folders,
     openMoveModal,
+    openPermissionsModal,
   } = useLibraryContext()
 
   const router = useRouter()
@@ -183,6 +184,12 @@ export function LibraryActionBar() {
     // Copy for folders or mixed
     if (isSingleFolder || isMultipleFolders || isMixed) {
       actions.push({ label: "Copy Folder and Contents", action: handleCopy })
+    }
+
+    // Share action for single selection
+    if (isSingleItem || isSingleFolder) {
+      const itemId = isSingleItem ? Array.from(selectedItems)[0] : Array.from(selectedFolders)[0]
+      actions.push({ label: "Share", action: () => openPermissionsModal(itemId) })
     }
 
     actions.push({ label: "Move", action: handleMove })

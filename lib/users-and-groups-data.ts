@@ -4,67 +4,96 @@ export interface User {
   email: string
   avatar?: string
   role?: string
+  type: "user"
 }
 
-export interface UserGroup {
+export interface Group {
   id: string
   name: string
-  memberIds: string[]
+  description: string
+  memberCount: number
+  type: "group" | "org"
 }
 
-export type PermissionLevel = "view" | "edit" | "comment" | "manage" | "restrict"
+export const CURRENT_ORG: Group = {
+  id: "org-1",
+  name: "Hudl Hooligans",
+  description: "Entire Organization",
+  memberCount: 145,
+  type: "org",
+}
 
-// Generate 20 dummy users
-export const users: User[] = [
-  { id: "u1", name: "Matt Allison", email: "matt.allison@team.com", role: "Team Mascot" },
-  { id: "u2", name: "John Smith", email: "john.smith@team.com", role: "Quarterback" },
-  { id: "u3", name: "Mike Johnson", email: "mike.johnson@team.com", role: "Running Back" },
-  { id: "u4", name: "David Williams", email: "david.williams@team.com", role: "Wide Receiver" },
-  { id: "u5", name: "Chris Brown", email: "chris.brown@team.com", role: "Tight End" },
-  { id: "u6", name: "James Davis", email: "james.davis@team.com", role: "Offensive Lineman" },
-  { id: "u7", name: "Robert Miller", email: "robert.miller@team.com", role: "Defensive End" },
-  { id: "u8", name: "Michael Wilson", email: "michael.wilson@team.com", role: "Linebacker" },
-  { id: "u9", name: "William Moore", email: "william.moore@team.com", role: "Cornerback" },
-  { id: "u10", name: "Richard Taylor", email: "richard.taylor@team.com", role: "Safety" },
-  { id: "u11", name: "Joseph Anderson", email: "joseph.anderson@team.com", role: "Kicker" },
-  { id: "u12", name: "Thomas Thomas", email: "thomas.thomas@team.com", role: "Punter" },
-  { id: "u13", name: "Charles Jackson", email: "charles.jackson@team.com", role: "Long Snapper" },
-  { id: "u14", name: "Daniel White", email: "daniel.white@team.com", role: "Head Coach" },
-  { id: "u15", name: "Matthew Harris", email: "matthew.harris@team.com", role: "Offensive Coordinator" },
-  { id: "u16", name: "Anthony Martin", email: "anthony.martin@team.com", role: "Defensive Coordinator" },
-  { id: "u17", name: "Mark Thompson", email: "mark.thompson@team.com", role: "Special Teams Coach" },
-  { id: "u18", name: "Donald Garcia", email: "donald.garcia@team.com", role: "Quarterbacks Coach" },
-  { id: "u19", name: "Steven Martinez", email: "steven.martinez@team.com", role: "Linebackers Coach" },
-  { id: "u20", name: "Paul Robinson", email: "paul.robinson@team.com", role: "Defensive Backs Coach" },
+export const MOCK_USERS: User[] = [
+  { id: "u1", name: "Dan Campbell", email: "dan.campbell@hudl.com", role: "Head Coach", type: "user" },
+  { id: "u2", name: "Ben Johnson", email: "ben.johnson@hudl.com", role: "Offensive Coordinator", type: "user" },
+  { id: "u3", name: "Aaron Glenn", email: "aaron.glenn@hudl.com", role: "Defensive Coordinator", type: "user" },
+  { id: "u4", name: "Dave Fipp", email: "dave.fipp@hudl.com", role: "Special Teams Coordinator", type: "user" },
+  { id: "u5", name: "Hank Fraley", email: "hank.fraley@hudl.com", role: "Offensive Line Coach", type: "user" },
+  { id: "u6", name: "Kelvin Sheppard", email: "kelvin.sheppard@hudl.com", role: "Linebackers Coach", type: "user" },
+  { id: "u7", name: "Deshea Townsend", email: "deshea.townsend@hudl.com", role: "Defensive Backs Coach", type: "user" },
+  {
+    id: "u8",
+    name: "Scottie Montgomery",
+    email: "scottie.montgomery@hudl.com",
+    role: "Running Backs Coach",
+    type: "user",
+  },
+  {
+    id: "u9",
+    name: "Antwaan Randle El",
+    email: "antwaan.randle-el@hudl.com",
+    role: "Wide Receivers Coach",
+    type: "user",
+  },
+  { id: "u10", name: "Jared Goff", email: "jared.goff@hudl.com", role: "Quarterback", type: "user" },
+  { id: "u11", name: "Amon-Ra St. Brown", email: "amon-ra.stbrown@hudl.com", role: "Wide Receiver", type: "user" },
+  { id: "u12", name: "Jahmyr Gibbs", email: "jahmyr.gibbs@hudl.com", role: "Running Back", type: "user" },
+  { id: "u13", name: "Penei Sewell", email: "penei.sewell@hudl.com", role: "Offensive Tackle", type: "user" },
+  { id: "u14", name: "Aidan Hutchinson", email: "aidan.hutchinson@hudl.com", role: "Defensive End", type: "user" },
+  { id: "u15", name: "Matt Allison", email: "matt.allison@hudl.com", role: "Video Coordinator", type: "user" },
 ]
 
-// 4 user groups with subsets of users
-export const userGroups: UserGroup[] = [
+export const MOCK_GROUPS: Group[] = [
   {
     id: "g1",
-    name: "Offense",
-    memberIds: ["u2", "u3", "u4", "u5", "u6", "u15", "u18"],
+    name: "Offensive Staff",
+    description: "All offensive coaches and assistants",
+    memberCount: 12,
+    type: "group",
   },
   {
     id: "g2",
-    name: "Defense",
-    memberIds: ["u7", "u8", "u9", "u10", "u16", "u19", "u20"],
+    name: "Defensive Staff",
+    description: "All defensive coaches and assistants",
+    memberCount: 10,
+    type: "group",
   },
   {
     id: "g3",
-    name: "Special Teams",
-    memberIds: ["u11", "u12", "u13", "u17"],
+    name: "Special Teams Staff",
+    description: "ST coordinators and assistants",
+    memberCount: 4,
+    type: "group",
   },
-  {
-    id: "g4",
-    name: "Coaches",
-    memberIds: ["u14", "u15", "u16", "u17", "u18", "u19", "u20"],
-  },
+  { id: "g4", name: "All Coaches", description: "Full coaching staff", memberCount: 26, type: "group" },
+  { id: "g5", name: "All Athletes", description: "Active roster players", memberCount: 53, type: "group" },
 ]
+
+export const users = MOCK_USERS
+export const userGroups = MOCK_GROUPS.map((g) => ({
+  id: g.id,
+  name: g.name,
+  memberIds: MOCK_USERS.slice(0, g.memberCount > MOCK_USERS.length ? MOCK_USERS.length : g.memberCount).map(
+    (u) => u.id,
+  ),
+}))
+
+export type PermissionLevel = "viewer" | "editor" | "manager" | "owner" | null
 
 export interface PermissionEntry {
   id: string
-  type: "user" | "group"
+  type: "user" | "group" | "org"
   entityId: string
   permission: PermissionLevel
+  inherited?: boolean
 }

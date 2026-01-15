@@ -111,8 +111,17 @@ export function Folder({
 
   const { density } = useDensity()
   const spacing = getDensitySpacing(density)
-  const { columns, renamingId, setRenamingId, copyFolder, pasteFolder, clipboard, setFolderColor, openMoveModal } =
-    useLibraryContext()
+  const {
+    columns,
+    renamingId,
+    setRenamingId,
+    copyFolder,
+    pasteFolder,
+    clipboard,
+    setFolderColor,
+    openMoveModal,
+    openPermissionsModal,
+  } = useLibraryContext()
 
   useEffect(() => {
     if (renamingId === folder.id) {
@@ -399,6 +408,15 @@ export function Folder({
       <DropdownMenuItem
         onClick={(e) => {
           e.stopPropagation()
+          openPermissionsModal(folder.id)
+        }}
+      >
+        Share...
+      </DropdownMenuItem>
+
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
           openMoveModal([{ id: folder.id, type: "folder" }])
         }}
       >
@@ -624,6 +642,15 @@ export function Folder({
       )}
 
       <ContextMenuSeparator />
+
+      <ContextMenuItem
+        onSelect={(e) => {
+          e.preventDefault()
+          openPermissionsModal(folder.id)
+        }}
+      >
+        Share...
+      </ContextMenuItem>
 
       <ContextMenuItem
         onSelect={(e) => {

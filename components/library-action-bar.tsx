@@ -224,7 +224,7 @@ export function LibraryActionBar() {
   return (
     <div
       ref={containerRef}
-      className="flex items-center justify-between w-full py-2 bg-content-emphasis-background-default text-foreground px-4 rounded-none overflow-hidden"
+      className="flex items-center justify-between w-full bg-content-emphasis-background-default text-foreground px-4 rounded-none overflow-hidden py-1.5"
     >
       {/* Left side: Close button and selection info */}
       <div className="flex items-center gap-4 min-w-0 flex-1">

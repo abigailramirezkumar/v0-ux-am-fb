@@ -801,7 +801,7 @@ export function LibraryView() {
       <div className="px-4 pt-1 shrink-0 border-b border-border">
         <LibraryHeader onImportComplete={handleImportComplete} />
         {selectedFolders.size > 0 || selectedItems.size > 0 ? (
-          <div className="px-0 pb-3">
+          <div className="px-0 pb-2">
             <LibraryActionBar />
           </div>
         ) : (

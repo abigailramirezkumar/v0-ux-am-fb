@@ -34,9 +34,8 @@ export function LibraryHeader({
   showImportButton = true,
   onReorderFolders,
 }: LibraryHeaderProps) {
-  const { viewMode, setViewMode, columns, setColumns } = useLibraryContext()
+  const { viewMode, setViewMode, columns, setColumns, layoutMode, setLayoutMode } = useLibraryContext()
   const { density, setDensity } = useDensity()
-  const [displayViewMode, setDisplayViewMode] = useState("grid")
   const [useDropdown, setUseDropdown] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -151,8 +150,8 @@ export function LibraryHeader({
 
           <ToggleGroup
             type="single"
-            value={displayViewMode}
-            onValueChange={(value) => value && setDisplayViewMode(value)}
+            value={layoutMode}
+            onValueChange={(value) => value && setLayoutMode(value as "list" | "grid")}
           >
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <Icon name="viewGrid" className="w-5 h-5" />

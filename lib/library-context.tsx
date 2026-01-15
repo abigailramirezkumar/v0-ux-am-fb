@@ -714,6 +714,7 @@ interface LibraryContextType {
   itemsToMove: MoveItem[]
   isPermissionsModalOpen: boolean
   itemForPermissions: string | null
+  layoutMode: "list" | "grid"
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -740,6 +741,7 @@ interface LibraryContextType {
   createSubfolderInMove: (parentId: string, name: string) => string
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
+  setLayoutMode: (mode: "list" | "grid") => void
 }
 
 export interface MoveItem {
@@ -775,6 +777,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
+  const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
@@ -790,6 +793,13 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
   const [itemForPermissions, setItemForPermissions] = useState<string | null>(null)
+
+  const foldersWithColors = useMemo(() => {
+    return folders.map((folder) => ({
+      ...folder,
+      color: folderColors[folder.id],
+    }))
+  }, [folders, folderColors])
 
   const scheduleFolders = useMemo(() => {
     // 1. Flatten all items first
@@ -1298,7 +1308,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         activeWatchItemId,
         activeWatchItems,
         renamingId,
-        folders,
+        folders: foldersWithColors,
         libraryView,
         selectedFolders,
         selectedItems,
@@ -1312,6 +1322,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         itemsToMove,
         isPermissionsModalOpen,
         itemForPermissions,
+        layoutMode,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1338,6 +1349,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         createSubfolderInMove,
         openPermissionsModal,
         closePermissionsModal,
+        setLayoutMode,
       }}
     >
       {children}

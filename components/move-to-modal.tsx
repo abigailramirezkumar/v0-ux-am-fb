@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon"
 import { useLibraryContext } from "@/lib/library-context"
 import type { FolderData } from "@/components/folder"
 import { cn } from "@/lib/utils"
+import { LibraryBreadcrumbs } from "@/components/library-breadcrumbs"
 
 export function MoveToModal() {
   const { isMoveModalOpen, closeMoveModal, moveItemsToFolder, folders, itemsToMove, createSubfolderInMove } =
@@ -222,15 +223,9 @@ export function MoveToModal() {
 
   return (
     <Dialog open={isMoveModalOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg p-0 gap-0 flex flex-col max-h-[80vh]">
+      <DialogContent className="max-w-lg p-0 gap-0 flex flex-col h-[600px]">
         <div className="flex items-center justify-between p-6 pb-4">
           <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
-          <button
-            onClick={() => handleOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Icon name="close" size={24} />
-          </button>
         </div>
 
         <div className="border-t border-border" />
@@ -254,31 +249,11 @@ export function MoveToModal() {
           </div>
         </div>
 
-        <div className="px-6 py-2 flex items-center gap-1 text-sm">
-          <button
-            onClick={() => setCurrentFolderId(null)}
-            className="flex items-center gap-1 hover:text-foreground transition-colors text-muted-foreground"
-          >
-            <Icon name="layout" size={18} />
-          </button>
-          <span className="text-muted-foreground">/</span>
-          {breadcrumbs.map((crumb, index) => (
-            <span key={crumb.id} className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentFolderId(crumb.id)}
-                className={cn(
-                  "hover:text-foreground transition-colors",
-                  index === breadcrumbs.length - 1 ? "text-foreground font-medium" : "text-muted-foreground",
-                )}
-              >
-                {crumb.name}
-              </button>
-              <span className="text-muted-foreground">/</span>
-            </span>
-          ))}
+        <div className="px-6 py-2 border-b border-border/40">
+          <LibraryBreadcrumbs breadcrumbs={breadcrumbs} onNavigate={(id) => setCurrentFolderId(id)} />
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-[200px] max-h-[300px]">
+        <div className="flex-1 overflow-y-auto">
           <div className="px-6">
             {/* Search Results Mode */}
             {searchQuery ? (
@@ -391,7 +366,7 @@ export function MoveToModal() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 border-t border-border">
+        <div className="flex items-center justify-between p-4 border-t border-border mt-auto">
           <Button
             variant="ghost"
             onClick={() => {

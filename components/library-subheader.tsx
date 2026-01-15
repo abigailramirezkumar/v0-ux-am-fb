@@ -11,9 +11,11 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
 import { useDensity } from "@/lib/density-context"
+import { useLibraryContext } from "@/lib/library-context"
 
 interface BreadcrumbItem {
   id: string
@@ -57,10 +59,21 @@ function LibraryIcon({ className }: { className?: string }) {
 
 export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
   const { density, setDensity } = useDensity()
+  const { columns, setColumns } = useLibraryContext()
+
+  const toggleColumn = (columnId: string) => {
+    setColumns(
+      columns.map((col) => {
+        if (col.id === columnId) {
+          return { ...col, visible: !col.visible }
+        }
+        return col
+      }),
+    )
+  }
 
   return (
     <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
-      {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button
           onClick={() => onNavigate(null)}
@@ -87,7 +100,6 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
         <span>/</span>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -110,6 +122,23 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>Show/Hide Columns</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {columns.map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    checked={column.visible}
+                    onCheckedChange={() => toggleColumn(column.id)}
+                    disabled={column.id === "name"}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {column.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
               <DropdownMenuSubContent>

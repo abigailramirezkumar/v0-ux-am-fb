@@ -155,6 +155,8 @@ export function Folder({
     onSelect?.(folder.id, checked)
   }
 
+  const isEmpty = !folder.children?.length && !folder.items?.length
+
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement
     if (target.closest("button") || target.closest('[role="checkbox"]') || target.closest("input")) {
@@ -228,7 +230,10 @@ export function Folder({
   }
 
   const getFolderIcon = () => {
-    const iconClass = cn(isSelected ? "text-white" : !folder.color && "text-foreground")
+    const iconClass = cn(
+      isSelected ? "text-white" : !folder.color && "text-foreground",
+      !isSelected && isEmpty && "opacity-50",
+    )
     const iconStyle = !isSelected && folder.color ? { color: folder.color } : undefined
 
     if (folder.icon === "calendar") {
@@ -258,6 +263,8 @@ export function Folder({
   const showMenuButton = !isImported && !folder.isSystemGroup
 
   const renderCell = (columnId: string) => {
+    const emptyTextClass = !isSelected && isEmpty ? "opacity-50" : ""
+
     switch (columnId) {
       case "name":
         return (
@@ -296,6 +303,7 @@ export function Folder({
                           className={cn(
                             "text-sm font-bold truncate block",
                             isSelected ? "text-white" : !folder.color && "text-foreground",
+                            emptyTextClass,
                           )}
                           style={!isSelected && folder.color ? { color: folder.color } : undefined}
                         >
@@ -316,7 +324,13 @@ export function Folder({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "text-sm truncate block",
+                    isSelected ? "text-white/80" : "text-muted-foreground",
+                    emptyTextClass,
+                  )}
+                >
                   {folder.dateModified || ""}
                 </span>
               </TooltipTrigger>
@@ -329,7 +343,13 @@ export function Folder({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "text-sm truncate block",
+                    isSelected ? "text-white/80" : "text-muted-foreground",
+                    emptyTextClass,
+                  )}
+                >
                   Folder
                 </span>
               </TooltipTrigger>
@@ -338,13 +358,23 @@ export function Folder({
           </TooltipProvider>
         )
       case "hasData":
-        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+        return (
+          <span
+            className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground", emptyTextClass)}
+          ></span>
+        )
       case "itemCount":
         return (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "text-sm truncate block",
+                    isSelected ? "text-white/80" : "text-muted-foreground",
+                    emptyTextClass,
+                  )}
+                >
                   {totalItemCount}
                 </span>
               </TooltipTrigger>
@@ -357,7 +387,13 @@ export function Folder({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className={cn("text-sm truncate block", isSelected ? "text-white/80" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "text-sm truncate block",
+                    isSelected ? "text-white/80" : "text-muted-foreground",
+                    emptyTextClass,
+                  )}
+                >
                   {folder.createdDate || ""}
                 </span>
               </TooltipTrigger>
@@ -366,7 +402,11 @@ export function Folder({
           </TooltipProvider>
         )
       default:
-        return <span className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground")}></span>
+        return (
+          <span
+            className={cn("text-sm", isSelected ? "text-white/80" : "text-muted-foreground", emptyTextClass)}
+          ></span>
+        )
     }
   }
 

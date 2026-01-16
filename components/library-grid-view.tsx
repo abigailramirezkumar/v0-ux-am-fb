@@ -33,6 +33,8 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
 
   const isSelected = selectedFolders.has(folder.id)
 
+  const isEmpty = !folder.children?.length && !folder.items?.length
+
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation()
     const newSet = new Set(e.metaKey || e.ctrlKey ? selectedFolders : [])
@@ -67,6 +69,7 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
             "h-28",
             "bg-[#2a2f3a] hover:bg-[#353b48]",
             isSelected ? "ring-2 ring-primary" : "",
+            isEmpty && !isSelected && "opacity-50 grayscale",
           )}
         >
           {/* Name - top left, bold */}

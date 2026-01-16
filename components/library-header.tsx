@@ -119,16 +119,16 @@ export function LibraryHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="flex items-center p-1 bg-muted/30 rounded-lg border border-border/40">
+          <div className="flex items-center gap-2">
             {orientations.map((item) => (
               <button
                 key={item.value}
                 onClick={() => handleOrientationChange(item.value)}
                 className={cn(
-                  "px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200",
+                  "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
                   orientation === item.value
                     ? "bg-foreground text-background shadow-sm" // Active: High Contrast
-                    : "text-muted-foreground hover:text-foreground hover:bg-background/20", // Inactive: Subtle
+                    : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted", // Inactive: Subtle pill background
                 )}
               >
                 {item.label}

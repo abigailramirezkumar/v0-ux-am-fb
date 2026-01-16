@@ -252,7 +252,7 @@ export function Folder({
     )
   }
 
-  const showCheckbox = !isImported && (!folder.isSystemGroup || folder.icon === "folder")
+  const showCheckbox = !isImported
 
   const showActions = isHovered || isSelected || isMenuOpen
   const showMenuButton = !isImported && !folder.isSystemGroup
@@ -265,11 +265,9 @@ export function Folder({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            {showCheckbox && (
-              <div className="flex-shrink-0 w-6">
-                <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />
-              </div>
-            )}
+            <div className="flex-shrink-0 w-6 flex justify-center">
+              {showCheckbox && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
+            </div>
 
             <div
               className="flex items-center justify-center flex-shrink-0 w-9 h-5 ml-0"

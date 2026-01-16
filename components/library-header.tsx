@@ -42,10 +42,10 @@ export function LibraryHeader({
   const { activeVersion } = useCatapultImportContext()
 
   const orientations = [
-    { value: "date", label: "By Date" },
+    // { value: "date", label: "By Date" },
     { value: "schedule", label: "By Schedule" },
     { value: "folder", label: "By Folder" },
-    { value: "team", label: "By Team" },
+    // { value: "team", label: "By Team" },
   ]
 
   const orientation = viewMode === "schedule" ? "schedule" : "folder"

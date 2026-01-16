@@ -786,7 +786,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
-  const [viewMode, setViewMode] = useState<"folder" | "schedule">("folder")
+  const [viewMode, setViewModeState] = useState<"folder" | "schedule">("folder")
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
   const [itemsToMove, setItemsToMove] = useState<MoveItem[]>([])
@@ -1299,6 +1299,21 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
+  const handleSetViewMode = (mode: "folder" | "schedule") => {
+    setViewModeState(mode)
+    // Reset Navigation
+    setCurrentFolderId(null)
+    setBreadcrumbs([])
+    // Reset Selection & Expansion
+    setSelectedFolders(new Set())
+    setSelectedItems(new Set())
+    setExpandedFolders(new Set())
+  }
+
+  const setViewMode = (mode: "folder" | "schedule") => {
+    handleSetViewMode(mode)
+  }
+
   return (
     <LibraryContext.Provider
       value={{
@@ -1342,7 +1357,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         copyFolder,
         pasteFolder,
         setFolderColor,
-        setViewMode,
+        setViewMode: handleSetViewMode,
         openMoveModal,
         closeMoveModal,
         moveItemsToFolder,

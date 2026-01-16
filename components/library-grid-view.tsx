@@ -63,20 +63,21 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
             onNavigate(folder.id)
           }}
           className={cn(
-            "group relative flex flex-col justify-between p-4 rounded-lg transition-all cursor-pointer aspect-[4/3] select-none",
+            "group relative flex flex-col justify-between p-4 rounded-lg transition-all cursor-pointer select-none",
+            "h-28",
             "bg-[#2a2f3a] hover:bg-[#353b48]",
             isSelected ? "ring-2 ring-primary" : "",
           )}
         >
           {/* Name - top left, bold */}
-          <span className="text-base font-bold text-white line-clamp-2 pr-8">{folder.name}</span>
+          <span className="text-sm font-bold text-white line-clamp-2 pr-8">{folder.name}</span>
 
           {/* Bottom row: count left, icon right */}
           <div className="flex items-end justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {itemCount} {itemCount === 1 ? "Item" : "Items"}
             </span>
-            <div className="text-muted-foreground/70">{getFolderIcon(folder.icon)}</div>
+            <div className="text-muted-foreground/70 [&_svg]:w-5 [&_svg]:h-5">{getFolderIcon(folder.icon)}</div>
           </div>
 
           {/* Hover Actions (3-dot) */}
@@ -159,32 +160,58 @@ const ItemTile = ({ item, onOpenItem }: ItemTileProps) => {
             onOpenItem(item.id)
           }}
           className={cn(
-            "group flex flex-col rounded-xl border overflow-hidden transition-all cursor-pointer hover:border-accent relative select-none",
-            isSelected ? "ring-2 ring-primary border-primary" : "bg-card border-border/40",
+            "group flex flex-col rounded-lg overflow-hidden cursor-pointer select-none",
+            "transition-all duration-200 ease-out",
+            "hover:-translate-y-1 hover:shadow-xl hover:shadow-black/20",
+            isSelected ? "ring-2 ring-primary" : "",
           )}
         >
-          {/* Thumbnail */}
-          <div className="aspect-video w-full bg-muted relative">
+          {/* Thumbnail with overlay bar */}
+          <div className="aspect-video w-full bg-muted relative rounded-lg overflow-hidden">
             <img src={item.thumbnailUrl || "/football-field.png"} alt="" className="w-full h-full object-cover" />
-            <div className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] px-1 rounded-sm">
-              {item.duration}
+
+            {/* Bottom overlay bar */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-black/40 px-2.5 py-1.5 flex items-center justify-between">
+              {/* Type badge */}
+              <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded">
+                <Icon name="video" className="w-3 h-3 text-white/80" />
+                <span className="text-[11px] text-white/90 font-medium">
+                  {item.type === "video" ? "Game" : item.type}
+                </span>
+              </div>
+              {/* Duration/Score */}
+              <span className="text-[11px] text-white font-medium">{item.duration || "0:00"}</span>
             </div>
-            {/* Play Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
-              <div className="bg-white/20 backdrop-blur-sm p-2 rounded-full">
+
+            {/* Play Overlay on hover */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/30 transition-opacity">
+              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-full">
                 <Icon name="play" className="w-6 h-6 text-white fill-white" />
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="p-3 flex flex-col gap-1">
-            <span className="text-sm font-medium line-clamp-1" title={item.name}>
+          {/* Footer - below thumbnail */}
+          <div className="pt-2.5 pb-1 flex flex-col gap-1.5">
+            {/* Title */}
+            <span className="text-sm line-clamp-1 text-foreground text-justify font-bold" title={item.name}>
               {item.name}
             </span>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            {/* Meta row: team badge, date, icons */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {/* Team badge */}
+              <span className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase">ME</span>
               <span>{item.createdDate}</span>
-              {item.size && <span>{item.size}</span>}
+              {/* Right side icons */}
+              <div className="ml-auto flex items-center gap-1">
+                {item.hasData && <Icon name="database" className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                {item.comments && item.comments > 0 && (
+                  <div className="flex items-center gap-0.5">
+                    <Icon name="message-square" className="w-3.5 h-3.5 text-muted-foreground/60" />
+                    <span className="text-[10px]">{item.comments}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

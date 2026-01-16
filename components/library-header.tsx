@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Icon } from "@/components/icon"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,7 +101,7 @@ export function LibraryHeader({
         {useDropdown ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full bg-white text-black text-sm py-2 px-4 font-semibold flex items-center gap-2 hover:bg-gray-100 transition-colors">
+              <button className="bg-foreground text-background text-sm py-2 px-4 font-semibold flex items-center gap-2 rounded-lg shadow-sm">
                 {currentOrientation?.label}
                 <Icon name="chevronDown" size={16} />
               </button>
@@ -118,16 +119,17 @@ export function LibraryHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center p-1 bg-muted/30 rounded-lg border border-border/40">
             {orientations.map((item) => (
               <button
                 key={item.value}
                 onClick={() => handleOrientationChange(item.value)}
-                className={`rounded-full transition-colors text-sm px-4 font-semibold whitespace-nowrap py-1.5 ${
+                className={cn(
+                  "px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200",
                   orientation === item.value
-                    ? "bg-[#1a1a1a] dark:bg-[#343434] text-white dark:text-white"
-                    : "bg-[#e5e5e5] dark:bg-[#ffffff] text-[#4a4a4a] dark:text-[#1a1a1a] hover:bg-[#d5d5d5] dark:hover:bg-[#e5e5e5]"
-                }`}
+                    ? "bg-foreground text-background shadow-sm" // Active: High Contrast
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/20", // Inactive: Subtle
+                )}
               >
                 {item.label}
               </button>

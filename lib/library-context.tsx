@@ -278,7 +278,7 @@ function createMiniCampOTAStructure(year: number, parentId: string): FolderData[
 function createSelfScoutYearFolders(): FolderData[] {
   const yearFolders: FolderData[] = []
 
-  for (let year = 2025; year >= 2006; year--) {
+  for (let year = 2025; year >= 2023; year--) {
     const yearId = `self-scout-${year}`
     yearFolders.push({
       id: yearId,
@@ -372,7 +372,7 @@ function createTeamStructure(teamName: string, teamNickname: string): FolderData
   const years: FolderData[] = []
   const teamId = teamName.toLowerCase().replace(/\s+/g, "-")
 
-  for (let year = 2008; year <= 2025; year++) {
+  for (let year = 2023; year <= 2025; year++) {
     const yearId = `${teamId}-${year}`
     years.push({
       id: yearId,
@@ -580,7 +580,7 @@ function createCollegeScoutingStructure(yearRange: string): FolderData[] {
 
 function createScoutingFolders(): FolderData[] {
   const folders: FolderData[] = []
-  for (let year = 2026; year >= 2009; year--) {
+  for (let year = 2026; year >= 2024; year--) {
     const yearRange = `${year - 1}-${year}`
     folders.push({
       id: `scouting-${yearRange}`,

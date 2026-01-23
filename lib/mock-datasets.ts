@@ -73,22 +73,22 @@ export const MOCK_DATASETS: Dataset[] = [
   {
     id: "dataset-a",
     name: "NFL Highlights",
-    plays: generatePlays(25, "BUF vs LA 01.01.26"),
+    plays: generatePlays(10, "BUF vs LA 01.01.26"),
   },
   {
     id: "dataset-b",
     name: "Practice Drills",
-    plays: generatePlays(50, "Practice - Wed 10.12"),
+    plays: generatePlays(12, "Practice - Wed 10.12"),
   },
   {
     id: "dataset-c",
     name: "Scrimmage",
-    plays: generatePlays(75, "LSU Spring Scrimmage"),
+    plays: generatePlays(15, "LSU Spring Scrimmage"),
   },
   {
     id: "dataset-d",
     name: "Full Game",
-    plays: generatePlays(100, "SF vs PHI 12.03.23"),
+    plays: generatePlays(20, "SF vs PHI 12.03.23"),
   },
 ]
 

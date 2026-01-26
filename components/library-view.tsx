@@ -57,6 +57,7 @@ export function LibraryView() {
     folders,
     rootItems,
     setFolders,
+    setRootItems,
     libraryView,
     setLibraryView,
     selectedFolders,
@@ -751,6 +752,45 @@ export function LibraryView() {
     (movedId: string, targetId: string, type: "folder" | "item") => {
       if (movedId === targetId) return
 
+      // 1. Handle moving an Item from rootItems -> Folder
+      if (type === "item") {
+        const rootItemIndex = rootItems.findIndex((i) => i.id === movedId)
+
+        if (rootItemIndex !== -1) {
+          const itemToMove = rootItems[rootItemIndex]
+
+          // Remove from rootItems
+          const newRootItems = [...rootItems]
+          newRootItems.splice(rootItemIndex, 1)
+          setRootItems(newRootItems)
+
+          // Add to Target Folder
+          setFolders((prevFolders) => {
+            const newFolders = JSON.parse(JSON.stringify(prevFolders)) as FolderData[]
+
+            const addToTarget = (nodes: FolderData[]): boolean => {
+              for (const node of nodes) {
+                if (node.id === targetId) {
+                  node.items = node.items || []
+                  node.items.push(itemToMove)
+                  return true
+                }
+                if (node.children && addToTarget(node.children)) return true
+              }
+              return false
+            }
+
+            if (addToTarget(newFolders)) {
+              toast({ title: "Moved Item", description: `Moved ${itemToMove.name}` })
+              return newFolders
+            }
+            return prevFolders
+          })
+          return
+        }
+      }
+
+      // 2. Existing Logic for Folder->Folder or SubItem->Folder moves
       setFolders((prevFolders) => {
         const newStructure = JSON.parse(JSON.stringify(prevFolders)) as FolderData[]
 
@@ -807,7 +847,6 @@ export function LibraryView() {
         }
 
         if (!movedObject) {
-          console.error("Could not find object to move")
           return prevFolders
         }
 
@@ -841,7 +880,7 @@ export function LibraryView() {
         }
       })
     },
-    [setFolders, isDescendantOf],
+    [setFolders, rootItems, setRootItems, isDescendantOf],
   )
 
   return (

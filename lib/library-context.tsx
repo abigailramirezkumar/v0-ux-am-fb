@@ -693,6 +693,7 @@ interface LibraryContextType {
   renamingId: string | null
   folders: FolderData[]
   rootItems: LibraryItemData[]
+  setRootItems: React.Dispatch<React.SetStateAction<LibraryItemData[]>>
   libraryView: "team" | "my"
   selectedFolders: Set<string>
   selectedItems: Set<string>
@@ -1383,6 +1384,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setWatchItems,
         setRenamingId,
         setFolders,
+        setRootItems,
         setLibraryView,
         setSelectedFolders,
         setSelectedItems,

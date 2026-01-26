@@ -132,7 +132,7 @@ export function LibraryItem({
   const { columns, openMoveModal, openPermissionsModal } = useLibraryContext()
 
   const isAlternate = index % 2 === 1
-  const indentMargin = (level || 0) * 16
+  const indentMargin = (level || 0) * spacing.indent
   const isVideo = item.type === "video"
 
   const totalRowWidth =
@@ -193,7 +193,7 @@ export function LibraryItem({
               )}
             </div>
 
-            <div className="flex-1 flex items-center gap-2 min-w-0 ml-2">
+            <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span

@@ -132,7 +132,7 @@ export function LibraryItem({
   const { columns, openMoveModal, openPermissionsModal } = useLibraryContext()
 
   const isAlternate = index % 2 === 1
-  const indentMargin = level * spacing.indent + 12
+  const indentMargin = (level || 0) * 16
   const isVideo = item.type === "video"
 
   const totalRowWidth =
@@ -173,8 +173,8 @@ export function LibraryItem({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            {/* Checkbox - fixed width */}
-            <div className="flex-shrink-0 w-6">
+            {/* Checkbox Container (w-6) - Matches Folder */}
+            <div className="flex-shrink-0 w-6 flex justify-center">
               {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 
@@ -193,7 +193,7 @@ export function LibraryItem({
               )}
             </div>
 
-            <div className="flex-1 flex items-center gap-2 min-w-0 ml-1">
+            <div className="flex-1 flex items-center gap-2 min-w-0 ml-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span

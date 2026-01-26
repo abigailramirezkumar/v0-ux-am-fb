@@ -195,11 +195,10 @@ export function MoveToModal() {
   }, [flattenedFolders, searchQuery])
 
   const handleMove = () => {
-    if (currentFolderId) {
-      moveItemsToFolder(currentFolderId)
-      setCurrentFolderId(null)
-      setSearchQuery("")
-    }
+    // Allow moving to root (currentFolderId is null)
+    moveItemsToFolder(currentFolderId)
+    setCurrentFolderId(null)
+    setSearchQuery("")
   }
 
   const handleCreateFolder = () => {
@@ -384,8 +383,8 @@ export function MoveToModal() {
             <Button variant="ghost" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleMove} disabled={!currentFolderId} className="bg-primary text-primary-foreground">
-              Move
+            <Button onClick={handleMove} className="bg-primary text-primary-foreground">
+              Move Here
             </Button>
           </div>
         </div>

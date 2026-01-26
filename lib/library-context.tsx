@@ -739,7 +739,7 @@ interface LibraryContextType {
   openMoveModal: (items: MoveItem[]) => void
   closeMoveModal: () => void
   moveItemsToFolder: (targetFolderId: string) => void
-  createSubfolderInMove: (parentId: string, name: string) => string
+  createSubfolderInMove: (parentId: string | null, name: string) => string
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
@@ -1291,7 +1291,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setSelectedItems(new Set())
   }
 
-  const createSubfolderInMove = (parentId: string, name: string): string => {
+  const createSubfolderInMove = (parentId: string | null, name: string): string => {
     const newFolderId = `folder-${Date.now()}`
     const newFolder: FolderData = {
       id: newFolderId,
@@ -1304,6 +1304,12 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
     setFolders((prev) => {
       const newFolders = JSON.parse(JSON.stringify(prev)) as FolderData[]
+
+      // If parentId is null, add to root level
+      if (parentId === null) {
+        newFolders.push(newFolder)
+        return newFolders
+      }
 
       const addToParent = (nodes: FolderData[]): boolean => {
         for (const node of nodes) {

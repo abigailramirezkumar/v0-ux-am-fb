@@ -202,7 +202,7 @@ export function MoveToModal() {
   }
 
   const handleCreateFolder = () => {
-    if (!newFolderName.trim() || !currentFolderId) return
+    if (!newFolderName.trim()) return
 
     const newId = createSubfolderInMove(currentFolderId, newFolderName.trim())
     setIsCreatingFolder(false)
@@ -369,11 +369,8 @@ export function MoveToModal() {
           <Button
             variant="ghost"
             onClick={() => {
-              if (currentFolderId) {
-                setIsCreatingFolder(true)
-              }
+              setIsCreatingFolder(true)
             }}
-            disabled={currentFolderId === null}
             className="text-primary hover:text-primary"
           >
             <Icon name="plus" className="w-4 h-4 mr-2" />

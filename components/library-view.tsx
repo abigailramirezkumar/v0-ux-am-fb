@@ -903,12 +903,15 @@ export function LibraryView() {
 
       <div className="flex-1 overflow-auto min-h-0">
         {layoutMode === "grid" ? (
-          <LibraryGridView
-            folders={currentViewData.children}
-            items={currentViewData.items}
-            onNavigate={handleNavigate}
-            onOpenItem={handleOpenItem}
-          />
+<LibraryGridView
+  folders={currentViewData.children}
+  items={currentViewData.items}
+  onNavigate={handleNavigate}
+  onOpenItem={handleOpenItem}
+  onMove={handleMove}
+  onRename={handleRenameFolder}
+  onDelete={handleDeleteFolderStart}
+  />
         ) : (
           <div className="min-w-[1000px] pb-4">
             <LibraryTableHeader />

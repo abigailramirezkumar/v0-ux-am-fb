@@ -1,14 +1,27 @@
 "use client"
 
-import type React from "react"
+import React, { useState, useEffect, useRef } from "react"
 
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
 import { Icon, FolderIcon, CalendarIcon, UserIcon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { useLibraryContext } from "@/lib/library-context"
-import { ContextMenu, ContextMenuContent, ContextMenuTrigger, ContextMenuItem } from "@/components/ui/context-menu"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/input"
 
 const getFolderIcon = (iconType?: "calendar" | "user" | "folder") => {
   switch (iconType) {
@@ -24,16 +37,83 @@ const getFolderIcon = (iconType?: "calendar" | "user" | "folder") => {
 interface FolderTileProps {
   folder: FolderData
   onNavigate: (id: string) => void
+  onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
+  onRename?: (id: string, newName: string) => void
+  onDelete?: (id: string) => void
 }
 
-const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
-  // Access context directly inside the component
-  const { selectedFolders, setSelectedFolders, setSelectedItems, openMoveModal, openPermissionsModal } =
-    useLibraryContext()
+const FolderTile = ({ folder, onNavigate, onMove, onRename, onDelete }: FolderTileProps) => {
+  const {
+    selectedFolders,
+    setSelectedFolders,
+    setSelectedItems,
+    openMoveModal,
+    openPermissionsModal,
+    renamingId,
+    setRenamingId,
+  } = useLibraryContext()
+
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [renameValue, setRenameValue] = useState(folder.name)
+  const isRenaming = renamingId === folder.id
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+      setRenameValue(folder.name)
+    }
+  }, [isRenaming, folder.name])
+
+  const handleRenameSubmit = () => {
+    if (renameValue.trim() && renameValue !== folder.name) {
+      onRename?.(folder.id, renameValue.trim())
+    }
+    setRenamingId(null)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleRenameSubmit()
+    if (e.key === "Escape") setRenamingId(null)
+    e.stopPropagation()
+  }
 
   const isSelected = selectedFolders.has(folder.id)
-
   const isEmpty = !folder.children?.length && !folder.items?.length
+  const itemCount = (folder.children?.length || 0) + (folder.items?.length || 0)
+
+  // Drag Handlers
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ id: folder.id, type: "folder" }))
+    e.dataTransfer.effectAllowed = "move"
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("application/json"))
+      if (data && data.id && data.type && onMove) {
+        onMove(data.id, folder.id, data.type)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -44,19 +124,80 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
       newSet.add(folder.id)
     }
     setSelectedFolders(newSet)
-
-    // Clear item selection unless multiselect
     if (!e.metaKey && !e.ctrlKey) {
       setSelectedItems(new Set())
     }
   }
 
-  const itemCount = (folder.children?.length || 0) + (folder.items?.length || 0)
+  const MenuItems = () => (
+    <>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          onNavigate(folder.id)
+        }}
+      >
+        Open
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          setRenamingId(folder.id)
+        }}
+      >
+        Rename
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          openMoveModal([{ id: folder.id, type: "folder" }])
+        }}
+      >
+        Move
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          openPermissionsModal(folder.id)
+        }}
+      >
+        Share
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          onDelete?.(folder.id)
+        }}
+        className="text-destructive"
+      >
+        Delete
+      </DropdownMenuItem>
+    </>
+  )
+
+  const ContextItems = () => (
+    <>
+      <ContextMenuItem onClick={() => onNavigate(folder.id)}>Open</ContextMenuItem>
+      <ContextMenuItem onClick={() => setRenamingId(folder.id)}>Rename</ContextMenuItem>
+      <ContextMenuItem onClick={() => openMoveModal([{ id: folder.id, type: "folder" }])}>Move</ContextMenuItem>
+      <ContextMenuItem onClick={() => openPermissionsModal(folder.id)}>Share</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem onClick={() => onDelete?.(folder.id)} className="text-destructive">
+        Delete
+      </ContextMenuItem>
+    </>
+  )
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          draggable={!isRenaming}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           onClick={handleSelect}
           onDoubleClick={(e) => {
             e.stopPropagation()
@@ -69,11 +210,24 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
             "h-28",
             "bg-[#2a2f3a] hover:bg-[#353b48]",
             isSelected ? "ring-2 ring-primary" : "",
-            isEmpty && !isSelected && "opacity-50 grayscale",
+            isDragOver ? "ring-2 ring-primary bg-accent/20" : "",
+            isEmpty && !isSelected && !isDragOver && "opacity-50 grayscale",
           )}
         >
           {/* Name - top left, bold */}
-          <span className="text-sm font-bold text-white line-clamp-2 pr-8">{folder.name}</span>
+          {isRenaming ? (
+            <Input
+              ref={inputRef}
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onBlur={handleRenameSubmit}
+              onKeyDown={handleKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              className="h-6 text-sm bg-background/50"
+            />
+          ) : (
+            <span className="text-sm font-bold text-white line-clamp-2 pr-8">{folder.name}</span>
+          )}
 
           {/* Bottom row: count left, icon right */}
           <div className="flex items-end justify-between">
@@ -84,47 +238,24 @@ const FolderTile = ({ folder, onNavigate }: FolderTileProps) => {
           </div>
 
           {/* Hover Actions (3-dot) */}
-          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1 hover:bg-white/10 rounded-md" onClick={(e) => e.stopPropagation()}>
-                  <Icon name="more-vertical" className="w-4 h-4 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onNavigate(folder.id)
-                  }}
-                >
-                  Open
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openMoveModal([{ id: folder.id, type: "folder" }])
-                  }}
-                >
-                  Move
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openPermissionsModal(folder.id)
-                  }}
-                >
-                  Share
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {!isRenaming && (
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-1 hover:bg-white/10 rounded-md" onClick={(e) => e.stopPropagation()}>
+                    <Icon name="more-vertical" className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <MenuItems />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={() => onNavigate(folder.id)}>Open</ContextMenuItem>
-        <ContextMenuItem onClick={() => openMoveModal([{ id: folder.id, type: "folder" }])}>Move</ContextMenuItem>
-        <ContextMenuItem onClick={() => openPermissionsModal(folder.id)}>Share</ContextMenuItem>
+        <ContextItems />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -141,6 +272,12 @@ const ItemTile = ({ item, onOpenItem }: ItemTileProps) => {
 
   const isSelected = selectedItems.has(item.id)
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation()
+    e.dataTransfer.setData("application/json", JSON.stringify({ id: item.id, type: "item" }))
+    e.dataTransfer.effectAllowed = "move"
+  }
+
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation()
     const newSet = new Set(e.metaKey || e.ctrlKey ? selectedItems : [])
@@ -153,10 +290,41 @@ const ItemTile = ({ item, onOpenItem }: ItemTileProps) => {
     if (!e.metaKey && !e.ctrlKey) setSelectedFolders(new Set())
   }
 
+  const MenuItems = () => (
+    <>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          onOpenItem(item.id)
+        }}
+      >
+        Play
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          openMoveModal([{ id: item.id, type: "item" }])
+        }}
+      >
+        Move
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.stopPropagation()
+          openPermissionsModal(item.id)
+        }}
+      >
+        Share
+      </DropdownMenuItem>
+    </>
+  )
+
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          draggable
+          onDragStart={handleDragStart}
           onClick={handleSelect}
           onDoubleClick={(e) => {
             e.stopPropagation()
@@ -172,6 +340,23 @@ const ItemTile = ({ item, onOpenItem }: ItemTileProps) => {
           {/* Thumbnail with overlay bar */}
           <div className="aspect-video w-full bg-muted relative rounded-lg overflow-hidden">
             <img src={item.thumbnailUrl || "/football-field.png"} alt="" className="w-full h-full object-cover" />
+
+            {/* 3-dot menu button on hover */}
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1 bg-black/50 hover:bg-black/70 rounded-md backdrop-blur-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Icon name="more-vertical" className="w-4 h-4 text-white" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <MenuItems />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             {/* Bottom overlay bar */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-black/40 px-2.5 py-1.5 flex items-center justify-between">
@@ -233,16 +418,34 @@ interface LibraryGridViewProps {
   items: LibraryItemData[]
   onNavigate: (id: string) => void
   onOpenItem: (id: string) => void
+  onMove?: (movedId: string, targetId: string, type: "folder" | "item") => void
+  onRename?: (id: string, newName: string) => void
+  onDelete?: (id: string) => void
 }
 
-export function LibraryGridView({ folders, items, onNavigate, onOpenItem }: LibraryGridViewProps) {
+export function LibraryGridView({
+  folders,
+  items,
+  onNavigate,
+  onOpenItem,
+  onMove,
+  onRename,
+  onDelete,
+}: LibraryGridViewProps) {
   return (
     <div className="p-4 pb-20">
       {folders.length > 0 && (
         <div className="mb-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {folders.map((folder) => (
-              <FolderTile key={folder.id} folder={folder} onNavigate={onNavigate} />
+              <FolderTile
+                key={folder.id}
+                folder={folder}
+                onNavigate={onNavigate}
+                onMove={onMove}
+                onRename={onRename}
+                onDelete={onDelete}
+              />
             ))}
           </div>
         </div>

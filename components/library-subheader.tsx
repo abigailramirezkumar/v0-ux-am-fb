@@ -1,6 +1,5 @@
 "use client"
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
 
 interface BreadcrumbItem {
@@ -72,21 +71,14 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
         <span>/</span>
       </div>
 
-      <div className="flex items-center gap-0">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Add content">
-              <Icon name="add" className="w-5 h-5 text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onCreateFolder}>
-              <Icon name="folder" className="w-4 h-4 mr-2" />
-              New Folder
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <button
+          onClick={onCreateFolder}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors"
+          aria-label="Create new folder"
+        >
+          <Icon name="add" className="w-4 h-4" />
+          New Folder
+        </button>
     </div>
   )
 }

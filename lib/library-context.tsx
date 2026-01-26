@@ -54,8 +54,8 @@ const TEAMS = [
 ]
 
 const generateLeafItems = (year: number, folderId: string): LibraryItemData[] => {
-  // 1. Random count between 1 and 10
-  const count = Math.floor(Math.random() * 10) + 1
+  // 1. REDUCE ITEM COUNT: Random count between 0 and 2 (instead of 1-10)
+  const count = Math.floor(Math.random() * 3)
 
   const items: LibraryItemData[] = []
   const baseMonth = 8 // August (Preseason/Start)
@@ -278,7 +278,8 @@ function createMiniCampOTAStructure(year: number, parentId: string): FolderData[
 function createSelfScoutYearFolders(): FolderData[] {
   const yearFolders: FolderData[] = []
 
-  for (let year = 2025; year >= 2023; year--) {
+  // CHANGE: Only generate data for current year (2025) instead of 2023-2025
+  for (let year = 2025; year >= 2025; year--) {
     const yearId = `self-scout-${year}`
     yearFolders.push({
       id: yearId,
@@ -580,7 +581,8 @@ function createCollegeScoutingStructure(yearRange: string): FolderData[] {
 
 function createScoutingFolders(): FolderData[] {
   const folders: FolderData[] = []
-  for (let year = 2026; year >= 2024; year--) {
+  // CHANGE: Only generate data for current year (2026) instead of 2024-2026
+  for (let year = 2026; year >= 2026; year--) {
     const yearRange = `${year - 1}-${year}`
     folders.push({
       id: `scouting-${yearRange}`,
@@ -605,39 +607,8 @@ const generateRamsLibrary = (): FolderData[] => {
       id: "opponent-scout",
       name: "Opponent Scout",
       dateModified: "Dec 14, 2024",
-      children: [
-        createTeamStructure("Arizona Cardinals", "Cardinals"),
-        createTeamStructure("Atlanta Falcons", "Falcons"),
-        createTeamStructure("Baltimore Ravens", "Ravens"),
-        createTeamStructure("Buffalo Bills", "Bills"),
-        createTeamStructure("Carolina Panthers", "Panthers"),
-        createTeamStructure("Chicago Bears", "Bears"),
-        createTeamStructure("Cincinnati Bengals", "Bengals"),
-        createTeamStructure("Cleveland Browns", "Browns"),
-        createTeamStructure("Dallas Cowboys", "Cowboys"),
-        createTeamStructure("Denver Broncos", "Broncos"),
-        createTeamStructure("Detroit Lions", "Lions"),
-        createTeamStructure("Green Bay Packers", "Packers"),
-        createTeamStructure("Houston Texans", "Texans"),
-        createTeamStructure("Indianapolis Colts", "Colts"),
-        createTeamStructure("Jacksonville Jaguars", "Jaguars"),
-        createTeamStructure("Kansas City Chiefs", "Chiefs"),
-        createTeamStructure("Las Vegas Raiders", "Raiders"),
-        createTeamStructure("Los Angeles Chargers", "Chargers"),
-        createTeamStructure("Miami Dolphins", "Dolphins"),
-        createTeamStructure("Minnesota Vikings", "Vikings"),
-        createTeamStructure("New England Patriots", "Patriots"),
-        createTeamStructure("New Orleans Saints", "Saints"),
-        createTeamStructure("New York Giants", "Giants"),
-        createTeamStructure("New York Jets", "Jets"),
-        createTeamStructure("Philadelphia Eagles", "Eagles"),
-        createTeamStructure("Pittsburgh Steelers", "Steelers"),
-        createTeamStructure("San Francisco 49ers", "49ers"),
-        createTeamStructure("Seattle Seahawks", "Seahawks"),
-        createTeamStructure("Tampa Bay Buccaneers", "Buccaneers"),
-        createTeamStructure("Tennessee Titans", "Titans"),
-        createTeamStructure("Washington Commanders", "Commanders"),
-      ],
+      // CHANGE: Only generate data for first team (Arizona Cardinals) instead of all 32 teams
+      children: [createTeamStructure("Arizona Cardinals", "Cardinals")],
     },
     {
       id: "scouting",

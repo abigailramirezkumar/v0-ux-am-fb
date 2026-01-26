@@ -173,8 +173,8 @@ export function LibraryItem({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            {/* Checkbox - fixed width */}
-            <div className="flex-shrink-0 w-6">
+            {/* Checkbox Container (w-6) - Matches Folder */}
+            <div className="flex-shrink-0 w-6 flex justify-center">
               {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 

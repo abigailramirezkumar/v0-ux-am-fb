@@ -55,6 +55,7 @@ export function LibraryView() {
     updateFolderOrder,
     setWatchItem,
     folders,
+    rootItems,
     setFolders,
     libraryView,
     setLibraryView,
@@ -640,6 +641,20 @@ export function LibraryView() {
     return recursiveSorted
   }, [scheduleFolders, sort, folderSortOptions, folderOrder])
 
+  // Sort Root Items (only relevant when at root level in folder view)
+  const sortedRootItems = useMemo(() => {
+    if (currentFolderId !== null || viewMode === "schedule") return []
+
+    const items = [...rootItems]
+    if (sort.columnId && sort.direction) {
+      items.sort((a, b) => compareItems(a, b, sort.columnId, sort.direction!))
+    } else {
+      // Default sort (Name ASC)
+      items.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return items
+  }, [rootItems, currentFolderId, sort, viewMode])
+
   const getFlattenedVisibleItems = (nodes: FolderData[], level = 0) => {
     const items: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
 
@@ -672,7 +687,8 @@ export function LibraryView() {
     const rootData = viewMode === "schedule" ? scheduleFolders : folders
 
     if (currentFolderId === null) {
-      return { children: activeData, items: [] as LibraryItemData[] }
+      // At root level, include rootItems
+      return { children: activeData, items: sortedRootItems }
     }
 
     const findNode = (nodes: FolderData[]): FolderData | null => {
@@ -688,7 +704,7 @@ export function LibraryView() {
 
     const node = findNode(rootData)
     return node ? { children: node.children || [], items: node.items || [] } : { children: [], items: [] }
-  }, [currentFolderId, viewMode, folders, scheduleFolders, activeData])
+  }, [currentFolderId, viewMode, folders, scheduleFolders, activeData, sortedRootItems])
 
   let visibleFlatList: Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }> = []
 
@@ -696,7 +712,13 @@ export function LibraryView() {
     // In schedule view, always show from root
     visibleFlatList = getFlattenedVisibleItems(activeData, 0)
   } else if (currentFolderId === null) {
+    // ROOT LEVEL: Folders + Root Items
     visibleFlatList = getFlattenedVisibleItems(activeData, 0)
+
+    // Append Root Items
+    sortedRootItems.forEach((item) => {
+      visibleFlatList.push({ type: "item", data: item, level: 0 })
+    })
   } else {
     const currentFolderData = activeData.find((f) => f.id === currentFolderId)
     if (currentFolderData) {

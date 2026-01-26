@@ -701,6 +701,7 @@ interface LibraryContextType {
   activeWatchItems: string[]
   renamingId: string | null
   folders: FolderData[]
+  rootItems: LibraryItemData[]
   libraryView: "team" | "my"
   selectedFolders: Set<string>
   selectedItems: Set<string>
@@ -780,6 +781,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
+  const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
@@ -802,8 +804,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   }, [folders, folderColors])
 
   const scheduleFolders = useMemo(() => {
-    // 1. Flatten all items first
-    const allItems: LibraryItemData[] = []
+    // 1. Flatten all items first (including root items)
+    const allItems: LibraryItemData[] = [...rootItems]
     const traverse = (nodes: FolderData[]) => {
       nodes.forEach((node) => {
         if (node.items) allItems.push(...node.items)
@@ -924,7 +926,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return [...seasonFolders, otherItemsFolder]
-  }, [folders])
+  }, [folders, rootItems])
 
   useEffect(() => {
     try {
@@ -1134,9 +1136,11 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemsToMove([])
   }
 
-  const moveItemsToFolder = (targetFolderId: string) => {
+  const moveItemsToFolder = (targetFolderId: string | null) => {
     // Deep clone folders for safe mutation
     const newFolders = JSON.parse(JSON.stringify(folders)) as FolderData[]
+    // Deep clone root items
+    const newRootItems = [...rootItems]
 
     // Check if trying to move a folder into itself or its descendant
     const isDescendantOf = (parentId: string, targetId: string): boolean => {
@@ -1191,24 +1195,54 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Also check root level folders
+    // Remove from Root Folders
     const rootFoldersToMove = newFolders.filter((f) => itemsToMove.some((m) => m.type === "folder" && m.id === f.id))
     collectedData.push(...rootFoldersToMove)
-    const filteredRoot = newFolders.filter((f) => !itemsToMove.some((m) => m.type === "folder" && m.id === f.id))
+    const filteredRootFolders = newFolders.filter((f) => !itemsToMove.some((m) => m.type === "folder" && m.id === f.id))
 
-    removeRecursive(filteredRoot)
+    // Remove from Root Items
+    const rootItemsToMove = newRootItems.filter((i) => itemsToMove.some((m) => m.type === "item" && m.id === i.id))
+    collectedData.push(...rootItemsToMove)
+    const filteredRootItems = newRootItems.filter((i) => !itemsToMove.some((m) => m.type === "item" && m.id === i.id))
+
+    removeRecursive(filteredRootFolders)
 
     // Validate: don't move folder into itself or descendant
-    for (const item of itemsToMove) {
-      if (item.type === "folder") {
-        if (item.id === targetFolderId || isDescendantOf(item.id, targetFolderId)) {
-          console.error("Cannot move folder into itself or its descendant")
-          return
+    if (targetFolderId !== null) {
+      for (const item of itemsToMove) {
+        if (item.type === "folder") {
+          if (item.id === targetFolderId || isDescendantOf(item.id, targetFolderId)) {
+            console.error("Cannot move folder into itself or its descendant")
+            return
+          }
         }
       }
     }
 
-    // 2. Find target folder and add items
+    // 2. Add to Target
+    if (targetFolderId === null) {
+      // Move to Root
+      collectedData.forEach((item) => {
+        if ("children" in item || (item as FolderData).children !== undefined) {
+          // It's a folder
+          filteredRootFolders.push(item as FolderData)
+        } else {
+          // It's an item (Now allowed at root!)
+          filteredRootItems.push(item as LibraryItemData)
+        }
+      })
+
+      setFolders(filteredRootFolders)
+      setRootItems(filteredRootItems)
+
+      setIsMoveModalOpen(false)
+      setItemsToMove([])
+      setSelectedFolders(new Set())
+      setSelectedItems(new Set())
+      return
+    }
+
+    // Move into specific folder
     const addToTarget = (nodes: FolderData[]): boolean => {
       for (const node of nodes) {
         if (node.id === targetFolderId) {
@@ -1245,9 +1279,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    addToTarget(filteredRoot)
+    addToTarget(filteredRootFolders)
 
-    setFolders(filteredRoot)
+    setFolders(filteredRootFolders)
+    setRootItems(filteredRootItems)
     setIsMoveModalOpen(false)
     setItemsToMove([])
 
@@ -1324,6 +1359,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         activeWatchItems,
         renamingId,
         folders: foldersWithColors,
+        rootItems,
         libraryView,
         selectedFolders,
         selectedItems,

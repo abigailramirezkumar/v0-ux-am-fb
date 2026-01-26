@@ -691,6 +691,26 @@ const generateRamsLibrary = (): FolderData[] => {
   ]
 }
 
+// ADD: New helper function to flatten the structure for initialization
+const getInitialFlatItems = (): LibraryItemData[] => {
+  const initialStructure = generateRamsLibrary()
+  const allItems: LibraryItemData[] = []
+
+  const traverse = (nodes: FolderData[]) => {
+    nodes.forEach((node) => {
+      if (node.items) {
+        allItems.push(...node.items)
+      }
+      if (node.children) {
+        traverse(node.children)
+      }
+    })
+  }
+
+  traverse(initialStructure)
+  return allItems
+}
+
 // --- CONTEXT ---
 
 interface LibraryContextType {
@@ -780,8 +800,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
 
-  const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
-  const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
+  // CHANGE: Initialize folders as empty for flat view
+  const [folders, setFolders] = useState<FolderData[]>([])
+  // CHANGE: Initialize rootItems with ALL items from the generator
+  const [rootItems, setRootItems] = useState<LibraryItemData[]>(getInitialFlatItems())
   const [libraryView, setLibraryView] = useState<"team" | "my">("team")
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set())
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())

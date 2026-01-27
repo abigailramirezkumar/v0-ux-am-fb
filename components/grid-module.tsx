@@ -72,7 +72,7 @@ export function GridModule() {
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
           {activeDataset.name}
-          {activeTabId === playingTabId && (
+          {activeTabId === playingTabId && activeDataset.plays.length > 0 && (
             <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
               LIVE
             </span>
@@ -81,8 +81,15 @@ export function GridModule() {
         <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
       </div>
 
-      {/* --- GRID TABLE --- */}
+      {/* --- GRID TABLE or EMPTY STATE --- */}
       <div className="flex-1 overflow-auto bg-background">
+        {activeDataset.plays.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <Icon name="playlist" className="w-12 h-12 opacity-20" />
+            <p>This playlist is empty</p>
+            <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+          </div>
+        ) : (
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
@@ -174,6 +181,7 @@ export function GridModule() {
             })}
           </TableBody>
         </Table>
+        )}
       </div>
     </div>
   )

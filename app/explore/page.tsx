@@ -8,10 +8,13 @@ import { ClipsDataGrid } from "@/components/explore/clips-data-grid"
 import { ClipViewer } from "@/components/explore/clip-viewer"
 import { GlobalFilters } from "@/components/explore/global-filters"
 import { mockClips, type Clip } from "@/lib/mock-clips"
+import { useFilter } from "@/lib/filter-context"
+import { cn } from "@/lib/utils"
 
 export default function ExplorePage() {
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null)
   const [activeTab, setActiveTab] = useState("plays")
+  const { isFilterSidebarOpen } = useFilter()
   
   // Initial State matches new schema
   const [filters, setFilters] = useState<FilterState>({
@@ -165,42 +168,53 @@ export default function ExplorePage() {
       </div>
 
       {/* Main Layout: Split Panes with Module Design */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
-        {/* Left Module: Filters */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="bg-transparent">
-          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex">
+        {/* Left Module: Filters - Sliding Panel */}
+        <div 
+          className={cn(
+            "h-full transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0",
+            isFilterSidebarOpen ? "w-[280px] opacity-100" : "w-0 opacity-0"
+          )}
+        >
+          <div className="h-full w-[280px] rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
             <FilterSidebar filters={filters} onFilterChange={setFilters} />
           </div>
-        </ResizablePanel>
+        </div>
 
-        {/* Gap 1 */}
-        <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/10" />
+        {/* Gap between filter and content */}
+        <div className={cn(
+          "transition-all duration-300 ease-in-out flex-shrink-0",
+          isFilterSidebarOpen ? "w-2" : "w-0"
+        )} />
 
-        {/* Middle Module: Data Grid */}
-        <ResizablePanel defaultSize={selectedClip ? 50 : 80} minSize={30} className="bg-transparent">
-          <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
-            <ClipsDataGrid
-              clips={filteredClips}
-              onClipDoubleClick={(clip) => setSelectedClip(clip)}
-              selectedClipId={selectedClip?.id || null}
-            />
-          </div>
-        </ResizablePanel>
+        {/* Main Content Area */}
+        <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
+          {/* Middle Module: Data Grid */}
+          <ResizablePanel defaultSize={selectedClip ? 65 : 100} minSize={30} className="bg-transparent">
+            <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
+              <ClipsDataGrid
+                clips={filteredClips}
+                onClipDoubleClick={(clip) => setSelectedClip(clip)}
+                selectedClipId={selectedClip?.id || null}
+              />
+            </div>
+          </ResizablePanel>
 
-        {/* Right Module: Clip Viewer (Conditional) */}
-        {selectedClip && (
-          <>
-            {/* Gap 2 */}
-            <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/10" />
+          {/* Right Module: Clip Viewer (Conditional) */}
+          {selectedClip && (
+            <>
+              {/* Gap 2 */}
+              <ResizableHandle className="w-2 bg-transparent transition-colors hover:bg-primary/10" />
 
-            <ResizablePanel defaultSize={30} minSize={20} maxSize={50} className="bg-transparent">
-              <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
-                <ClipViewer clip={selectedClip} onClose={() => setSelectedClip(null)} />
-              </div>
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
+              <ResizablePanel defaultSize={35} minSize={20} maxSize={50} className="bg-transparent">
+                <div className="h-full rounded-xl bg-background shadow-sm overflow-hidden">
+                  <ClipViewer clip={selectedClip} onClose={() => setSelectedClip(null)} />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
     </div>
   )
 }

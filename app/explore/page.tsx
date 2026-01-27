@@ -16,13 +16,14 @@ export default function ExplorePage() {
   // Initial State matches new schema
   const [filters, setFilters] = useState<FilterState>({
     downs: [],
-    distance: [0, 20],
-    yardLine: [0, 100],
+    distance: [0, 100],
+    yardLine: [50],
     hash: [],
     playContext: [],
     playResult: [],
     passing: [],
     rushing: [],
+    blocking: [],
     specialTeams: []
   })
 

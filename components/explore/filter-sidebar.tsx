@@ -1,10 +1,9 @@
 "use client"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Checkbox } from "@/components/checkbox"
 import { Slider } from "@/components/slider"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Select, SelectItem } from "@/components/select"
 import { cn } from "@/lib/utils"
 
 export interface FilterState {
@@ -12,16 +11,112 @@ export interface FilterState {
   distance: number[]
   yardLine: number[]
   hash: string[]
-  playContext: string[] // e.g. "playAction", "rpo-Pass"
-  playResult: string[] // e.g. "touchdown-Pass"
+  playContext: string[]
+  playResult: string[]
   passing: string[]
   rushing: string[]
+  blocking: string[]
   specialTeams: string[]
 }
 
 interface FilterSidebarProps {
   filters: FilterState
   onFilterChange: (filters: FilterState) => void
+}
+
+// Filter row component with radio button, label, and count
+function FilterRow({ 
+  label, 
+  count, 
+  checked, 
+  onChange,
+  children 
+}: { 
+  label: string
+  count: number
+  checked: boolean
+  onChange: () => void
+  children?: React.ReactNode
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <button 
+          onClick={onChange}
+          className="flex items-center gap-2 text-left"
+        >
+          <div className={cn(
+            "h-4 w-4 rounded-full border flex items-center justify-center",
+            checked ? "border-[#3d4a5c]" : "border-[#85909e]"
+          )}>
+            {checked && <div className="h-2 w-2 rounded-full bg-[#3d4a5c]" />}
+          </div>
+          <span className="text-sm text-foreground">{label}</span>
+        </button>
+        <span className="text-sm text-muted-foreground">{count}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Toggle badge component
+function ToggleBadge({ 
+  label, 
+  selected, 
+  onClick 
+}: { 
+  label: string
+  selected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-2.5 py-1 text-xs rounded border transition-colors",
+        selected 
+          ? "bg-[#3d4a5c] text-white border-[#3d4a5c]" 
+          : "bg-transparent text-[#3d4a5c] border-[#3d4a5c] hover:bg-[#3d4a5c]/10"
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+// Preset button for sliders
+function PresetButton({ 
+  label, 
+  selected, 
+  onClick 
+}: { 
+  label: string
+  selected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-2 py-1 text-xs rounded border transition-colors",
+        selected 
+          ? "bg-[#3d4a5c] text-white border-[#3d4a5c]" 
+          : "bg-transparent text-[#3d4a5c] border-[#3d4a5c] hover:bg-[#3d4a5c]/10"
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+// Section header component
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+      {children}
+    </span>
+  )
 }
 
 export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
@@ -31,12 +126,10 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
     let next: any[] = []
 
     if (type === "range") {
-      next = value // Value is [min, max]
+      next = value
     } else if (type === "set") {
-        // For exclusive sets or direct assignment
-        next = value
+      next = value
     } else {
-      // Toggle logic
       next = current.includes(value) 
         ? current.filter(i => i !== value)
         : [...current, value]
@@ -45,13 +138,17 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
     onFilterChange({ ...filters, [category]: next })
   }
 
+  const isInRange = (range: number[], min: number, max: number) => {
+    return range[0] === min && range[1] === max
+  }
+
   return (
     <div className="h-full overflow-y-auto bg-background">
       <div className="p-4 border-b border-border sticky top-0 bg-background z-10 flex justify-between items-center">
         <span className="text-sm font-semibold">Filters</span>
         <Button variant="ghost" size="sm" onClick={() => onFilterChange({
-            downs: [], distance: [0, 20], yardLine: [0, 100], hash: [],
-            playContext: [], playResult: [], passing: [], rushing: [], specialTeams: []
+          downs: [], distance: [0, 100], yardLine: [50], hash: [],
+          playContext: [], playResult: [], passing: [], rushing: [], blocking: [], specialTeams: []
         })}>
           Reset
         </Button>
@@ -61,279 +158,375 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
         
         {/* GAME CONTEXT */}
         <AccordionItem value="gameContext" className="border-b border-border">
-          <AccordionTrigger className="text-sm font-bold py-4">Game Context</AccordionTrigger>
-          <AccordionContent className="space-y-6 pt-2">
+          <AccordionTrigger className="text-sm font-semibold py-3">Game Context</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
             
             {/* Down */}
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Down</span>
-              <div className="flex gap-2">
+            <FilterRow label="Down" count={123} checked={filters.downs.length > 0} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
                 {[1, 2, 3, 4].map(d => (
-                  <Button 
-                    key={d} 
-                    variant={filters.downs.includes(d) ? "primary" : "outline"}
-                    size="sm"
-                    className="flex-1 h-8"
+                  <ToggleBadge 
+                    key={d}
+                    label={`${d}${d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'}`}
+                    selected={filters.downs.includes(d)}
                     onClick={() => updateFilter("downs", d)}
-                  >
-                    {d}{d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'}
-                  </Button>
+                  />
                 ))}
               </div>
-            </div>
+            </FilterRow>
 
-            {/* Distance */}
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Distance to First</span>
-              <div className="flex gap-2 mb-2">
-                <Button variant="outline" size="xsmall" className="flex-1" onClick={() => updateFilter("distance", [1, 3], "range")}>Short (1-3)</Button>
-                <Button variant="outline" size="xsmall" className="flex-1" onClick={() => updateFilter("distance", [4, 7], "range")}>Med (4-7)</Button>
-                <Button variant="outline" size="xsmall" className="flex-1" onClick={() => updateFilter("distance", [8, 20], "range")}>Long (8+)</Button>
+            {/* Distance to first */}
+            <FilterRow label="Distance to first" count={128} checked={!isInRange(filters.distance, 0, 100)} onChange={() => {}}>
+              <div className="pl-6 space-y-2">
+                <div className="flex gap-1.5">
+                  <PresetButton label="Short: 1-3" selected={isInRange(filters.distance, 1, 3)} onClick={() => updateFilter("distance", [1, 3], "range")} />
+                  <PresetButton label="Medium: 4-7" selected={isInRange(filters.distance, 4, 7)} onClick={() => updateFilter("distance", [4, 7], "range")} />
+                  <PresetButton label="Long: 8+" selected={isInRange(filters.distance, 8, 100)} onClick={() => updateFilter("distance", [8, 100], "range")} />
+                </div>
+                <Slider 
+                  value={filters.distance} 
+                  min={0} max={100} step={1} 
+                  onValueChange={(val) => updateFilter("distance", val, "range")} 
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{filters.distance[0]}</span>
+                  <span>{filters.distance[1]}</span>
+                </div>
               </div>
-              <Slider 
-                value={filters.distance} 
-                min={0} max={20} step={1} 
-                onValueChange={(val) => updateFilter("distance", val, "range")} 
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{filters.distance[0]}</span>
-                <span>{filters.distance[1]}+</span>
-              </div>
-            </div>
+            </FilterRow>
 
-            {/* Yard Line */}
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Yard Line</span>
-              <Slider 
-                value={filters.yardLine} 
-                min={0} max={100} step={1} 
-                onValueChange={(val) => updateFilter("yardLine", val, "range")} 
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Own End</span>
-                <span>50</span>
-                <span>Opp End</span>
+            {/* Yard line */}
+            <FilterRow label="Yard line" count={128} checked={filters.yardLine[0] !== 50} onChange={() => {}}>
+              <div className="pl-6 space-y-2">
+                <Slider 
+                  value={filters.yardLine} 
+                  min={0} max={100} step={1} 
+                  onValueChange={(val) => updateFilter("yardLine", val, "range")} 
+                />
+                <div className="flex justify-center text-xs text-muted-foreground">
+                  <span>{filters.yardLine[0]}</span>
+                </div>
               </div>
-            </div>
+            </FilterRow>
 
             {/* Hash */}
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Hash</span>
-              <div className="flex rounded-md shadow-sm" role="group">
-                {["Left", "Middle", "Right"].map((h) => (
-                  <Button
+            <FilterRow label="Hash" count={123} checked={filters.hash.length > 0} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                {["Left", "Middle", "Right"].map(h => (
+                  <ToggleBadge 
                     key={h}
-                    variant={filters.hash.includes(h) ? "primary" : "outline"}
-                    size="sm"
-                    className="flex-1 rounded-none first:rounded-l-md last:rounded-r-md border-r-0 last:border-r"
+                    label={h}
+                    selected={filters.hash.includes(h)}
                     onClick={() => updateFilter("hash", h)}
-                  >
-                    {h}
-                  </Button>
+                  />
                 ))}
               </div>
-            </div>
+            </FilterRow>
 
           </AccordionContent>
         </AccordionItem>
 
         {/* PLAY CONTEXT */}
         <AccordionItem value="playContext" className="border-b border-border">
-          <AccordionTrigger className="text-sm font-bold py-4">Play Context</AccordionTrigger>
-          <AccordionContent className="space-y-6 pt-2">
+          <AccordionTrigger className="text-sm font-semibold py-3">Play Context</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
             
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Play Development</span>
-              <div className="space-y-2">
-                <Checkbox label="Play-action" checked={filters.playContext.includes("playAction")} onCheckedChange={() => updateFilter("playContext", "playAction")} />
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Checkbox label="RPO" checked={filters.playContext.some(i => i.startsWith("rpo"))} onCheckedChange={() => {
-                      // Toggle all RPO options
-                      const hasRpo = filters.playContext.some(i => i.startsWith("rpo"))
-                      if (hasRpo) {
-                        onFilterChange({ ...filters, playContext: filters.playContext.filter(i => !i.startsWith("rpo")) })
-                      }
-                    }} />
-                  </div>
-                  <div className="pl-6 flex gap-2">
-                    <Badge variant={filters.playContext.includes("rpo-Pass") ? "default" : "outline"} className="cursor-pointer" onClick={() => updateFilter("playContext", "rpo-Pass")}>Pass</Badge>
-                    <Badge variant={filters.playContext.includes("rpo-Run") ? "default" : "outline"} className="cursor-pointer" onClick={() => updateFilter("playContext", "rpo-Run")}>Run</Badge>
-                  </div>
-                </div>
-
-                <Checkbox label="Screen" checked={filters.playContext.includes("screen")} onCheckedChange={() => updateFilter("playContext", "screen")} />
-                <Checkbox label="Designed Rollout" checked={filters.playContext.includes("designedRollout")} onCheckedChange={() => updateFilter("playContext", "designedRollout")} />
-                <Checkbox label="Broken Play" checked={filters.playContext.includes("brokenPlay")} onCheckedChange={() => updateFilter("playContext", "brokenPlay")} />
+            <SectionHeader>Play Development</SectionHeader>
+            
+            <FilterRow label="Play-action" count={123} checked={filters.playContext.includes("playAction")} onChange={() => updateFilter("playContext", "playAction")} />
+            
+            <FilterRow label="RPO" count={128} checked={filters.playContext.some(i => i.startsWith("rpo"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Pass" selected={filters.playContext.includes("rpo-Pass")} onClick={() => updateFilter("playContext", "rpo-Pass")} />
+                <ToggleBadge label="Run" selected={filters.playContext.includes("rpo-Run")} onClick={() => updateFilter("playContext", "rpo-Run")} />
               </div>
-            </div>
+            </FilterRow>
 
-            <div className="space-y-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase">Play Result</span>
-              <div className="space-y-2">
-                 {/* Touchdown with Sub-options */}
-                 <div className="space-y-2">
-                    <Checkbox label="Touchdown" checked={filters.playResult.some(i => i.startsWith("td"))} onCheckedChange={() => {
-                      const hasTd = filters.playResult.some(i => i.startsWith("td"))
-                      if (hasTd) {
-                        onFilterChange({ ...filters, playResult: filters.playResult.filter(i => !i.startsWith("td")) })
-                      }
-                    }} />
-                    <div className="pl-6 flex flex-wrap gap-2">
-                      {["Pass", "Run", "Defensive"].map(t => (
-                        <Badge 
-                          key={t}
-                          variant={filters.playResult.includes(`td-${t}`) ? "default" : "outline"}
-                          className="cursor-pointer text-[10px] h-5"
-                          onClick={() => updateFilter("playResult", `td-${t}`)}
-                        >
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                 </div>
-                 
-                 {/* First Down */}
-                 <div className="space-y-2">
-                    <Checkbox label="First Down" checked={filters.playResult.some(i => i.startsWith("fd"))} onCheckedChange={() => {
-                      const hasFd = filters.playResult.some(i => i.startsWith("fd"))
-                      if (hasFd) {
-                        onFilterChange({ ...filters, playResult: filters.playResult.filter(i => !i.startsWith("fd")) })
-                      }
-                    }} />
-                    <div className="pl-6 flex flex-wrap gap-2">
-                      {["Pass", "Run"].map(t => (
-                        <Badge 
-                          key={t}
-                          variant={filters.playResult.includes(`fd-${t}`) ? "default" : "outline"}
-                          className="cursor-pointer text-[10px] h-5"
-                          onClick={() => updateFilter("playResult", `fd-${t}`)}
-                        >
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                 </div>
+            <FilterRow label="Screen" count={123} checked={filters.playContext.includes("screen")} onChange={() => updateFilter("playContext", "screen")} />
+            <FilterRow label="Designed rollout" count={123} checked={filters.playContext.includes("designedRollout")} onChange={() => updateFilter("playContext", "designedRollout")} />
+            <FilterRow label="Broken Play" count={123} checked={filters.playContext.includes("brokenPlay")} onChange={() => updateFilter("playContext", "brokenPlay")} />
 
-                 {/* Turnover */}
-                 <div className="space-y-2">
-                    <Checkbox label="Turnover" checked={filters.playResult.some(i => i.startsWith("to"))} onCheckedChange={() => {
-                      const hasTo = filters.playResult.some(i => i.startsWith("to"))
-                      if (hasTo) {
-                        onFilterChange({ ...filters, playResult: filters.playResult.filter(i => !i.startsWith("to")) })
-                      }
-                    }} />
-                    <div className="pl-6 flex flex-wrap gap-2">
-                      {["Fumble", "Interception", "On downs"].map(t => (
-                        <Badge 
-                          key={t}
-                          variant={filters.playResult.includes(`to-${t}`) ? "default" : "outline"}
-                          className="cursor-pointer text-[10px] h-5"
-                          onClick={() => updateFilter("playResult", `to-${t}`)}
-                        >
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                 </div>
+            <SectionHeader>Play Result</SectionHeader>
+
+            <FilterRow label="Touchdown" count={123} checked={filters.playResult.some(i => i.startsWith("td"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6 flex-wrap">
+                <ToggleBadge label="Pass" selected={filters.playResult.includes("td-Pass")} onClick={() => updateFilter("playResult", "td-Pass")} />
+                <ToggleBadge label="Run" selected={filters.playResult.includes("td-Run")} onClick={() => updateFilter("playResult", "td-Run")} />
+                <ToggleBadge label="Defensive" selected={filters.playResult.includes("td-Defensive")} onClick={() => updateFilter("playResult", "td-Defensive")} />
               </div>
-            </div>
+            </FilterRow>
+
+            <FilterRow label="First down earned" count={128} checked={filters.playResult.some(i => i.startsWith("fd"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Pass" selected={filters.playResult.includes("fd-Pass")} onClick={() => updateFilter("playResult", "fd-Pass")} />
+                <ToggleBadge label="Run" selected={filters.playResult.includes("fd-Run")} onClick={() => updateFilter("playResult", "fd-Run")} />
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Turnover" count={123} checked={filters.playResult.some(i => i.startsWith("to"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6 flex-wrap">
+                <ToggleBadge label="Fumble" selected={filters.playResult.includes("to-Fumble")} onClick={() => updateFilter("playResult", "to-Fumble")} />
+                <ToggleBadge label="Interception" selected={filters.playResult.includes("to-Interception")} onClick={() => updateFilter("playResult", "to-Interception")} />
+                <ToggleBadge label="On downs" selected={filters.playResult.includes("to-OnDowns")} onClick={() => updateFilter("playResult", "to-OnDowns")} />
+                <ToggleBadge label="Safety" selected={filters.playResult.includes("to-Safety")} onClick={() => updateFilter("playResult", "to-Safety")} />
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Penalty" count={123} checked={filters.playResult.some(i => i.startsWith("penalty"))} onChange={() => {}}>
+              <div className="pl-6">
+                <Select placeholder="Select penalty" onValueChange={(val) => updateFilter("playResult", `penalty-${val}`)}>
+                  <SelectItem value="holding">Holding</SelectItem>
+                  <SelectItem value="offside">Offside</SelectItem>
+                  <SelectItem value="falseStart">False Start</SelectItem>
+                  <SelectItem value="passInterference">Pass Interference</SelectItem>
+                </Select>
+              </div>
+            </FilterRow>
 
           </AccordionContent>
         </AccordionItem>
 
         {/* PASSING */}
         <AccordionItem value="passing" className="border-b border-border">
-          <AccordionTrigger className="text-sm font-bold py-4">Passing</AccordionTrigger>
-          <AccordionContent className="space-y-4 pt-2">
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Pass Result</span>
-                <Checkbox label="Complete" checked={filters.passing.includes("result-Complete")} onCheckedChange={() => updateFilter("passing", "result-Complete")} />
-                <Checkbox label="Incomplete" checked={filters.passing.includes("result-Incomplete")} onCheckedChange={() => updateFilter("passing", "result-Incomplete")} />
-             </div>
+          <AccordionTrigger className="text-sm font-semibold py-3">Passing</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
+            
+            <SectionHeader>Passing (Quarterback)</SectionHeader>
+            
+            <FilterRow label="Pass thrown" count={62} checked={filters.passing.some(i => i.startsWith("thrown"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Complete" selected={filters.passing.includes("thrown-Complete")} onClick={() => updateFilter("passing", "thrown-Complete")} />
+                <ToggleBadge label="Incomplete" selected={filters.passing.includes("thrown-Incomplete")} onClick={() => updateFilter("passing", "thrown-Incomplete")} />
+              </div>
+            </FilterRow>
 
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Quarterback</span>
-                <Checkbox label="Scramble" checked={filters.passing.includes("scramble")} onCheckedChange={() => updateFilter("passing", "scramble")} />
-                <Checkbox label="Sack Taken" checked={filters.passing.includes("sack")} onCheckedChange={() => updateFilter("passing", "sack")} />
-                <Checkbox label="Throwaway" checked={filters.passing.includes("throwaway")} onCheckedChange={() => updateFilter("passing", "throwaway")} />
-             </div>
+            <FilterRow label="Pass thrown under pressure" count={59} checked={filters.passing.some(i => i.startsWith("pressure"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Complete" selected={filters.passing.includes("pressure-Complete")} onClick={() => updateFilter("passing", "pressure-Complete")} />
+                <ToggleBadge label="Incomplete" selected={filters.passing.includes("pressure-Incomplete")} onClick={() => updateFilter("passing", "pressure-Incomplete")} />
+              </div>
+            </FilterRow>
 
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Receiver</span>
-                <Checkbox label="Drop" checked={filters.passing.includes("drop")} onCheckedChange={() => updateFilter("passing", "drop")} />
-                <Checkbox label="Contested Catch" checked={filters.passing.includes("contested")} onCheckedChange={() => updateFilter("passing", "contested")} />
-             </div>
-             
-             <div className="space-y-2">
-               <span className="text-xs font-semibold text-muted-foreground uppercase">Depth of Target</span>
-               <div className="grid grid-cols-2 gap-2">
-                 {["Behind LOS", "0-10", "10-20", "20+"].map(d => (
-                   <Button 
-                      key={d}
-                      variant={filters.passing.includes(`depth-${d}`) ? "primary" : "outline"}
-                      size="xsmall"
-                      onClick={() => updateFilter("passing", `depth-${d}`)}
-                   >
-                     {d}
-                   </Button>
-                 ))}
-               </div>
-             </div>
+            <FilterRow label="Scramble" count={17} checked={filters.passing.includes("scramble")} onChange={() => updateFilter("passing", "scramble")} />
+            <FilterRow label="Sack taken" count={123} checked={filters.passing.includes("sackTaken")} onChange={() => updateFilter("passing", "sackTaken")} />
+            <FilterRow label="Throwaway" count={123} checked={filters.passing.includes("throwaway")} onChange={() => updateFilter("passing", "throwaway")} />
+
+            <SectionHeader>Receiving</SectionHeader>
+
+            <FilterRow label="Target / Pass targeted" count={13} checked={filters.passing.includes("target")} onChange={() => updateFilter("passing", "target")} />
+            <FilterRow label="Reception" count={7} checked={filters.passing.includes("reception")} onChange={() => updateFilter("passing", "reception")} />
+            <FilterRow label="Drop" count={17} checked={filters.passing.includes("drop")} onChange={() => updateFilter("passing", "drop")} />
+            <FilterRow label="Contested catch" count={123} checked={filters.passing.includes("contested")} onChange={() => updateFilter("passing", "contested")} />
+            
+            <FilterRow label="Route type" count={123} checked={filters.passing.some(i => i.startsWith("route"))} onChange={() => {}}>
+              <div className="pl-6">
+                <Select placeholder="Select route type" onValueChange={(val) => updateFilter("passing", `route-${val}`)}>
+                  <SelectItem value="slant">Slant</SelectItem>
+                  <SelectItem value="out">Out</SelectItem>
+                  <SelectItem value="in">In</SelectItem>
+                  <SelectItem value="go">Go</SelectItem>
+                  <SelectItem value="post">Post</SelectItem>
+                  <SelectItem value="corner">Corner</SelectItem>
+                </Select>
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Depth of target" count={123} checked={filters.passing.some(i => i.startsWith("depth"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6 flex-wrap">
+                <ToggleBadge label="Behind LOS" selected={filters.passing.includes("depth-BehindLOS")} onClick={() => updateFilter("passing", "depth-BehindLOS")} />
+                <ToggleBadge label="0-10" selected={filters.passing.includes("depth-0-10")} onClick={() => updateFilter("passing", "depth-0-10")} />
+                <ToggleBadge label="10-20" selected={filters.passing.includes("depth-10-20")} onClick={() => updateFilter("passing", "depth-10-20")} />
+                <ToggleBadge label="20+" selected={filters.passing.includes("depth-20+")} onClick={() => updateFilter("passing", "depth-20+")} />
+              </div>
+            </FilterRow>
+
+            <SectionHeader>Pass Defense</SectionHeader>
+
+            <FilterRow label="Pass defended / Breakup" count={13} checked={filters.passing.includes("defended")} onChange={() => updateFilter("passing", "defended")} />
+            <FilterRow label="Interception" count={7} checked={filters.passing.includes("interception")} onChange={() => updateFilter("passing", "interception")} />
+            <FilterRow label="Sack made" count={17} checked={filters.passing.includes("sackMade")} onChange={() => updateFilter("passing", "sackMade")} />
+            <FilterRow label="Pressure generated" count={123} checked={filters.passing.includes("pressureGenerated")} onChange={() => updateFilter("passing", "pressureGenerated")} />
+            
+            <FilterRow label="Coverage" count={123} checked={filters.passing.some(i => i.startsWith("coverage"))} onChange={() => {}}>
+              <div className="pl-6">
+                <Select placeholder="Select coverage" onValueChange={(val) => updateFilter("passing", `coverage-${val}`)}>
+                  <SelectItem value="man">Man</SelectItem>
+                  <SelectItem value="zone">Zone</SelectItem>
+                  <SelectItem value="cover2">Cover 2</SelectItem>
+                  <SelectItem value="cover3">Cover 3</SelectItem>
+                </Select>
+              </div>
+            </FilterRow>
+
           </AccordionContent>
         </AccordionItem>
 
         {/* RUSHING */}
         <AccordionItem value="rushing" className="border-b border-border">
-          <AccordionTrigger className="text-sm font-bold py-4">Rushing</AccordionTrigger>
-          <AccordionContent className="space-y-4 pt-2">
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Result</span>
-                <Checkbox label="Gain" checked={filters.rushing.includes("attempt-Gain")} onCheckedChange={() => updateFilter("rushing", "attempt-Gain")} />
-                <Checkbox label="Loss / No gain" checked={filters.rushing.includes("attempt-Loss")} onCheckedChange={() => updateFilter("rushing", "attempt-Loss")} />
-             </div>
+          <AccordionTrigger className="text-sm font-semibold py-3">Rushing</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
+            
+            <SectionHeader>Rushing (Ball Carrier)</SectionHeader>
+            
+            <FilterRow label="Rush attempt" count={62} checked={filters.rushing.some(i => i.startsWith("attempt"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Gain" selected={filters.rushing.includes("attempt-Gain")} onClick={() => updateFilter("rushing", "attempt-Gain")} />
+                <ToggleBadge label="Loss / No gain" selected={filters.rushing.includes("attempt-Loss")} onClick={() => updateFilter("rushing", "attempt-Loss")} />
+              </div>
+            </FilterRow>
 
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Direction</span>
-                <div className="grid grid-cols-3 gap-1">
-                   {["Left end", "Left tackle", "Left guard", "Center", "Right guard", "Right tackle", "Right end"].map((d, idx) => (
-                     <Button 
-                        key={d}
-                        variant={filters.rushing.includes(`dir-${d}`) ? "primary" : "outline"}
-                        size="xsmall"
-                        className={cn(
-                          "text-[10px] h-7",
-                          d === "Center" && "col-start-2",
-                          d === "Right end" && "col-start-3"
-                        )}
-                        onClick={() => updateFilter("rushing", `dir-${d}`)}
-                     >
-                       {d === "Center" ? "Center" : `${d.split(' ')[0][0]} ${d.split(' ')[1]}`}
-                     </Button>
-                   ))}
+            <FilterRow label="Yards gained after contact" count={128} checked={filters.rushing.some(i => i.startsWith("yac"))} onChange={() => {}}>
+              <div className="pl-6 space-y-2">
+                <div className="flex gap-1.5">
+                  <PresetButton label="Short: 1-3" selected={filters.rushing.includes("yac-1-3")} onClick={() => updateFilter("rushing", "yac-1-3")} />
+                  <PresetButton label="Medium: 4-7" selected={filters.rushing.includes("yac-4-7")} onClick={() => updateFilter("rushing", "yac-4-7")} />
+                  <PresetButton label="Long: 8+" selected={filters.rushing.includes("yac-8+")} onClick={() => updateFilter("rushing", "yac-8+")} />
                 </div>
-             </div>
+                <Slider 
+                  value={[0, 100]} 
+                  min={0} max={100} step={1} 
+                  onValueChange={() => {}} 
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </FilterRow>
 
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Defense</span>
-                <Checkbox label="TFL (Tackle for Loss)" checked={filters.rushing.includes("tfl")} onCheckedChange={() => updateFilter("rushing", "tfl")} />
-                <Checkbox label="Forced Fumble" checked={filters.rushing.includes("forcedFumble")} onCheckedChange={() => updateFilter("rushing", "forcedFumble")} />
-             </div>
+            <FilterRow label="Rush direction" count={17} checked={filters.rushing.some(i => i.startsWith("dir"))} onChange={() => {}}>
+              <div className="pl-6 space-y-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Left end" selected={filters.rushing.includes("dir-LeftEnd")} onClick={() => updateFilter("rushing", "dir-LeftEnd")} />
+                  <ToggleBadge label="Left tackle" selected={filters.rushing.includes("dir-LeftTackle")} onClick={() => updateFilter("rushing", "dir-LeftTackle")} />
+                  <ToggleBadge label="Left guard" selected={filters.rushing.includes("dir-LeftGuard")} onClick={() => updateFilter("rushing", "dir-LeftGuard")} />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Center" selected={filters.rushing.includes("dir-Center")} onClick={() => updateFilter("rushing", "dir-Center")} />
+                  <ToggleBadge label="Right guard" selected={filters.rushing.includes("dir-RightGuard")} onClick={() => updateFilter("rushing", "dir-RightGuard")} />
+                  <ToggleBadge label="Right tackle" selected={filters.rushing.includes("dir-RightTackle")} onClick={() => updateFilter("rushing", "dir-RightTackle")} />
+                </div>
+                <div className="flex gap-1.5">
+                  <ToggleBadge label="Right end" selected={filters.rushing.includes("dir-RightEnd")} onClick={() => updateFilter("rushing", "dir-RightEnd")} />
+                </div>
+              </div>
+            </FilterRow>
+
+            <SectionHeader>Rush Defense</SectionHeader>
+
+            <FilterRow label="Tackle made" count={13} checked={filters.rushing.includes("tackleMade")} onChange={() => updateFilter("rushing", "tackleMade")} />
+            <FilterRow label="Tackle missed" count={7} checked={filters.rushing.includes("tackleMissed")} onChange={() => updateFilter("rushing", "tackleMissed")} />
+            <FilterRow label="Tackle for loss made" count={17} checked={filters.rushing.includes("tfl")} onChange={() => updateFilter("rushing", "tfl")} />
+            <FilterRow label="Forced fumble" count={123} checked={filters.rushing.includes("forcedFumble")} onChange={() => updateFilter("rushing", "forcedFumble")} />
+
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* BLOCKING */}
+        <AccordionItem value="blocking" className="border-b border-border">
+          <AccordionTrigger className="text-sm font-semibold py-3">Blocking</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
+            
+            <SectionHeader>Offensive Line</SectionHeader>
+            
+            <FilterRow label="Pass block" count={62} checked={filters.blocking.includes("passBlock")} onChange={() => updateFilter("blocking", "passBlock")} />
+            <FilterRow label="Run block" count={128} checked={filters.blocking.includes("runBlock")} onChange={() => updateFilter("blocking", "runBlock")} />
+            <FilterRow label="Allowed pressure" count={17} checked={filters.blocking.includes("allowedPressure")} onChange={() => updateFilter("blocking", "allowedPressure")} />
+            <FilterRow label="Allowed sack" count={123} checked={filters.blocking.includes("allowedSack")} onChange={() => updateFilter("blocking", "allowedSack")} />
+
           </AccordionContent>
         </AccordionItem>
 
         {/* SPECIAL TEAMS */}
         <AccordionItem value="specialTeams" className="border-b border-border">
-          <AccordionTrigger className="text-sm font-bold py-4">Special Teams</AccordionTrigger>
-          <AccordionContent className="space-y-4 pt-2">
-             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Play Type</span>
-                <Checkbox label="Field Goal" checked={filters.specialTeams.includes("type-Field Goal")} onCheckedChange={() => updateFilter("specialTeams", "type-Field Goal")} />
-                <Checkbox label="PAT" checked={filters.specialTeams.includes("type-PAT")} onCheckedChange={() => updateFilter("specialTeams", "type-PAT")} />
-                <Checkbox label="Punt" checked={filters.specialTeams.includes("type-Punt")} onCheckedChange={() => updateFilter("specialTeams", "type-Punt")} />
-                <Checkbox label="Kickoff" checked={filters.specialTeams.includes("type-Kickoff")} onCheckedChange={() => updateFilter("specialTeams", "type-Kickoff")} />
-             </div>
+          <AccordionTrigger className="text-sm font-semibold py-3">Special Teams</AccordionTrigger>
+          <AccordionContent className="space-y-5 pb-4">
+            
+            <FilterRow label="Field goal attempt" count={17} checked={filters.specialTeams.some(i => i.startsWith("fg"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6 flex-wrap">
+                <ToggleBadge label="Made" selected={filters.specialTeams.includes("fg-Made")} onClick={() => updateFilter("specialTeams", "fg-Made")} />
+                <ToggleBadge label="Missed" selected={filters.specialTeams.includes("fg-Missed")} onClick={() => updateFilter("specialTeams", "fg-Missed")} />
+                <ToggleBadge label="Blocked" selected={filters.specialTeams.includes("fg-Blocked")} onClick={() => updateFilter("specialTeams", "fg-Blocked")} />
+                <ToggleBadge label="Fake" selected={filters.specialTeams.includes("fg-Fake")} onClick={() => updateFilter("specialTeams", "fg-Fake")} />
+              </div>
+            </FilterRow>
+
+            <FilterRow label="PAT attempt" count={17} checked={filters.specialTeams.some(i => i.startsWith("pat"))} onChange={() => {}}>
+              <div className="flex gap-1.5 pl-6">
+                <ToggleBadge label="Made" selected={filters.specialTeams.includes("pat-Made")} onClick={() => updateFilter("specialTeams", "pat-Made")} />
+                <ToggleBadge label="Missed" selected={filters.specialTeams.includes("pat-Missed")} onClick={() => updateFilter("specialTeams", "pat-Missed")} />
+                <ToggleBadge label="Blocked" selected={filters.specialTeams.includes("pat-Blocked")} onClick={() => updateFilter("specialTeams", "pat-Blocked")} />
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Punt" count={62} checked={filters.specialTeams.some(i => i.startsWith("punt-") && !i.startsWith("puntReturn"))} onChange={() => {}}>
+              <div className="pl-6 space-y-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("punt-Regular")} onClick={() => updateFilter("specialTeams", "punt-Regular")} />
+                  <ToggleBadge label="Fake" selected={filters.specialTeams.includes("punt-Fake")} onClick={() => updateFilter("specialTeams", "punt-Fake")} />
+                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("punt-Touchback")} onClick={() => updateFilter("specialTeams", "punt-Touchback")} />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("punt-OOB")} onClick={() => updateFilter("specialTeams", "punt-OOB")} />
+                  <ToggleBadge label="Returned" selected={filters.specialTeams.includes("punt-Returned")} onClick={() => updateFilter("specialTeams", "punt-Returned")} />
+                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("punt-Downed")} onClick={() => updateFilter("specialTeams", "punt-Downed")} />
+                </div>
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Punt return" count={128} checked={filters.specialTeams.some(i => i.startsWith("puntReturn"))} onChange={() => {}}>
+              <div className="pl-6 space-y-2">
+                <div className="flex gap-1.5">
+                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("puntReturn-0-10")} onClick={() => updateFilter("specialTeams", "puntReturn-0-10")} />
+                  <PresetButton label="Medium: 10-20" selected={filters.specialTeams.includes("puntReturn-10-20")} onClick={() => updateFilter("specialTeams", "puntReturn-10-20")} />
+                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("puntReturn-20+")} onClick={() => updateFilter("specialTeams", "puntReturn-20+")} />
+                </div>
+                <Slider 
+                  value={[0, 100]} 
+                  min={0} max={100} step={1} 
+                  onValueChange={() => {}} 
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Kickoff" count={123} checked={filters.specialTeams.some(i => i.startsWith("kickoff-") && !i.startsWith("kickoffReturn"))} onChange={() => {}}>
+              <div className="pl-6 space-y-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("kickoff-Regular")} onClick={() => updateFilter("specialTeams", "kickoff-Regular")} />
+                  <ToggleBadge label="Onside" selected={filters.specialTeams.includes("kickoff-Onside")} onClick={() => updateFilter("specialTeams", "kickoff-Onside")} />
+                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("kickoff-Touchback")} onClick={() => updateFilter("specialTeams", "kickoff-Touchback")} />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("kickoff-OOB")} onClick={() => updateFilter("specialTeams", "kickoff-OOB")} />
+                  <ToggleBadge label="Returned" selected={filters.specialTeams.includes("kickoff-Returned")} onClick={() => updateFilter("specialTeams", "kickoff-Returned")} />
+                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("kickoff-Downed")} onClick={() => updateFilter("specialTeams", "kickoff-Downed")} />
+                </div>
+              </div>
+            </FilterRow>
+
+            <FilterRow label="Kickoff return" count={128} checked={filters.specialTeams.some(i => i.startsWith("kickoffReturn"))} onChange={() => {}}>
+              <div className="pl-6 space-y-2">
+                <div className="flex gap-1.5">
+                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("kickoffReturn-0-10")} onClick={() => updateFilter("specialTeams", "kickoffReturn-0-10")} />
+                  <PresetButton label="Medium: 10-20" selected={filters.specialTeams.includes("kickoffReturn-10-20")} onClick={() => updateFilter("specialTeams", "kickoffReturn-10-20")} />
+                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("kickoffReturn-20+")} onClick={() => updateFilter("specialTeams", "kickoffReturn-20+")} />
+                </div>
+                <Slider 
+                  value={[0, 100]} 
+                  min={0} max={100} step={1} 
+                  onValueChange={() => {}} 
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>0</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </FilterRow>
+
           </AccordionContent>
         </AccordionItem>
 

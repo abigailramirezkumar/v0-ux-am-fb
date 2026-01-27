@@ -39,6 +39,7 @@ export interface LibraryItemData {
   createdDate?: string
   angles?: number
   comments?: number
+  items?: LibraryItemData[]
 }
 
 interface LibraryItemProps {

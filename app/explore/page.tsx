@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useRef } from "react"
+import { useState, useMemo } from "react"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FilterSidebar, type FilterState } from "@/components/explore/filter-sidebar"
@@ -15,34 +15,6 @@ export default function ExplorePage() {
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null)
   const [activeTab, setActiveTab] = useState("plays")
   const { isFilterSidebarOpen } = useFilter()
-  const [filterWidth, setFilterWidth] = useState(280)
-  const isResizing = useRef(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    isResizing.current = true
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current || !containerRef.current) return
-      const containerRect = containerRef.current.getBoundingClientRect()
-      const newWidth = e.clientX - containerRect.left
-      setFilterWidth(Math.max(200, Math.min(400, newWidth)))
-    }
-
-    const handleMouseUp = () => {
-      isResizing.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-  }, [])
   
   // Initial State matches new schema
   const [filters, setFilters] = useState<FilterState>({
@@ -196,32 +168,24 @@ export default function ExplorePage() {
       </div>
 
       {/* Main Layout: Split Panes with Module Design */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex">
-        {/* Left Module: Filters - Resizable Sliding Panel */}
+      <div className="flex-1 min-h-0 flex">
+        {/* Left Module: Filters - Sliding Panel */}
         <div 
           className={cn(
-            "h-full overflow-hidden flex-shrink-0 flex",
-            isFilterSidebarOpen ? "opacity-100" : "w-0 opacity-0"
+            "h-full transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0",
+            isFilterSidebarOpen ? "w-[280px] opacity-100" : "w-0 opacity-0"
           )}
-          style={{ 
-            width: isFilterSidebarOpen ? filterWidth : 0,
-            transition: isResizing.current ? 'none' : 'width 300ms ease-in-out, opacity 300ms ease-in-out'
-          }}
         >
-          <div 
-            className="h-full rounded-xl bg-background shadow-sm overflow-hidden flex flex-col flex-1"
-            style={{ minWidth: filterWidth }}
-          >
+          <div className="h-full w-[280px] rounded-xl bg-background shadow-sm overflow-hidden flex flex-col">
             <FilterSidebar filters={filters} onFilterChange={setFilters} />
           </div>
-          {/* Resize Handle */}
-          <div
-            onMouseDown={handleMouseDown}
-            className="w-2 h-full cursor-col-resize flex-shrink-0 group flex items-center justify-center hover:bg-primary/10 transition-colors"
-          >
-            <div className="w-0.5 h-8 bg-border rounded-full group-hover:bg-primary/50 transition-colors" />
-          </div>
         </div>
+
+        {/* Gap between filter and content */}
+        <div className={cn(
+          "transition-all duration-300 ease-in-out flex-shrink-0",
+          isFilterSidebarOpen ? "w-2" : "w-0"
+        )} />
 
         {/* Main Content Area */}
         <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">

@@ -1357,6 +1357,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
       itemCount: 0,
       thumbnailUrl: "/placeholder-logo.png",
+      items: [],
     }
 
     if (targetFolderId === null) {

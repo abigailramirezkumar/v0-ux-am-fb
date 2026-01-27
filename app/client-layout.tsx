@@ -12,6 +12,7 @@ import { CatapultImportProvider } from "@/lib/catapult-import-context"
 import { DensityProvider } from "@/lib/density-context"
 import { LibraryProvider } from "@/lib/library-context"
 import { FilterProvider, useFilter } from "@/lib/filter-context"
+import { WatchProvider } from "@/components/watch/watch-context"
 
 function ClientLayoutInner({ 
   isWatchPage, 
@@ -70,14 +71,16 @@ export default function ClientLayout({
       <CatapultImportProvider>
         <DensityProvider>
           <LibraryProvider>
-            <FilterProvider>
-              <SidebarProvider defaultOpen={true}>
-                <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
-                  {children}
-                </ClientLayoutInner>
-                <Analytics />
-              </SidebarProvider>
-            </FilterProvider>
+            <WatchProvider>
+              <FilterProvider>
+                <SidebarProvider defaultOpen={true}>
+                  <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
+                    {children}
+                  </ClientLayoutInner>
+                  <Analytics />
+                </SidebarProvider>
+              </FilterProvider>
+            </WatchProvider>
           </LibraryProvider>
         </DensityProvider>
       </CatapultImportProvider>

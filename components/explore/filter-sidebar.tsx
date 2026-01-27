@@ -64,20 +64,23 @@ function FilterRow({
 function ToggleBadge({ 
   label, 
   selected, 
-  onClick 
+  onClick,
+  className
 }: { 
   label: string
   selected: boolean
   onClick: () => void
+  className?: string
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "px-2.5 py-1 text-xs rounded border transition-colors",
+        "px-3 py-1.5 text-xs font-medium transition-colors",
         selected 
-          ? "bg-[#3d4a5c] text-white border-[#3d4a5c]" 
-          : "bg-transparent text-[#3d4a5c] border-[#3d4a5c] hover:bg-[#3d4a5c]/10"
+          ? "bg-[#64748b] text-white" 
+          : "bg-[#3f4a5a] text-[#9ca3af] hover:bg-[#4a5568]",
+        className
       )}
     >
       {label}
@@ -89,20 +92,23 @@ function ToggleBadge({
 function PresetButton({ 
   label, 
   selected, 
-  onClick 
+  onClick,
+  className
 }: { 
   label: string
   selected: boolean
   onClick: () => void
+  className?: string
 }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "px-2 py-1 text-xs rounded border transition-colors",
+        "px-3 py-1.5 text-xs font-medium transition-colors",
         selected 
-          ? "bg-[#3d4a5c] text-white border-[#3d4a5c]" 
-          : "bg-transparent text-[#3d4a5c] border-[#3d4a5c] hover:bg-[#3d4a5c]/10"
+          ? "bg-[#64748b] text-white" 
+          : "bg-[#3f4a5a] text-[#9ca3af] hover:bg-[#4a5568]",
+        className
       )}
     >
       {label}
@@ -163,13 +169,17 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             
             {/* Down */}
             <FilterRow label="Down" count={123} checked={filters.downs.length > 0} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                {[1, 2, 3, 4].map(d => (
+              <div className="flex pl-6">
+                {[1, 2, 3, 4].map((d, i) => (
                   <ToggleBadge 
                     key={d}
                     label={`${d}${d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'}`}
                     selected={filters.downs.includes(d)}
                     onClick={() => updateFilter("downs", d)}
+                    className={cn(
+                      i === 0 && "rounded-l",
+                      i === 3 && "rounded-r"
+                    )}
                   />
                 ))}
               </div>
@@ -178,10 +188,10 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             {/* Distance to first */}
             <FilterRow label="Distance to first" count={128} checked={!isInRange(filters.distance, 0, 100)} onChange={() => {}}>
               <div className="pl-6 space-y-2">
-                <div className="flex gap-1.5">
-                  <PresetButton label="Short: 1-3" selected={isInRange(filters.distance, 1, 3)} onClick={() => updateFilter("distance", [1, 3], "range")} />
+                <div className="flex">
+                  <PresetButton label="Short: 1-3" selected={isInRange(filters.distance, 1, 3)} onClick={() => updateFilter("distance", [1, 3], "range")} className="rounded-l" />
                   <PresetButton label="Medium: 4-7" selected={isInRange(filters.distance, 4, 7)} onClick={() => updateFilter("distance", [4, 7], "range")} />
-                  <PresetButton label="Long: 8+" selected={isInRange(filters.distance, 8, 100)} onClick={() => updateFilter("distance", [8, 100], "range")} />
+                  <PresetButton label="Long: 8+" selected={isInRange(filters.distance, 8, 100)} onClick={() => updateFilter("distance", [8, 100], "range")} className="rounded-r" />
                 </div>
                 <Slider 
                   value={filters.distance} 
@@ -211,13 +221,17 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
 
             {/* Hash */}
             <FilterRow label="Hash" count={123} checked={filters.hash.length > 0} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                {["Left", "Middle", "Right"].map(h => (
+              <div className="flex pl-6">
+                {["Left", "Middle", "Right"].map((h, i) => (
                   <ToggleBadge 
                     key={h}
                     label={h}
                     selected={filters.hash.includes(h)}
                     onClick={() => updateFilter("hash", h)}
+                    className={cn(
+                      i === 0 && "rounded-l",
+                      i === 2 && "rounded-r"
+                    )}
                   />
                 ))}
               </div>
@@ -236,9 +250,9 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             <FilterRow label="Play-action" count={123} checked={filters.playContext.includes("playAction")} onChange={() => updateFilter("playContext", "playAction")} />
             
             <FilterRow label="RPO" count={128} checked={filters.playContext.some(i => i.startsWith("rpo"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Pass" selected={filters.playContext.includes("rpo-Pass")} onClick={() => updateFilter("playContext", "rpo-Pass")} />
-                <ToggleBadge label="Run" selected={filters.playContext.includes("rpo-Run")} onClick={() => updateFilter("playContext", "rpo-Run")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Pass" selected={filters.playContext.includes("rpo-Pass")} onClick={() => updateFilter("playContext", "rpo-Pass")} className="rounded-l" />
+                <ToggleBadge label="Run" selected={filters.playContext.includes("rpo-Run")} onClick={() => updateFilter("playContext", "rpo-Run")} className="rounded-r" />
               </div>
             </FilterRow>
 
@@ -249,26 +263,30 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             <SectionHeader>Play Result</SectionHeader>
 
             <FilterRow label="Touchdown" count={123} checked={filters.playResult.some(i => i.startsWith("td"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6 flex-wrap">
-                <ToggleBadge label="Pass" selected={filters.playResult.includes("td-Pass")} onClick={() => updateFilter("playResult", "td-Pass")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Pass" selected={filters.playResult.includes("td-Pass")} onClick={() => updateFilter("playResult", "td-Pass")} className="rounded-l" />
                 <ToggleBadge label="Run" selected={filters.playResult.includes("td-Run")} onClick={() => updateFilter("playResult", "td-Run")} />
-                <ToggleBadge label="Defensive" selected={filters.playResult.includes("td-Defensive")} onClick={() => updateFilter("playResult", "td-Defensive")} />
+                <ToggleBadge label="Defensive" selected={filters.playResult.includes("td-Defensive")} onClick={() => updateFilter("playResult", "td-Defensive")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="First down earned" count={128} checked={filters.playResult.some(i => i.startsWith("fd"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Pass" selected={filters.playResult.includes("fd-Pass")} onClick={() => updateFilter("playResult", "fd-Pass")} />
-                <ToggleBadge label="Run" selected={filters.playResult.includes("fd-Run")} onClick={() => updateFilter("playResult", "fd-Run")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Pass" selected={filters.playResult.includes("fd-Pass")} onClick={() => updateFilter("playResult", "fd-Pass")} className="rounded-l" />
+                <ToggleBadge label="Run" selected={filters.playResult.includes("fd-Run")} onClick={() => updateFilter("playResult", "fd-Run")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="Turnover" count={123} checked={filters.playResult.some(i => i.startsWith("to"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6 flex-wrap">
-                <ToggleBadge label="Fumble" selected={filters.playResult.includes("to-Fumble")} onClick={() => updateFilter("playResult", "to-Fumble")} />
-                <ToggleBadge label="Interception" selected={filters.playResult.includes("to-Interception")} onClick={() => updateFilter("playResult", "to-Interception")} />
-                <ToggleBadge label="On downs" selected={filters.playResult.includes("to-OnDowns")} onClick={() => updateFilter("playResult", "to-OnDowns")} />
-                <ToggleBadge label="Safety" selected={filters.playResult.includes("to-Safety")} onClick={() => updateFilter("playResult", "to-Safety")} />
+              <div className="pl-6 space-y-1">
+                <div className="flex">
+                  <ToggleBadge label="Fumble" selected={filters.playResult.includes("to-Fumble")} onClick={() => updateFilter("playResult", "to-Fumble")} className="rounded-l" />
+                  <ToggleBadge label="Interception" selected={filters.playResult.includes("to-Interception")} onClick={() => updateFilter("playResult", "to-Interception")} />
+                  <ToggleBadge label="On downs" selected={filters.playResult.includes("to-OnDowns")} onClick={() => updateFilter("playResult", "to-OnDowns")} className="rounded-r" />
+                </div>
+                <div className="flex">
+                  <ToggleBadge label="Safety" selected={filters.playResult.includes("to-Safety")} onClick={() => updateFilter("playResult", "to-Safety")} className="rounded" />
+                </div>
               </div>
             </FilterRow>
 
@@ -294,16 +312,16 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             <SectionHeader>Passing (Quarterback)</SectionHeader>
             
             <FilterRow label="Pass thrown" count={62} checked={filters.passing.some(i => i.startsWith("thrown"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Complete" selected={filters.passing.includes("thrown-Complete")} onClick={() => updateFilter("passing", "thrown-Complete")} />
-                <ToggleBadge label="Incomplete" selected={filters.passing.includes("thrown-Incomplete")} onClick={() => updateFilter("passing", "thrown-Incomplete")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Complete" selected={filters.passing.includes("thrown-Complete")} onClick={() => updateFilter("passing", "thrown-Complete")} className="rounded-l" />
+                <ToggleBadge label="Incomplete" selected={filters.passing.includes("thrown-Incomplete")} onClick={() => updateFilter("passing", "thrown-Incomplete")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="Pass thrown under pressure" count={59} checked={filters.passing.some(i => i.startsWith("pressure"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Complete" selected={filters.passing.includes("pressure-Complete")} onClick={() => updateFilter("passing", "pressure-Complete")} />
-                <ToggleBadge label="Incomplete" selected={filters.passing.includes("pressure-Incomplete")} onClick={() => updateFilter("passing", "pressure-Incomplete")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Complete" selected={filters.passing.includes("pressure-Complete")} onClick={() => updateFilter("passing", "pressure-Complete")} className="rounded-l" />
+                <ToggleBadge label="Incomplete" selected={filters.passing.includes("pressure-Incomplete")} onClick={() => updateFilter("passing", "pressure-Incomplete")} className="rounded-r" />
               </div>
             </FilterRow>
 
@@ -332,11 +350,11 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             </FilterRow>
 
             <FilterRow label="Depth of target" count={123} checked={filters.passing.some(i => i.startsWith("depth"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6 flex-wrap">
-                <ToggleBadge label="Behind LOS" selected={filters.passing.includes("depth-BehindLOS")} onClick={() => updateFilter("passing", "depth-BehindLOS")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Behind LOS" selected={filters.passing.includes("depth-BehindLOS")} onClick={() => updateFilter("passing", "depth-BehindLOS")} className="rounded-l" />
                 <ToggleBadge label="0-10" selected={filters.passing.includes("depth-0-10")} onClick={() => updateFilter("passing", "depth-0-10")} />
                 <ToggleBadge label="10-20" selected={filters.passing.includes("depth-10-20")} onClick={() => updateFilter("passing", "depth-10-20")} />
-                <ToggleBadge label="20+" selected={filters.passing.includes("depth-20+")} onClick={() => updateFilter("passing", "depth-20+")} />
+                <ToggleBadge label="20+" selected={filters.passing.includes("depth-20+")} onClick={() => updateFilter("passing", "depth-20+")} className="rounded-r" />
               </div>
             </FilterRow>
 
@@ -369,18 +387,18 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             <SectionHeader>Rushing (Ball Carrier)</SectionHeader>
             
             <FilterRow label="Rush attempt" count={62} checked={filters.rushing.some(i => i.startsWith("attempt"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Gain" selected={filters.rushing.includes("attempt-Gain")} onClick={() => updateFilter("rushing", "attempt-Gain")} />
-                <ToggleBadge label="Loss / No gain" selected={filters.rushing.includes("attempt-Loss")} onClick={() => updateFilter("rushing", "attempt-Loss")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Gain" selected={filters.rushing.includes("attempt-Gain")} onClick={() => updateFilter("rushing", "attempt-Gain")} className="rounded-l" />
+                <ToggleBadge label="Loss / No gain" selected={filters.rushing.includes("attempt-Loss")} onClick={() => updateFilter("rushing", "attempt-Loss")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="Yards gained after contact" count={128} checked={filters.rushing.some(i => i.startsWith("yac"))} onChange={() => {}}>
               <div className="pl-6 space-y-2">
-                <div className="flex gap-1.5">
-                  <PresetButton label="Short: 1-3" selected={filters.rushing.includes("yac-1-3")} onClick={() => updateFilter("rushing", "yac-1-3")} />
+                <div className="flex">
+                  <PresetButton label="Short: 1-3" selected={filters.rushing.includes("yac-1-3")} onClick={() => updateFilter("rushing", "yac-1-3")} className="rounded-l" />
                   <PresetButton label="Medium: 4-7" selected={filters.rushing.includes("yac-4-7")} onClick={() => updateFilter("rushing", "yac-4-7")} />
-                  <PresetButton label="Long: 8+" selected={filters.rushing.includes("yac-8+")} onClick={() => updateFilter("rushing", "yac-8+")} />
+                  <PresetButton label="Long: 8+" selected={filters.rushing.includes("yac-8+")} onClick={() => updateFilter("rushing", "yac-8+")} className="rounded-r" />
                 </div>
                 <Slider 
                   value={[0, 100]} 
@@ -395,19 +413,19 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             </FilterRow>
 
             <FilterRow label="Rush direction" count={17} checked={filters.rushing.some(i => i.startsWith("dir"))} onChange={() => {}}>
-              <div className="pl-6 space-y-1.5">
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Left end" selected={filters.rushing.includes("dir-LeftEnd")} onClick={() => updateFilter("rushing", "dir-LeftEnd")} />
+              <div className="pl-6 space-y-1">
+                <div className="flex">
+                  <ToggleBadge label="Left end" selected={filters.rushing.includes("dir-LeftEnd")} onClick={() => updateFilter("rushing", "dir-LeftEnd")} className="rounded-l" />
                   <ToggleBadge label="Left tackle" selected={filters.rushing.includes("dir-LeftTackle")} onClick={() => updateFilter("rushing", "dir-LeftTackle")} />
-                  <ToggleBadge label="Left guard" selected={filters.rushing.includes("dir-LeftGuard")} onClick={() => updateFilter("rushing", "dir-LeftGuard")} />
+                  <ToggleBadge label="Left guard" selected={filters.rushing.includes("dir-LeftGuard")} onClick={() => updateFilter("rushing", "dir-LeftGuard")} className="rounded-r" />
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Center" selected={filters.rushing.includes("dir-Center")} onClick={() => updateFilter("rushing", "dir-Center")} />
+                <div className="flex">
+                  <ToggleBadge label="Center" selected={filters.rushing.includes("dir-Center")} onClick={() => updateFilter("rushing", "dir-Center")} className="rounded-l" />
                   <ToggleBadge label="Right guard" selected={filters.rushing.includes("dir-RightGuard")} onClick={() => updateFilter("rushing", "dir-RightGuard")} />
-                  <ToggleBadge label="Right tackle" selected={filters.rushing.includes("dir-RightTackle")} onClick={() => updateFilter("rushing", "dir-RightTackle")} />
+                  <ToggleBadge label="Right tackle" selected={filters.rushing.includes("dir-RightTackle")} onClick={() => updateFilter("rushing", "dir-RightTackle")} className="rounded-r" />
                 </div>
-                <div className="flex gap-1.5">
-                  <ToggleBadge label="Right end" selected={filters.rushing.includes("dir-RightEnd")} onClick={() => updateFilter("rushing", "dir-RightEnd")} />
+                <div className="flex">
+                  <ToggleBadge label="Right end" selected={filters.rushing.includes("dir-RightEnd")} onClick={() => updateFilter("rushing", "dir-RightEnd")} className="rounded" />
                 </div>
               </div>
             </FilterRow>
@@ -443,43 +461,43 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
           <AccordionContent className="space-y-5 pb-4">
             
             <FilterRow label="Field goal attempt" count={17} checked={filters.specialTeams.some(i => i.startsWith("fg"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6 flex-wrap">
-                <ToggleBadge label="Made" selected={filters.specialTeams.includes("fg-Made")} onClick={() => updateFilter("specialTeams", "fg-Made")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Made" selected={filters.specialTeams.includes("fg-Made")} onClick={() => updateFilter("specialTeams", "fg-Made")} className="rounded-l" />
                 <ToggleBadge label="Missed" selected={filters.specialTeams.includes("fg-Missed")} onClick={() => updateFilter("specialTeams", "fg-Missed")} />
                 <ToggleBadge label="Blocked" selected={filters.specialTeams.includes("fg-Blocked")} onClick={() => updateFilter("specialTeams", "fg-Blocked")} />
-                <ToggleBadge label="Fake" selected={filters.specialTeams.includes("fg-Fake")} onClick={() => updateFilter("specialTeams", "fg-Fake")} />
+                <ToggleBadge label="Fake" selected={filters.specialTeams.includes("fg-Fake")} onClick={() => updateFilter("specialTeams", "fg-Fake")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="PAT attempt" count={17} checked={filters.specialTeams.some(i => i.startsWith("pat"))} onChange={() => {}}>
-              <div className="flex gap-1.5 pl-6">
-                <ToggleBadge label="Made" selected={filters.specialTeams.includes("pat-Made")} onClick={() => updateFilter("specialTeams", "pat-Made")} />
+              <div className="flex pl-6">
+                <ToggleBadge label="Made" selected={filters.specialTeams.includes("pat-Made")} onClick={() => updateFilter("specialTeams", "pat-Made")} className="rounded-l" />
                 <ToggleBadge label="Missed" selected={filters.specialTeams.includes("pat-Missed")} onClick={() => updateFilter("specialTeams", "pat-Missed")} />
-                <ToggleBadge label="Blocked" selected={filters.specialTeams.includes("pat-Blocked")} onClick={() => updateFilter("specialTeams", "pat-Blocked")} />
+                <ToggleBadge label="Blocked" selected={filters.specialTeams.includes("pat-Blocked")} onClick={() => updateFilter("specialTeams", "pat-Blocked")} className="rounded-r" />
               </div>
             </FilterRow>
 
             <FilterRow label="Punt" count={62} checked={filters.specialTeams.some(i => i.startsWith("punt-") && !i.startsWith("puntReturn"))} onChange={() => {}}>
-              <div className="pl-6 space-y-1.5">
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("punt-Regular")} onClick={() => updateFilter("specialTeams", "punt-Regular")} />
+              <div className="pl-6 space-y-1">
+                <div className="flex">
+                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("punt-Regular")} onClick={() => updateFilter("specialTeams", "punt-Regular")} className="rounded-l" />
                   <ToggleBadge label="Fake" selected={filters.specialTeams.includes("punt-Fake")} onClick={() => updateFilter("specialTeams", "punt-Fake")} />
-                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("punt-Touchback")} onClick={() => updateFilter("specialTeams", "punt-Touchback")} />
+                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("punt-Touchback")} onClick={() => updateFilter("specialTeams", "punt-Touchback")} className="rounded-r" />
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("punt-OOB")} onClick={() => updateFilter("specialTeams", "punt-OOB")} />
+                <div className="flex">
+                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("punt-OOB")} onClick={() => updateFilter("specialTeams", "punt-OOB")} className="rounded-l" />
                   <ToggleBadge label="Returned" selected={filters.specialTeams.includes("punt-Returned")} onClick={() => updateFilter("specialTeams", "punt-Returned")} />
-                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("punt-Downed")} onClick={() => updateFilter("specialTeams", "punt-Downed")} />
+                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("punt-Downed")} onClick={() => updateFilter("specialTeams", "punt-Downed")} className="rounded-r" />
                 </div>
               </div>
             </FilterRow>
 
             <FilterRow label="Punt return" count={128} checked={filters.specialTeams.some(i => i.startsWith("puntReturn"))} onChange={() => {}}>
               <div className="pl-6 space-y-2">
-                <div className="flex gap-1.5">
-                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("puntReturn-0-10")} onClick={() => updateFilter("specialTeams", "puntReturn-0-10")} />
+                <div className="flex">
+                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("puntReturn-0-10")} onClick={() => updateFilter("specialTeams", "puntReturn-0-10")} className="rounded-l" />
                   <PresetButton label="Medium: 10-20" selected={filters.specialTeams.includes("puntReturn-10-20")} onClick={() => updateFilter("specialTeams", "puntReturn-10-20")} />
-                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("puntReturn-20+")} onClick={() => updateFilter("specialTeams", "puntReturn-20+")} />
+                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("puntReturn-20+")} onClick={() => updateFilter("specialTeams", "puntReturn-20+")} className="rounded-r" />
                 </div>
                 <Slider 
                   value={[0, 100]} 
@@ -494,26 +512,26 @@ export function FilterSidebar({ filters, onFilterChange }: FilterSidebarProps) {
             </FilterRow>
 
             <FilterRow label="Kickoff" count={123} checked={filters.specialTeams.some(i => i.startsWith("kickoff-") && !i.startsWith("kickoffReturn"))} onChange={() => {}}>
-              <div className="pl-6 space-y-1.5">
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("kickoff-Regular")} onClick={() => updateFilter("specialTeams", "kickoff-Regular")} />
+              <div className="pl-6 space-y-1">
+                <div className="flex">
+                  <ToggleBadge label="Regular" selected={filters.specialTeams.includes("kickoff-Regular")} onClick={() => updateFilter("specialTeams", "kickoff-Regular")} className="rounded-l" />
                   <ToggleBadge label="Onside" selected={filters.specialTeams.includes("kickoff-Onside")} onClick={() => updateFilter("specialTeams", "kickoff-Onside")} />
-                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("kickoff-Touchback")} onClick={() => updateFilter("specialTeams", "kickoff-Touchback")} />
+                  <ToggleBadge label="Touchback" selected={filters.specialTeams.includes("kickoff-Touchback")} onClick={() => updateFilter("specialTeams", "kickoff-Touchback")} className="rounded-r" />
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("kickoff-OOB")} onClick={() => updateFilter("specialTeams", "kickoff-OOB")} />
+                <div className="flex">
+                  <ToggleBadge label="Out of bounds" selected={filters.specialTeams.includes("kickoff-OOB")} onClick={() => updateFilter("specialTeams", "kickoff-OOB")} className="rounded-l" />
                   <ToggleBadge label="Returned" selected={filters.specialTeams.includes("kickoff-Returned")} onClick={() => updateFilter("specialTeams", "kickoff-Returned")} />
-                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("kickoff-Downed")} onClick={() => updateFilter("specialTeams", "kickoff-Downed")} />
+                  <ToggleBadge label="Downed" selected={filters.specialTeams.includes("kickoff-Downed")} onClick={() => updateFilter("specialTeams", "kickoff-Downed")} className="rounded-r" />
                 </div>
               </div>
             </FilterRow>
 
             <FilterRow label="Kickoff return" count={128} checked={filters.specialTeams.some(i => i.startsWith("kickoffReturn"))} onChange={() => {}}>
               <div className="pl-6 space-y-2">
-                <div className="flex gap-1.5">
-                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("kickoffReturn-0-10")} onClick={() => updateFilter("specialTeams", "kickoffReturn-0-10")} />
+                <div className="flex">
+                  <PresetButton label="Short: 0-10" selected={filters.specialTeams.includes("kickoffReturn-0-10")} onClick={() => updateFilter("specialTeams", "kickoffReturn-0-10")} className="rounded-l" />
                   <PresetButton label="Medium: 10-20" selected={filters.specialTeams.includes("kickoffReturn-10-20")} onClick={() => updateFilter("specialTeams", "kickoffReturn-10-20")} />
-                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("kickoffReturn-20+")} onClick={() => updateFilter("specialTeams", "kickoffReturn-20+")} />
+                  <PresetButton label="Long: 20+" selected={filters.specialTeams.includes("kickoffReturn-20+")} onClick={() => updateFilter("specialTeams", "kickoffReturn-20+")} className="rounded-r" />
                 </div>
                 <Slider 
                   value={[0, 100]} 

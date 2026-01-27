@@ -2,7 +2,17 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, getRandomVideoUrl, type PlayData, type Dataset } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
+import type { Clip } from "@/lib/mock-clips"
+import { useRouter } from "next/navigation"
+
+// Extended Dataset type to support unsaved playlists
+export interface Dataset {
+  id: string
+  name: string
+  plays: PlayData[]
+  isUnsaved?: boolean
+}
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
 
@@ -26,6 +36,7 @@ interface WatchContextType {
   playTab: (tabId: string) => void
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
+  playUnsavedPlaylist: (clips: Clip[]) => void
 
   // Module Visibility
   visibleModules: {
@@ -55,6 +66,7 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
 }
 
 export function WatchProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
@@ -224,6 +236,58 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setCurrentPlay(play)
   }
 
+  const playUnsavedPlaylist = (clips: Clip[]) => {
+    // 1. Convert Clips to Plays
+    const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
+      id: clip.id,
+      playNumber: index + 1,
+      description: `${clip.matchup} - Q${clip.quarter}`,
+      startTime: 0,
+      duration: 10,
+      videoUrl: clip.videoUrl,
+      thumbnailUrl: clip.thumbnailUrl,
+      status: "live" as const,
+      odk: "O",
+      quarter: clip.quarter,
+      down: clip.down,
+      distance: clip.distance,
+      yardLine: clip.yardLine,
+      hash: clip.hash,
+      yards: clip.gain,
+      result: clip.passing?.result || (clip.rushing ? "Rush" : "-"),
+      gainLoss: clip.gain >= 0 ? "Gn" : "Ls",
+      defFront: "4-3",
+      defStr: "R",
+      coverage: "C3",
+      blitz: "N",
+      game: clip.matchup,
+    }))
+
+    // 2. Create Unsaved Dataset
+    const unsavedDataset: Dataset = {
+      id: "unsaved-playlist",
+      name: "Unsaved Playlist",
+      plays: unsavedPlays,
+      isUnsaved: true,
+    }
+
+    // 3. Update State
+    setTabs((prev) => {
+      // Remove existing unsaved tab if present to avoid dupes
+      const clean = prev.filter((t) => t.id !== "unsaved-playlist")
+      return [unsavedDataset, ...clean]
+    })
+    setActiveTabId("unsaved-playlist")
+    setPlayingTabId("unsaved-playlist")
+    if (unsavedPlays.length > 0) {
+      setCurrentPlay(unsavedPlays[0])
+      setVideoUrl(unsavedPlays[0].videoUrl)
+    }
+
+    // 4. Navigate
+    router.push("/watch")
+  }
+
   const activeDataset = tabs.find((t) => t.id === activeTabId) || null
   const playingDataset = tabs.find((t) => t.id === playingTabId) || null
 
@@ -243,6 +307,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         playTab,
         seekToPlay,
         setVideoUrl,
+        playUnsavedPlaylist,
         visibleModules,
         toggleModule,
       }}

@@ -2,20 +2,30 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { Clip } from "@/lib/mock-clips"
 
 interface ClipsDataGridProps {
   clips: Clip[]
   onClipDoubleClick: (clip: Clip) => void
   selectedClipId: string | null
+  selectedClips: Set<string>
+  onSelectClip: (id: string, selected: boolean) => void
+  onSelectAll: (selected: boolean) => void
 }
 
-export function ClipsDataGrid({ clips, onClipDoubleClick, selectedClipId }: ClipsDataGridProps) {
+export function ClipsDataGrid({ clips, onClipDoubleClick, selectedClipId, selectedClips, onSelectClip, onSelectAll }: ClipsDataGridProps) {
   return (
     <div className="h-full overflow-auto">
       <Table>
         <TableHeader className="sticky top-0 bg-background z-10">
           <TableRow className="border-b border-border hover:bg-transparent">
+            <TableHead className="w-[40px]">
+              <Checkbox
+                checked={clips.length > 0 && selectedClips.size === clips.length}
+                onCheckedChange={(c) => onSelectAll(!!c)}
+              />
+            </TableHead>
             <TableHead className="w-[80px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               ID
             </TableHead>
@@ -60,6 +70,13 @@ export function ClipsDataGrid({ clips, onClipDoubleClick, selectedClipId }: Clip
               }`}
               onDoubleClick={() => onClipDoubleClick(clip)}
             >
+              <TableCell className="py-2">
+                <Checkbox
+                  checked={selectedClips.has(clip.id)}
+                  onCheckedChange={(c) => onSelectClip(clip.id, !!c)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TableCell>
               <TableCell className="py-2 text-xs font-mono text-muted-foreground">{clip.id}</TableCell>
               <TableCell className="py-2 text-xs font-medium">{clip.matchup}</TableCell>
               <TableCell className="py-2 text-xs">Q{clip.quarter}</TableCell>

@@ -717,6 +717,7 @@ interface LibraryContextType {
   itemForPermissions: string | null
   layoutMode: "list" | "grid"
   isCreatePlaylistModalOpen: boolean
+  pendingPlaylistItems: LibraryItemData[]
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -744,9 +745,10 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
-  openCreatePlaylistModal: () => void
+  openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
   closeCreatePlaylistModal: () => void
   createPlaylist: (targetFolderId: string | null, name: string) => void
+  clearPendingPlaylistItems: () => void
 }
 
 export interface MoveItem {
@@ -783,6 +785,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
+  const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -1345,8 +1348,19 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
-  const openCreatePlaylistModal = () => setIsCreatePlaylistModalOpen(true)
-  const closeCreatePlaylistModal = () => setIsCreatePlaylistModalOpen(false)
+  const openCreatePlaylistModal = (initialItems?: LibraryItemData[]) => {
+    if (initialItems) {
+      setPendingPlaylistItems(initialItems)
+    } else {
+      setPendingPlaylistItems([])
+    }
+    setIsCreatePlaylistModalOpen(true)
+  }
+  const closeCreatePlaylistModal = () => {
+    setIsCreatePlaylistModalOpen(false)
+    setPendingPlaylistItems([])
+  }
+  const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
 
   const createPlaylist = (targetFolderId: string | null, name: string) => {
     const newPlaylist: LibraryItemData = {
@@ -1355,9 +1369,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       type: "playlist",
       createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
       dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      itemCount: 0,
+      itemCount: pendingPlaylistItems.length,
       thumbnailUrl: "/placeholder-logo.png",
-      items: [],
+      items: pendingPlaylistItems,
     }
 
     if (targetFolderId === null) {
@@ -1422,6 +1436,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         itemForPermissions,
         layoutMode,
         isCreatePlaylistModalOpen,
+        pendingPlaylistItems,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1452,6 +1467,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
         createPlaylist,
+        clearPendingPlaylistItems,
       }}
     >
       {children}

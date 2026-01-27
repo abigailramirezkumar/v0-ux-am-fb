@@ -9,12 +9,20 @@ import { ClipViewer } from "@/components/explore/clip-viewer"
 import { GlobalFilters } from "@/components/explore/global-filters"
 import { mockClips, type Clip } from "@/lib/mock-clips"
 import { useFilter } from "@/lib/filter-context"
+import { useWatchContext } from "@/components/watch/watch-context"
 import { cn } from "@/lib/utils"
 
 export default function ExplorePage() {
+  const { playUnsavedPlaylist } = useWatchContext()
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null)
   const [activeTab, setActiveTab] = useState("plays")
+  const [selectedClips, setSelectedClips] = useState<Set<string>>(new Set())
   const { isFilterSidebarOpen } = useFilter()
+
+  const handlePlayClips = () => {
+    const clipsToPlay = filteredClips.filter((c) => selectedClips.has(c.id))
+    playUnsavedPlaylist(clipsToPlay)
+  }
   
   // Initial State matches new schema
   const [filters, setFilters] = useState<FilterState>({
@@ -137,7 +145,21 @@ export default function ExplorePage() {
   }, [filters])
 
   return (
-    <div className="h-full flex flex-col gap-2">
+    <div className="h-full flex flex-col gap-2 relative">
+      {/* Floating Action Bar */}
+      {selectedClips.size > 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-foreground text-background px-6 py-2 rounded-full shadow-lg flex items-center gap-4 animate-in fade-in slide-in-from-top-4">
+          <span className="text-sm font-medium">{selectedClips.size} selected</span>
+          <div className="h-4 w-px bg-background/20" />
+          <button onClick={handlePlayClips} className="text-sm font-bold hover:text-primary transition-colors">
+            Play Clips
+          </button>
+          <button onClick={() => setSelectedClips(new Set())} className="text-sm opacity-70 hover:opacity-100">
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Top Module: Header & Global Filters */}
       <div className="rounded-xl bg-background shadow-sm overflow-hidden shrink-0">
         <div className="px-4 py-2 border-b border-border/50">
@@ -196,6 +218,15 @@ export default function ExplorePage() {
                 clips={filteredClips}
                 onClipDoubleClick={(clip) => setSelectedClip(clip)}
                 selectedClipId={selectedClip?.id || null}
+                selectedClips={selectedClips}
+                onSelectClip={(id, val) => {
+                  const next = new Set(selectedClips)
+                  val ? next.add(id) : next.delete(id)
+                  setSelectedClips(next)
+                }}
+                onSelectAll={(val) => {
+                  setSelectedClips(val ? new Set(filteredClips.map((c) => c.id)) : new Set())
+                }}
               />
             </div>
           </ResizablePanel>

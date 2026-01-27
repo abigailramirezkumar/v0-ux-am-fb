@@ -1,14 +1,33 @@
 "use client"
 
 import { useWatchContext } from "@/components/watch/watch-context"
+import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
+import type { LibraryItemData } from "@/components/library-item"
 
 export function GridModule() {
   const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
     useWatchContext()
+  const { openCreatePlaylistModal } = useLibraryContext()
+
+  const handleSaveAsPlaylist = () => {
+    if (!activeDataset) return
+
+    // Convert PlayData back to LibraryItemData structure
+    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
+      id: play.id,
+      name: play.description || "Untitled Clip",
+      type: "video",
+      thumbnailUrl: play.thumbnailUrl,
+      duration: "0:10",
+      createdDate: new Date().toLocaleDateString(),
+    }))
+
+    openCreatePlaylistModal(itemsToSave)
+  }
 
   if (!activeDataset) {
     return (
@@ -78,7 +97,14 @@ export function GridModule() {
             </span>
           )}
         </h3>
-        <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+        <div className="flex items-center gap-2">
+          {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+            <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
+              Save as Playlist
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+        </div>
       </div>
 
       {/* --- GRID TABLE or EMPTY STATE --- */}

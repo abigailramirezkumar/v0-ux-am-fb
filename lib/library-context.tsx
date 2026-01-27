@@ -716,6 +716,8 @@ interface LibraryContextType {
   isPermissionsModalOpen: boolean
   itemForPermissions: string | null
   layoutMode: "list" | "grid"
+  isCreatePlaylistModalOpen: boolean
+  pendingPlaylistItems: LibraryItemData[]
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -743,6 +745,10 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
+  openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
+  closeCreatePlaylistModal: () => void
+  createPlaylist: (targetFolderId: string | null, name: string) => void
+  clearPendingPlaylistItems: () => void
 }
 
 export interface MoveItem {
@@ -779,6 +785,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
+  const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -795,6 +802,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
   const [itemForPermissions, setItemForPermissions] = useState<string | null>(null)
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
 
   const foldersWithColors = useMemo(() => {
     return folders.map((folder) => ({
@@ -1340,6 +1348,53 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
+  const openCreatePlaylistModal = (initialItems?: LibraryItemData[]) => {
+    if (initialItems) {
+      setPendingPlaylistItems(initialItems)
+    } else {
+      setPendingPlaylistItems([])
+    }
+    setIsCreatePlaylistModalOpen(true)
+  }
+  const closeCreatePlaylistModal = () => {
+    setIsCreatePlaylistModalOpen(false)
+    setPendingPlaylistItems([])
+  }
+  const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
+
+  const createPlaylist = (targetFolderId: string | null, name: string) => {
+    const newPlaylist: LibraryItemData = {
+      id: `playlist-${Date.now()}`,
+      name: name,
+      type: "playlist",
+      createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
+      dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
+      itemCount: pendingPlaylistItems.length,
+      thumbnailUrl: "/placeholder-logo.png",
+      items: pendingPlaylistItems,
+    }
+
+    if (targetFolderId === null) {
+      setRootItems(prev => [...prev, newPlaylist])
+    } else {
+      setFolders(prev => {
+        const updateRecursive = (nodes: FolderData[]): FolderData[] => {
+          return nodes.map(node => {
+            if (node.id === targetFolderId) {
+              return { ...node, items: [...(node.items || []), newPlaylist] }
+            }
+            if (node.children) {
+              return { ...node, children: updateRecursive(node.children) }
+            }
+            return node
+          })
+        }
+        return updateRecursive(prev)
+      })
+    }
+    closeCreatePlaylistModal()
+  }
+
   const handleSetViewMode = (mode: "folder" | "schedule") => {
     setViewModeState(mode)
     // Reset Navigation
@@ -1380,6 +1435,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         isPermissionsModalOpen,
         itemForPermissions,
         layoutMode,
+        isCreatePlaylistModalOpen,
+        pendingPlaylistItems,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1407,6 +1464,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openPermissionsModal,
         closePermissionsModal,
         setLayoutMode,
+        openCreatePlaylistModal,
+        closeCreatePlaylistModal,
+        createPlaylist,
+        clearPendingPlaylistItems,
       }}
     >
       {children}

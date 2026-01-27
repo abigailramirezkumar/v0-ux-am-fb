@@ -1,14 +1,33 @@
 "use client"
 
 import { useWatchContext } from "@/components/watch/watch-context"
+import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
+import type { LibraryItemData } from "@/components/library-item"
 
 export function GridModule() {
   const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
     useWatchContext()
+  const { openCreatePlaylistModal } = useLibraryContext()
+
+  const handleSaveAsPlaylist = () => {
+    if (!activeDataset) return
+
+    // Convert PlayData back to LibraryItemData structure
+    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
+      id: play.id,
+      name: play.description || "Untitled Clip",
+      type: "video",
+      thumbnailUrl: play.thumbnailUrl,
+      duration: "0:10",
+      createdDate: new Date().toLocaleDateString(),
+    }))
+
+    openCreatePlaylistModal(itemsToSave)
+  }
 
   if (!activeDataset) {
     return (
@@ -72,17 +91,31 @@ export function GridModule() {
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
           {activeDataset.name}
-          {activeTabId === playingTabId && (
+          {activeTabId === playingTabId && activeDataset.plays.length > 0 && (
             <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
               LIVE
             </span>
           )}
         </h3>
-        <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+        <div className="flex items-center gap-2">
+          {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+            <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
+              Save as Playlist
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+        </div>
       </div>
 
-      {/* --- GRID TABLE --- */}
+      {/* --- GRID TABLE or EMPTY STATE --- */}
       <div className="flex-1 overflow-auto bg-background">
+        {activeDataset.plays.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <Icon name="playlist" className="w-12 h-12 opacity-20" />
+            <p>This playlist is empty</p>
+            <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+          </div>
+        ) : (
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
@@ -174,6 +207,7 @@ export function GridModule() {
             })}
           </TableBody>
         </Table>
+        )}
       </div>
     </div>
   )

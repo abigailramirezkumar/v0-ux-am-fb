@@ -2,8 +2,19 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, getRandomVideoUrl, type PlayData, type Dataset } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
+import type { Clip } from "@/lib/mock-clips"
+import { useRouter } from "next/navigation"
+
+// Extended Dataset type to support unsaved playlists
+export interface Dataset {
+  id: string
+  name: string
+  plays: PlayData[]
+  isUnsaved?: boolean
+}
 import type { FolderData } from "@/components/folder"
+import type { LibraryItemData } from "@/components/library-item"
 
 interface WatchContextType {
   // Tab State
@@ -25,6 +36,7 @@ interface WatchContextType {
   playTab: (tabId: string) => void
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
+  playUnsavedPlaylist: (clips: Clip[]) => void
 
   // Module Visibility
   visibleModules: {
@@ -37,16 +49,16 @@ interface WatchContextType {
 
 const WatchContext = createContext<WatchContextType | undefined>(undefined)
 
-function findItemNameById(folders: FolderData[], itemId: string): string | null {
+function findItemById(folders: FolderData[], itemId: string): LibraryItemData | null {
   for (const folder of folders) {
     // Check items in this folder
     if (folder.items) {
       const foundItem = folder.items.find((i) => i.id === itemId)
-      if (foundItem) return foundItem.name
+      if (foundItem) return foundItem
     }
     // Check children folders
     if (folder.children) {
-      const foundInChild = findItemNameById(folder.children, itemId)
+      const foundInChild = findItemById(folder.children, itemId)
       if (foundInChild) return foundInChild
     }
   }
@@ -54,6 +66,7 @@ function findItemNameById(folders: FolderData[], itemId: string): string | null 
 }
 
 export function WatchProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
@@ -93,15 +106,34 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         return prevTabs
       }
 
-      // 2. New Tab Logic
-      const newDataset = getDatasetForItem(activeWatchItemId)
+      // 2. New Tab Logic - Check if it's a playlist
+      const item = findItemById(folders, activeWatchItemId)
+      let datasetWithId: Dataset
 
-      const realName = findItemNameById(folders, activeWatchItemId)
-
-      const datasetWithId = {
-        ...newDataset,
-        id: activeWatchItemId,
-        name: realName || newDataset.name, // Use real name or fallback to mock name
+      if (item && item.type === "playlist") {
+        // Initialize EMPTY dataset for playlists
+        datasetWithId = {
+          id: activeWatchItemId,
+          name: item.name,
+          plays: [], // Empty by default for new playlists
+        }
+        // Stop playback for empty playlist
+        setVideoUrl(null)
+        setCurrentPlay(null)
+      } else {
+        // Use Mock data for games/other videos
+        const newDataset = getDatasetForItem(activeWatchItemId)
+        datasetWithId = {
+          ...newDataset,
+          id: activeWatchItemId,
+          name: item?.name || newDataset.name, // Use real name or fallback to mock name
+        }
+        // Pick a random video to start
+        playRandomVideo()
+        // Set first play as current
+        if (datasetWithId.plays.length > 0) {
+          setCurrentPlay(datasetWithId.plays[0])
+        }
       }
 
       // Make it active in Grid
@@ -109,14 +141,6 @@ export function WatchProvider({ children }: { children: ReactNode }) {
 
       // Also make it the Playing Tab (Auto-play behavior for new items)
       setPlayingTabId(datasetWithId.id)
-
-      // Pick a random video to start
-      playRandomVideo()
-
-      // Set first play as current
-      if (datasetWithId.plays.length > 0) {
-        setCurrentPlay(datasetWithId.plays[0])
-      }
 
       return [datasetWithId, ...prevTabs]
     })
@@ -128,18 +152,29 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setTabs((prevTabs) => {
       const newTabs = [...prevTabs]
       let firstNewId: string | null = null
+      let firstNewIsPlaylist = false
 
       activeWatchItems.forEach((itemId) => {
         // Check if already exists
         if (newTabs.some((t) => t.id === itemId)) return
 
-        const newDataset = getDatasetForItem(itemId)
-        const realName = findItemNameById(folders, itemId)
+        const item = findItemById(folders, itemId)
+        let datasetWithId: Dataset
 
-        const datasetWithId = {
-          ...newDataset,
-          id: itemId,
-          name: realName || newDataset.name,
+        if (item && item.type === "playlist") {
+          datasetWithId = {
+            id: itemId,
+            name: item.name,
+            plays: [],
+          }
+          if (!firstNewId) firstNewIsPlaylist = true
+        } else {
+          const newDataset = getDatasetForItem(itemId)
+          datasetWithId = {
+            ...newDataset,
+            id: itemId,
+            name: item?.name || newDataset.name,
+          }
         }
 
         if (!firstNewId) firstNewId = itemId
@@ -149,11 +184,17 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       if (firstNewId) {
         setActiveTabId(firstNewId)
         setPlayingTabId(firstNewId)
-        playRandomVideo()
-        // Set current play for the first new tab
-        const firstDataset = newTabs.find((t) => t.id === firstNewId)
-        if (firstDataset && firstDataset.plays.length > 0) {
-          setCurrentPlay(firstDataset.plays[0])
+        
+        if (firstNewIsPlaylist) {
+          setVideoUrl(null)
+          setCurrentPlay(null)
+        } else {
+          playRandomVideo()
+          // Set current play for the first new tab
+          const firstDataset = newTabs.find((t) => t.id === firstNewId)
+          if (firstDataset && firstDataset.plays.length > 0) {
+            setCurrentPlay(firstDataset.plays[0])
+          }
         }
       }
 
@@ -195,6 +236,58 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setCurrentPlay(play)
   }
 
+  const playUnsavedPlaylist = (clips: Clip[]) => {
+    // 1. Convert Clips to Plays
+    const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
+      id: clip.id,
+      playNumber: index + 1,
+      description: `${clip.matchup} - Q${clip.quarter}`,
+      startTime: 0,
+      duration: 10,
+      videoUrl: clip.videoUrl,
+      thumbnailUrl: clip.thumbnailUrl,
+      status: "live" as const,
+      odk: "O",
+      quarter: clip.quarter,
+      down: clip.down,
+      distance: clip.distance,
+      yardLine: clip.yardLine,
+      hash: clip.hash,
+      yards: clip.gain,
+      result: clip.passing?.result || (clip.rushing ? "Rush" : "-"),
+      gainLoss: clip.gain >= 0 ? "Gn" : "Ls",
+      defFront: "4-3",
+      defStr: "R",
+      coverage: "C3",
+      blitz: "N",
+      game: clip.matchup,
+    }))
+
+    // 2. Create Unsaved Dataset
+    const unsavedDataset: Dataset = {
+      id: "unsaved-playlist",
+      name: "Unsaved Playlist",
+      plays: unsavedPlays,
+      isUnsaved: true,
+    }
+
+    // 3. Update State
+    setTabs((prev) => {
+      // Remove existing unsaved tab if present to avoid dupes
+      const clean = prev.filter((t) => t.id !== "unsaved-playlist")
+      return [unsavedDataset, ...clean]
+    })
+    setActiveTabId("unsaved-playlist")
+    setPlayingTabId("unsaved-playlist")
+    if (unsavedPlays.length > 0) {
+      setCurrentPlay(unsavedPlays[0])
+      setVideoUrl(unsavedPlays[0].videoUrl)
+    }
+
+    // 4. Navigate
+    router.push("/watch")
+  }
+
   const activeDataset = tabs.find((t) => t.id === activeTabId) || null
   const playingDataset = tabs.find((t) => t.id === playingTabId) || null
 
@@ -214,6 +307,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         playTab,
         seekToPlay,
         setVideoUrl,
+        playUnsavedPlaylist,
         visibleModules,
         toggleModule,
       }}

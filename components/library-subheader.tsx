@@ -2,6 +2,7 @@
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
+import { useLibraryContext } from "@/lib/library-context"
 
 interface BreadcrumbItem {
   id: string
@@ -44,6 +45,8 @@ function LibraryIcon({ className }: { className?: string }) {
 }
 
 export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
+  const { openCreatePlaylistModal } = useLibraryContext()
+  
   return (
     <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -83,6 +86,10 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
             <DropdownMenuItem onClick={onCreateFolder}>
               <Icon name="folder" className="w-4 h-4 mr-2" />
               New Folder
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={openCreatePlaylistModal}>
+              <Icon name="playlist" className="w-4 h-4 mr-2" />
+              New Playlist
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

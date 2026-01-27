@@ -119,7 +119,7 @@ function PresetButton({
 // Section header component
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+    <span className="font-semibold text-muted-foreground uppercase tracking-wide text-xs leading-8">
       {children}
     </span>
   )

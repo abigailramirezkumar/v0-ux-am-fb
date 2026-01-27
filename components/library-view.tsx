@@ -25,6 +25,7 @@ import { toast } from "@/components/ui/use-toast"
 import { MoveToModal } from "@/components/move-to-modal"
 import { PermissionsModal } from "@/components/permissions-modal"
 import { LibraryGridView } from "@/components/library-grid-view"
+import { CreatePlaylistModal } from "@/components/create-playlist-modal"
 
 const parseDuration = (str?: string) => {
   if (!str) return 0
@@ -967,6 +968,7 @@ export function LibraryView() {
 
       <MoveToModal />
       <PermissionsModal />
+      <CreatePlaylistModal />
     </div>
   )
 }

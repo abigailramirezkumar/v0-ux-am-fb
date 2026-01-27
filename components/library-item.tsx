@@ -30,7 +30,7 @@ export interface LibraryItemData {
   id: string
   name: string
   thumbnailUrl?: string
-  type: "video" | "pdf" | "image" | "audio" | "document"
+  type: "video" | "pdf" | "image" | "audio" | "document" | "playlist"
   dateModified?: string
   hasData?: boolean
   itemCount?: number
@@ -484,6 +484,7 @@ const formatItemType = (type: string): string => {
     image: "Image",
     audio: "Audio",
     document: "Document",
+    playlist: "Playlist",
   }
   return typeMap[type] || type
 }

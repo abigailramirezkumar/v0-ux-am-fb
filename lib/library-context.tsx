@@ -716,6 +716,7 @@ interface LibraryContextType {
   isPermissionsModalOpen: boolean
   itemForPermissions: string | null
   layoutMode: "list" | "grid"
+  isCreatePlaylistModalOpen: boolean
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -743,6 +744,9 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
+  openCreatePlaylistModal: () => void
+  closeCreatePlaylistModal: () => void
+  createPlaylist: (targetFolderId: string | null, name: string) => void
 }
 
 export interface MoveItem {
@@ -795,6 +799,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
   const [itemForPermissions, setItemForPermissions] = useState<string | null>(null)
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
 
   const foldersWithColors = useMemo(() => {
     return folders.map((folder) => ({
@@ -1340,6 +1345,41 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
+  const openCreatePlaylistModal = () => setIsCreatePlaylistModalOpen(true)
+  const closeCreatePlaylistModal = () => setIsCreatePlaylistModalOpen(false)
+
+  const createPlaylist = (targetFolderId: string | null, name: string) => {
+    const newPlaylist: LibraryItemData = {
+      id: `playlist-${Date.now()}`,
+      name: name,
+      type: "playlist",
+      createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
+      dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
+      itemCount: 0,
+      thumbnailUrl: "/placeholder-logo.png",
+    }
+
+    if (targetFolderId === null) {
+      setRootItems(prev => [...prev, newPlaylist])
+    } else {
+      setFolders(prev => {
+        const updateRecursive = (nodes: FolderData[]): FolderData[] => {
+          return nodes.map(node => {
+            if (node.id === targetFolderId) {
+              return { ...node, items: [...(node.items || []), newPlaylist] }
+            }
+            if (node.children) {
+              return { ...node, children: updateRecursive(node.children) }
+            }
+            return node
+          })
+        }
+        return updateRecursive(prev)
+      })
+    }
+    closeCreatePlaylistModal()
+  }
+
   const handleSetViewMode = (mode: "folder" | "schedule") => {
     setViewModeState(mode)
     // Reset Navigation
@@ -1380,6 +1420,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         isPermissionsModalOpen,
         itemForPermissions,
         layoutMode,
+        isCreatePlaylistModalOpen,
         setSort,
         toggleColumnVisibility,
         setColumns,
@@ -1407,6 +1448,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openPermissionsModal,
         closePermissionsModal,
         setLayoutMode,
+        openCreatePlaylistModal,
+        closeCreatePlaylistModal,
+        createPlaylist,
       }}
     >
       {children}

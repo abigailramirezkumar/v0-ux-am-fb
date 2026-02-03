@@ -1,5 +1,9 @@
-export interface Clip {
-  id: string
+import { LibraryItemData } from "@/components/library-item"
+
+// Clip extends LibraryItemData to ensure compatibility with Library's data structure
+export interface Clip extends LibraryItemData {
+  // LibraryItemData fields: id, name, type, dateModified, createdDate, duration, thumbnailUrl, etc.
+  // Football-specific fields:
   gameId: string
   matchup: string
   date: string
@@ -101,14 +105,25 @@ export const mockClips: Clip[] = Array.from({ length: 50 }).map((_, i) => {
   const isRun = !isPass && Math.random() > 0.2;
   const isSpecial = !isPass && !isRun;
   const gain = isPass ? randomInt(-7, 35) : isRun ? randomInt(-3, 20) : 0;
+  const matchup = matchups[i % matchups.length];
+  const quarter = (i % 4) + 1;
+  const time = `${String(15 - (i % 15)).padStart(2, "0")}:${String((i * 7) % 60).padStart(2, "0")}`;
 
   return {
+    // LibraryItemData fields
     id: `clip-${String(i + 1).padStart(4, "0")}`,
+    name: `${matchup} - Q${quarter} ${time}`,
+    type: "video",
+    dateModified: new Date().toLocaleDateString(),
+    createdDate: "2024-11-17",
+    duration: "00:10",
+    
+    // Football-specific fields
     gameId: `game-${Math.floor(i / 10)}`,
-    matchup: matchups[i % matchups.length],
+    matchup,
     date: "2024-11-17",
-    quarter: (i % 4) + 1,
-    time: `${String(15 - (i % 15)).padStart(2, "0")}:${String((i * 7) % 60).padStart(2, "0")}`,
+    quarter,
+    time,
     down: (i % 4) + 1,
     distance: randomInt(1, 15),
     yardLine: randomInt(1, 99),

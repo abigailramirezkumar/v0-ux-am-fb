@@ -241,7 +241,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
       id: clip.id,
       playNumber: index + 1,
-      description: `${clip.matchup} - Q${clip.quarter}`,
+      description: clip.name, // Use name from LibraryItemData
       startTime: 0,
       duration: 10,
       videoUrl: clip.videoUrl,
@@ -252,7 +252,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       down: clip.down,
       distance: clip.distance,
       yardLine: clip.yardLine,
-      hash: clip.hash,
+      hash: clip.hash === "Left" ? "L" : clip.hash === "Right" ? "R" : "M",
       yards: clip.gain,
       result: clip.passing?.result || (clip.rushing ? "Rush" : "-"),
       gainLoss: clip.gain >= 0 ? "Gn" : "Ls",
@@ -261,6 +261,8 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       coverage: "C3",
       blitz: "N",
       game: clip.matchup,
+      // KEY: Preserve the source item for saving playlists later
+      sourceItem: clip,
     }))
 
     // 2. Create Unsaved Dataset

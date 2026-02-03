@@ -166,14 +166,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={pathname.startsWith("/explore")} tooltip="Explore">
-              <Link href="/explore">
-                <Icon name="explore" className="w-5 h-5 flex-shrink-0" />
-                <span>Explore</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarContent>
 

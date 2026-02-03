@@ -10,7 +10,14 @@ import { WatchToolbar } from "@/components/watch/watch-toolbar"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
 function WatchContent() {
-  const { visibleModules } = useWatchContext()
+  const { visibleModules, resetWatchState } = useWatchContext()
+
+  // Reset state when leaving the Watch page (unmounting)
+  useEffect(() => {
+    return () => {
+      resetWatchState()
+    }
+  }, [resetWatchState])
 
   const libraryPanelRef = useRef<ImperativePanelHandle>(null)
   const videoPanelRef = useRef<ImperativePanelHandle>(null)

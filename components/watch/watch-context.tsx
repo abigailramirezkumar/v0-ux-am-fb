@@ -37,6 +37,7 @@ interface WatchContextType {
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
   playUnsavedPlaylist: (clips: Clip[]) => void
+  resetWatchState: () => void
 
   // Module Visibility
   visibleModules: {
@@ -236,7 +237,22 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setCurrentPlay(play)
   }
 
+  const resetWatchState = () => {
+    setTabs([])
+    setActiveTabId(null)
+    setPlayingTabId(null)
+    setCurrentPlay(null)
+    setVideoUrl(null)
+    setVisibleModules({
+      library: true,
+      video: true,
+      grid: true,
+    })
+  }
+
   const playUnsavedPlaylist = (clips: Clip[]) => {
+    // Clear any active Library item selection to prevent conflicts
+    // This is handled by resetting tabs and creating fresh unsaved playlist
     // 1. Convert Clips to Plays
     const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
       id: clip.id,
@@ -308,6 +324,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         seekToPlay,
         setVideoUrl,
         playUnsavedPlaylist,
+        resetWatchState,
         visibleModules,
         toggleModule,
       }}

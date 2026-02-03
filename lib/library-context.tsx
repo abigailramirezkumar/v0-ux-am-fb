@@ -421,7 +421,7 @@ function createCollegeScoutingStructure(yearRange: string): FolderData[] {
       id: `${prefix}-${i}`,
       name: school,
       dateModified: "Feb 15, 2025",
-      items: generateLeafItems(year, `${prefix}-${i}`, 2),
+      items: generateLeafItems(year, `${prefix}-${i}`),
     }))
   }
 

@@ -237,6 +237,8 @@ export function WatchProvider({ children }: { children: ReactNode }) {
   }
 
   const playUnsavedPlaylist = (clips: Clip[]) => {
+    console.log("[v0] playUnsavedPlaylist called with", clips.length, "clips")
+    console.log("[v0] clips:", clips)
     // 1. Convert Clips to Plays
     const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
       id: clip.id,
@@ -286,6 +288,9 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       setVideoUrl(unsavedPlays[0].videoUrl)
     }
 
+    console.log("[v0] State updated - navigating to /watch")
+    console.log("[v0] unsavedDataset:", unsavedDataset)
+    
     // 4. Navigate
     router.push("/watch")
   }

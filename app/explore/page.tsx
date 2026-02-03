@@ -20,12 +20,7 @@ export default function ExplorePage() {
   const { isFilterSidebarOpen } = useFilter()
 
   const handlePlayClips = () => {
-    console.log("[v0] handlePlayClips called")
-    console.log("[v0] selectedClips:", selectedClips)
-    console.log("[v0] filteredClips count:", filteredClips.length)
     const clipsToPlay = filteredClips.filter((c) => selectedClips.has(c.id))
-    console.log("[v0] clipsToPlay:", clipsToPlay)
-    console.log("[v0] calling playUnsavedPlaylist with", clipsToPlay.length, "clips")
     playUnsavedPlaylist(clipsToPlay)
   }
   

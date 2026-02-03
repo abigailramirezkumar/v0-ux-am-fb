@@ -17,22 +17,14 @@ export function GridModule() {
     if (!activeDataset) return
 
     // Convert PlayData back to LibraryItemData structure
-    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => {
-      // If we have the original source item, use it to preserve all metadata
-      if (play.sourceItem) {
-        return play.sourceItem
-      }
-
-      // Fallback for plays that might not have source items (e.g. mock data)
-      return {
-        id: play.id,
-        name: play.description || "Untitled Clip",
-        type: "video" as const,
-        thumbnailUrl: play.thumbnailUrl,
-        duration: "0:10",
-        createdDate: new Date().toLocaleDateString(),
-      }
-    })
+    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
+      id: play.id,
+      name: play.description || "Untitled Clip",
+      type: "video",
+      thumbnailUrl: play.thumbnailUrl,
+      duration: "0:10",
+      createdDate: new Date().toLocaleDateString(),
+    }))
 
     openCreatePlaylistModal(itemsToSave)
   }

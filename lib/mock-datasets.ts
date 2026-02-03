@@ -1,5 +1,3 @@
-import { LibraryItemData } from "@/components/library-item"
-
 export interface PlayData {
   id: string
   playNumber: number
@@ -7,8 +5,8 @@ export interface PlayData {
   quarter: number
   down: number
   distance: number
-  yardLine: string | number
-  hash: "L" | "R" | "M" | "Left" | "Middle" | "Right"
+  yardLine: string
+  hash: "L" | "R" | "M"
   yards: number
   result: string
   gainLoss: "Gn" | "Ls"
@@ -17,15 +15,6 @@ export interface PlayData {
   coverage: string
   blitz: string
   game: string
-  // Optional fields for unsaved playlists
-  description?: string
-  startTime?: number
-  duration?: number
-  videoUrl?: string
-  thumbnailUrl?: string
-  status?: "live" | "paused"
-  // Preserve original source item for saving playlists
-  sourceItem?: LibraryItemData
 }
 
 export interface Dataset {

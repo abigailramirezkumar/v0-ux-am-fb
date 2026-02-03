@@ -5,7 +5,7 @@ import { LibraryView } from "@/components/library-view"
 import { GridModule } from "@/components/grid-module"
 import { VideoModule } from "@/components/video-module"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import { useWatchContext } from "@/components/watch/watch-context"
+import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { WatchToolbar } from "@/components/watch/watch-toolbar"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
@@ -115,8 +115,10 @@ function WatchContent() {
 
 export default function WatchPage() {
   return (
-    <div className="h-full w-full overflow-hidden bg-sidebar">
-      <WatchContent />
-    </div>
+    <WatchProvider>
+      <div className="h-full w-full overflow-hidden bg-sidebar">
+        <WatchContent />
+      </div>
+    </WatchProvider>
   )
 }

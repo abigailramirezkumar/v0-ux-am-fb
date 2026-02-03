@@ -3,7 +3,7 @@ import { Icon } from "@/components/icon"
 import { Button } from "@/components/button"
 import { Input } from "@/components/input"
 import { cn } from "@/lib/utils"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, LayoutGrid, Download } from "lucide-react"
 
 interface HeaderProps {
   className?: string
@@ -38,7 +38,7 @@ export function Header({
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
         ) : (
-          <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />
+          <LayoutGrid className="w-5 h-5 text-muted-foreground" />
         )}
 
         <span className="text-foreground font-medium">{title}</span>
@@ -69,20 +69,7 @@ export function Header({
           </Button>
 
           <Button variant="ghost" size="medium" onClick={onDownloadClick} className="flex items-center gap-2">
-            <Icon name="download" className="w-4 h-4" />
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="inline-block w-4 h-4"
-            >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path>
-            </svg>
+            <Download className="w-4 h-4" />
             Download
           </Button>
         </div>

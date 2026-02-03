@@ -1,83 +1,19 @@
-export interface Clip {
-  id: string
+import type { LibraryItemData } from "@/components/library-item"
+
+// Clip extends LibraryItemData to be fully compatible with the Library view
+export interface Clip extends LibraryItemData {
+  // Override required fields from LibraryItemData
+  type: "video"
+  
+  // Sports-specific required fields (extending the optional ones in LibraryItemData)
   gameId: string
   matchup: string
-  date: string
   quarter: number
   time: string
   down: number
   distance: number
-  yardLine: number // 0-100
+  yardLine: number
   hash: "Left" | "Middle" | "Right"
-  
-  // Play Context
-  playDevelopment: {
-    playAction: boolean
-    rpo?: "Pass" | "Run"
-    screen: boolean
-    designedRollout: boolean
-    brokenPlay: boolean
-  }
-  playResult: {
-    touchdown?: "Pass" | "Run" | "Defensive"
-    firstDown?: "Pass" | "Run"
-    turnover?: "Fumble" | "Interception" | "On downs" | "Safety"
-    penalty?: string
-  }
-
-  // Passing
-  passing?: {
-    result?: "Complete" | "Incomplete"
-    pressure?: "Complete" | "Incomplete" // Result under pressure
-    scramble: boolean
-    sack: boolean
-    throwaway: boolean
-    receiver?: {
-      targeted: boolean
-      reception: boolean
-      drop: boolean
-      contested: boolean
-      route: string
-      depth: "Behind LOS" | "0-10" | "10-20" | "20+"
-    }
-    defense?: {
-      breakup: boolean
-      interception: boolean
-      sack: boolean
-      pressure: boolean
-      coverage: string
-    }
-  }
-
-  // Rushing
-  rushing?: {
-    attempt?: "Gain" | "Loss / No gain"
-    yac: number
-    direction: "Left end" | "Left tackle" | "Left guard" | "Center" | "Right guard" | "Right tackle" | "Right end"
-    defense?: {
-      tackleMade: boolean
-      tackleMissed: boolean
-      tfl: boolean
-      forcedFumble: boolean
-    }
-  }
-
-  // Blocking
-  blocking?: {
-    passBlock: boolean
-    runBlock: boolean
-    allowedPressure: boolean
-    allowedSack: boolean
-  }
-
-  // Special Teams
-  specialTeams?: {
-    type: "Field Goal" | "PAT" | "Punt" | "Kickoff"
-    result?: string // Made, Missed, Blocked, etc.
-    returnYards?: number
-  }
-
-  // Legacy/Shared
   personnel: {
     offense: string
     defense: string
@@ -102,12 +38,22 @@ export const mockClips: Clip[] = Array.from({ length: 50 }).map((_, i) => {
   const isSpecial = !isPass && !isRun;
   const gain = isPass ? randomInt(-7, 35) : isRun ? randomInt(-3, 20) : 0;
 
+  const matchup = matchups[i % matchups.length]
+  const quarter = (i % 4) + 1
+
   return {
+    // Base LibraryItemData fields
     id: `clip-${String(i + 1).padStart(4, "0")}`,
+    name: `${matchup} - Q${quarter} Play ${i + 1}`,
+    type: "video" as const,
+    createdDate: "2024-11-17",
+    dateModified: "2024-11-17",
+    hasData: true,
+    
+    // Sports-specific fields
     gameId: `game-${Math.floor(i / 10)}`,
-    matchup: matchups[i % matchups.length],
-    date: "2024-11-17",
-    quarter: (i % 4) + 1,
+    matchup,
+    quarter,
     time: `${String(15 - (i % 15)).padStart(2, "0")}:${String((i * 7) % 60).padStart(2, "0")}`,
     down: (i % 4) + 1,
     distance: randomInt(1, 15),

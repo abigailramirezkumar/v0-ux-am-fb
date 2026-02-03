@@ -26,6 +26,81 @@ import {
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 
+// Sports-specific sub-interfaces
+export interface PlayDevelopment {
+  playAction: boolean
+  rpo?: "Pass" | "Run"
+  screen: boolean
+  designedRollout: boolean
+  brokenPlay: boolean
+}
+
+export interface PlayResult {
+  touchdown?: "Pass" | "Run" | "Defensive"
+  firstDown?: "Pass" | "Run"
+  turnover?: "Fumble" | "Interception" | "On downs" | "Safety"
+  penalty?: string
+}
+
+export interface PassingReceiver {
+  targeted: boolean
+  reception: boolean
+  drop: boolean
+  contested: boolean
+  route: string
+  depth: "Behind LOS" | "0-10" | "10-20" | "20+"
+}
+
+export interface PassingDefense {
+  breakup: boolean
+  interception: boolean
+  sack: boolean
+  pressure: boolean
+  coverage: string
+}
+
+export interface PassingData {
+  result?: "Complete" | "Incomplete"
+  pressure?: "Complete" | "Incomplete"
+  scramble: boolean
+  sack: boolean
+  throwaway: boolean
+  receiver?: PassingReceiver
+  defense?: PassingDefense
+}
+
+export interface RushingDefense {
+  tackleMade: boolean
+  tackleMissed: boolean
+  tfl: boolean
+  forcedFumble: boolean
+}
+
+export interface RushingData {
+  attempt?: "Gain" | "Loss / No gain"
+  yac: number
+  direction: "Left end" | "Left tackle" | "Left guard" | "Center" | "Right guard" | "Right tackle" | "Right end"
+  defense?: RushingDefense
+}
+
+export interface BlockingData {
+  passBlock: boolean
+  runBlock: boolean
+  allowedPressure: boolean
+  allowedSack: boolean
+}
+
+export interface SpecialTeamsData {
+  type: "Field Goal" | "PAT" | "Punt" | "Kickoff"
+  result?: string
+  returnYards?: number
+}
+
+export interface PersonnelData {
+  offense: string
+  defense: string
+}
+
 export interface LibraryItemData {
   id: string
   name: string
@@ -40,6 +115,25 @@ export interface LibraryItemData {
   angles?: number
   comments?: number
   items?: LibraryItemData[]
+  videoUrl?: string
+
+  // Sports-specific optional fields
+  gameId?: string
+  matchup?: string
+  quarter?: number
+  time?: string
+  down?: number
+  distance?: number
+  yardLine?: number
+  hash?: "Left" | "Middle" | "Right"
+  playDevelopment?: PlayDevelopment
+  playResult?: PlayResult
+  passing?: PassingData
+  rushing?: RushingData
+  blocking?: BlockingData
+  specialTeams?: SpecialTeamsData
+  personnel?: PersonnelData
+  gain?: number
 }
 
 interface LibraryItemProps {

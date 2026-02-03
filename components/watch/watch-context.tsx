@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 import type { Clip } from "@/lib/mock-clips"
@@ -239,7 +239,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setCurrentPlay(play)
   }
 
-  const resetWatchState = () => {
+  const resetWatchState = useCallback(() => {
     setTabs([])
     setActiveTabId(null)
     setPlayingTabId(null)
@@ -250,7 +250,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       video: true,
       grid: true,
     })
-  }
+  }, [])
 
   const playUnsavedPlaylist = (clips: Clip[]) => {
     // Clear any active Library item selection to prevent race conditions

@@ -38,7 +38,7 @@ export function Header({
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
         ) : (
-          <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />
+          <Icon name="menu" className="w-5 h-5 text-muted-foreground" />
         )}
 
         <span className="text-foreground font-medium">{title}</span>
@@ -69,7 +69,6 @@ export function Header({
           </Button>
 
           <Button variant="ghost" size="medium" onClick={onDownloadClick} className="flex items-center gap-2">
-            <Icon name="download" className="w-4 h-4" />
             <svg
               width="20"
               height="20"

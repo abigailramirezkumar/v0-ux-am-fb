@@ -68,7 +68,7 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
 
 export function WatchProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, setWatchItem, setWatchItems } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -251,8 +251,6 @@ export function WatchProvider({ children }: { children: ReactNode }) {
       grid: true,
     })
   }
-
-  const { setWatchItem, setWatchItems } = useLibraryContext()
 
   const playUnsavedPlaylist = (clips: Clip[]) => {
     // Clear any active Library item selection to prevent race conditions

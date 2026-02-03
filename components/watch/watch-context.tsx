@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 import type { Clip } from "@/lib/mock-clips"
@@ -37,6 +37,7 @@ interface WatchContextType {
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
   playUnsavedPlaylist: (clips: Clip[]) => void
+  resetWatchState: () => void
 
   // Module Visibility
   visibleModules: {
@@ -67,7 +68,7 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
 
 export function WatchProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, setWatchItem, setWatchItems } = useLibraryContext()
 
   const [tabs, setTabs] = useState<Dataset[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -222,21 +223,40 @@ export function WatchProvider({ children }: { children: ReactNode }) {
   }
 
   const seekToPlay = (play: PlayData) => {
-    console.log("Play selected:", play.playNumber)
-
     // 1. Ensure the video player knows we are now playing from the Active Grid Tab
     if (activeTabId && activeTabId !== playingTabId) {
       setPlayingTabId(activeTabId)
     }
 
-    // 2. Pick a NEW random video for this clip
-    playRandomVideo()
+    // 2. Check if the play has its own videoUrl (from Explore clips), otherwise use random
+    if (play.videoUrl) {
+      setVideoUrl(play.videoUrl)
+    } else {
+      playRandomVideo()
+    }
 
     // 3. Set the play data
     setCurrentPlay(play)
   }
 
+  const resetWatchState = useCallback(() => {
+    setTabs([])
+    setActiveTabId(null)
+    setPlayingTabId(null)
+    setCurrentPlay(null)
+    setVideoUrl(null)
+    setVisibleModules({
+      library: true,
+      video: true,
+      grid: true,
+    })
+  }, [])
+
   const playUnsavedPlaylist = (clips: Clip[]) => {
+    // Clear any active Library item selection to prevent race conditions
+    setWatchItem(null)
+    setWatchItems([])
+    
     // 1. Convert Clips to Plays
     const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
       id: clip.id,
@@ -308,6 +328,7 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         seekToPlay,
         setVideoUrl,
         playUnsavedPlaylist,
+        resetWatchState,
         visibleModules,
         toggleModule,
       }}

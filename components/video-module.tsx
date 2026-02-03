@@ -13,6 +13,11 @@ function extractVideoId(url: string | null) {
   return match && match[7].length === 11 ? match[7] : null
 }
 
+function isYouTubeUrl(url: string | null): boolean {
+  if (!url) return false
+  return url.includes("youtube.com") || url.includes("youtu.be")
+}
+
 function formatTime(seconds: number) {
   if (!seconds) return "0:00"
   const mins = Math.floor(seconds / 60)
@@ -31,6 +36,7 @@ export function VideoModule() {
   const { currentPlay, videoUrl } = useWatchContext()
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
+  const html5VideoRef = useRef<HTMLVideoElement>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Player State
@@ -43,7 +49,19 @@ export function VideoModule() {
   const [showControls, setShowControls] = useState(false)
   const [isPlayerReady, setIsPlayerReady] = useState(false)
 
+  const isYouTube = isYouTubeUrl(videoUrl)
+
+  // Reset player ready state when URL or type changes
   useEffect(() => {
+    setIsPlayerReady(false)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [videoUrl])
+
+  // YouTube Player Effect
+  useEffect(() => {
+    if (!isYouTube) return
+
     // Load API Script if not present
     if (!window.YT) {
       const tag = document.createElement("script")
@@ -103,9 +121,48 @@ export function VideoModule() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [videoUrl])
+  }, [videoUrl, isYouTube])
 
+  // HTML5 Video Effect
   useEffect(() => {
+    if (isYouTube || !html5VideoRef.current) return
+
+    const video = html5VideoRef.current
+    
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+      setIsPlayerReady(true)
+    }
+    
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime)
+    }
+    
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => setIsPlaying(false)
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata)
+    video.addEventListener("timeupdate", handleTimeUpdate)
+    video.addEventListener("play", handlePlay)
+    video.addEventListener("pause", handlePause)
+
+    // Auto-play when source changes
+    video.play().catch(() => {
+      // Autoplay blocked, user interaction required
+    })
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata)
+      video.removeEventListener("timeupdate", handleTimeUpdate)
+      video.removeEventListener("play", handlePlay)
+      video.removeEventListener("pause", handlePause)
+    }
+  }, [videoUrl, isYouTube])
+
+  // YouTube time tracking (HTML5 uses event listeners)
+  useEffect(() => {
+    if (!isYouTube) return
+    
     if (isPlaying && isPlayerReady) {
       intervalRef.current = setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime) {
@@ -120,46 +177,80 @@ export function VideoModule() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [isPlaying, isPlayerReady, duration])
+  }, [isPlaying, isPlayerReady, duration, isYouTube])
 
   const togglePlay = useCallback(() => {
-    if (!playerRef.current) return
-    if (isPlaying) {
-      playerRef.current.pauseVideo()
+    if (isYouTube) {
+      if (!playerRef.current) return
+      if (isPlaying) {
+        playerRef.current.pauseVideo()
+      } else {
+        playerRef.current.playVideo()
+      }
     } else {
-      playerRef.current.playVideo()
+      if (!html5VideoRef.current) return
+      if (isPlaying) {
+        html5VideoRef.current.pause()
+      } else {
+        html5VideoRef.current.play()
+      }
     }
-  }, [isPlaying])
+  }, [isPlaying, isYouTube])
 
   const handleSeek = (value: number[]) => {
-    if (!playerRef.current) return
     const newTime = value[0]
     setCurrentTime(newTime)
-    playerRef.current.seekTo(newTime, true)
+    
+    if (isYouTube) {
+      if (!playerRef.current) return
+      playerRef.current.seekTo(newTime, true)
+    } else {
+      if (!html5VideoRef.current) return
+      html5VideoRef.current.currentTime = newTime
+    }
   }
 
   const toggleMute = () => {
-    if (!playerRef.current) return
-    if (isMuted) {
-      playerRef.current.unMute()
-      setIsMuted(false)
+    if (isYouTube) {
+      if (!playerRef.current) return
+      if (isMuted) {
+        playerRef.current.unMute()
+        setIsMuted(false)
+      } else {
+        playerRef.current.mute()
+        setIsMuted(true)
+      }
     } else {
-      playerRef.current.mute()
-      setIsMuted(true)
+      if (!html5VideoRef.current) return
+      html5VideoRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
     }
   }
 
   const handleVolumeChange = (value: number[]) => {
-    if (!playerRef.current) return
     const newVol = value[0]
     setVolume(newVol)
-    playerRef.current.setVolume(newVol)
-    if (newVol === 0 && !isMuted) {
-      playerRef.current.mute()
-      setIsMuted(true)
-    } else if (newVol > 0 && isMuted) {
-      playerRef.current.unMute()
-      setIsMuted(false)
+    
+    if (isYouTube) {
+      if (!playerRef.current) return
+      playerRef.current.setVolume(newVol)
+      if (newVol === 0 && !isMuted) {
+        playerRef.current.mute()
+        setIsMuted(true)
+      } else if (newVol > 0 && isMuted) {
+        playerRef.current.unMute()
+        setIsMuted(false)
+      }
+    } else {
+      if (!html5VideoRef.current) return
+      html5VideoRef.current.volume = newVol / 100
+      if (newVol === 0 && !isMuted) {
+        html5VideoRef.current.muted = true
+        setIsMuted(true)
+      } else if (newVol > 0 && isMuted) {
+        html5VideoRef.current.muted = false
+        setIsMuted(false)
+      }
     }
   }
 
@@ -184,7 +275,18 @@ export function VideoModule() {
       {videoUrl ? (
         <>
           <div className="relative flex-1 bg-black">
-            <div id="youtube-player" className="h-full w-full" />
+            {isYouTube ? (
+              <div id="youtube-player" className="h-full w-full" />
+            ) : (
+              <video
+                ref={html5VideoRef}
+                src={videoUrl}
+                className="h-full w-full object-contain"
+                muted={isMuted}
+                playsInline
+                crossOrigin="anonymous"
+              />
+            )}
             <div className="absolute inset-0 bg-transparent" onClick={togglePlay} onDoubleClick={toggleFullscreen} />
           </div>
 

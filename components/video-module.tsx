@@ -51,6 +51,13 @@ export function VideoModule() {
 
   const isYouTube = isYouTubeUrl(videoUrl)
 
+  // Reset player ready state when URL or type changes
+  useEffect(() => {
+    setIsPlayerReady(false)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [videoUrl])
+
   // YouTube Player Effect
   useEffect(() => {
     if (!isYouTube) return

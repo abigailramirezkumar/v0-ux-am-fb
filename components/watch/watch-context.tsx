@@ -223,15 +223,17 @@ export function WatchProvider({ children }: { children: ReactNode }) {
   }
 
   const seekToPlay = (play: PlayData) => {
-    console.log("Play selected:", play.playNumber)
-
     // 1. Ensure the video player knows we are now playing from the Active Grid Tab
     if (activeTabId && activeTabId !== playingTabId) {
       setPlayingTabId(activeTabId)
     }
 
-    // 2. Pick a NEW random video for this clip
-    playRandomVideo()
+    // 2. Check if the play has its own videoUrl (from Explore clips), otherwise use random
+    if (play.videoUrl) {
+      setVideoUrl(play.videoUrl)
+    } else {
+      playRandomVideo()
+    }
 
     // 3. Set the play data
     setCurrentPlay(play)
@@ -250,9 +252,13 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  const { setWatchItem, setWatchItems } = useLibraryContext()
+
   const playUnsavedPlaylist = (clips: Clip[]) => {
-    // Clear any active Library item selection to prevent conflicts
-    // This is handled by resetting tabs and creating fresh unsaved playlist
+    // Clear any active Library item selection to prevent race conditions
+    setWatchItem(null)
+    setWatchItems([])
+    
     // 1. Convert Clips to Plays
     const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
       id: clip.id,

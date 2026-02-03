@@ -15,6 +15,9 @@ export interface PlayData {
   coverage: string
   blitz: string
   game: string
+  // Per-play video fields for clips
+  videoUrl?: string
+  thumbnailUrl?: string
 }
 
 export interface Dataset {

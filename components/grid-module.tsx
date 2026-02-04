@@ -95,22 +95,12 @@ export function GridModule({ showTabs = true }: GridModuleProps) {
       )}
 
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
-        <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-          {activeDataset.name}
-          {activeTabId === playingTabId && activeDataset.plays.length > 0 && (
-            <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
-              LIVE
-            </span>
-          )}
-        </h3>
-        <div className="flex items-center gap-2">
-          {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-            <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
-              Save as Playlist
-            </Button>
-          )}
-          <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
-        </div>
+        <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+        {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+          <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
+            Save as Playlist
+          </Button>
+        )}
       </div>
 
       {/* --- GRID TABLE or EMPTY STATE --- */}

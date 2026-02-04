@@ -108,24 +108,20 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
         </div>
       )}
 
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
+      <div className="px-4 py-2 border-b border-border flex items-center bg-background">
         {selectedPlayIds.size > 0 ? (
-          <>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={clearPlaySelection}
-                className="w-7 h-7 rounded-md flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/70 dark:text-foreground/60" />
-                </svg>
-              </button>
-              <span className="text-sm font-medium">{selectedPlayIds.size} selected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {selectionActions}
-            </div>
-          </>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={clearPlaySelection}
+              className="text-sm font-medium text-[#0273e3] hover:text-[#0262c2] transition-colors"
+            >
+              {selectedPlayIds.size} Selected
+            </button>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-muted-foreground/50">
+              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {selectionActions}
+          </div>
         ) : (
           <>
             <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>

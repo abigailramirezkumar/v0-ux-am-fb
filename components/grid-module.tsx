@@ -8,18 +8,20 @@ import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
+import type { Dataset } from "@/lib/mock-datasets"
 
 interface GridModuleProps {
   showTabs?: boolean
   selectionActions?: React.ReactNode | null
+  dataset?: Dataset | null
 }
 
-export function GridModule({ showTabs = true, selectionActions }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
     playingTabId, 
-    activeDataset, 
+    activeDataset: contextDataset, 
     currentPlay, 
     activateTab, 
     closeTab, 
@@ -30,6 +32,9 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
     clearPlaySelection
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
+
+  // Use prop if provided, otherwise context
+  const activeDataset = datasetProp || contextDataset
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return

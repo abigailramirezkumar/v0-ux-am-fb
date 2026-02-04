@@ -1,14 +1,12 @@
 "use client"
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { FilterState } from "@/hooks/use-explore-filters"
-import { ChevronDown, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface FiltersModuleProps {
   filters: FilterState
@@ -20,90 +18,135 @@ interface FiltersModuleProps {
   filteredCount: number
 }
 
-interface FilterOption {
+// Toggle button component matching the design
+function ToggleButton({
+  label,
+  isSelected,
+  onClick,
+}: {
   label: string
-  category: string
-  items: string[]
-  type?: "checkbox" | "toggle" | "slider" | "select"
+  isSelected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 text-xs font-medium rounded border transition-colors",
+        isSelected
+          ? "bg-[#2d3748] text-white border-[#2d3748]"
+          : "bg-white text-[#4a5568] border-[#e2e8f0] hover:border-[#cbd5e0]"
+      )}
+    >
+      {label}
+    </button>
+  )
 }
 
-interface FilterSection {
-  id: string
-  title: string
-  count?: number
-  options: FilterOption[]
-}
-
-// Toggle button group component for compact filter options
+// Toggle button group
 function ToggleGroup({
   items,
   category,
   filters,
   onToggle,
 }: {
-  items: string[]
+  items: { value: string; label: string }[]
   category: string
   filters: FilterState
   onToggle: (category: string, value: string) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-1">
-      {items.map((item) => {
-        const isSelected = filters[category]?.has(item)
-        return (
-          <button
-            key={item}
-            onClick={() => onToggle(category, item)}
-            className={cn(
-              "px-2.5 py-1 text-xs rounded-md border transition-colors",
-              isSelected
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {item}
-          </button>
-        )
-      })}
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <ToggleButton
+          key={item.value}
+          label={item.label}
+          isSelected={filters[category]?.has(item.value) || false}
+          onClick={() => onToggle(category, item.value)}
+        />
+      ))}
     </div>
   )
 }
 
-// Checkbox group component
-function CheckboxGroup({
-  items,
-  category,
-  filters,
-  onToggle,
+// Filter row with circular checkbox
+function FilterRow({
+  label,
+  count,
+  isSelected,
+  onClick,
+  children,
 }: {
-  items: string[]
-  category: string
-  filters: FilterState
-  onToggle: (category: string, value: string) => void
+  label: string
+  count?: number
+  isSelected?: boolean
+  onClick?: () => void
+  children?: React.ReactNode
 }) {
   return (
     <div className="space-y-2">
-      {items.map((item) => {
-        const isSelected = filters[category]?.has(item)
-        return (
-          <label
-            key={item}
-            className="flex items-center gap-2 cursor-pointer group"
-          >
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => onToggle(category, item)}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <span className={cn(
-              "text-sm transition-colors",
-              isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-            )}>
-              {item}
-            </span>
-          </label>
-        )
-      })}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {onClick !== undefined && (
+            <button
+              onClick={onClick}
+              className={cn(
+                "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
+                isSelected
+                  ? "border-[#2d3748] bg-[#2d3748]"
+                  : "border-[#cbd5e0] bg-white hover:border-[#a0aec0]"
+              )}
+            >
+              {isSelected && (
+                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+              )}
+            </button>
+          )}
+          <span className="text-sm text-[#2d3748]">{label}</span>
+        </div>
+        {count !== undefined && (
+          <span className="text-xs text-[#718096]">{count}</span>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+// Subsection header
+function SubsectionHeader({ label }: { label: string }) {
+  return (
+    <div className="text-[11px] font-semibold text-[#718096] uppercase tracking-wider pt-2 pb-1">
+      {label}
+    </div>
+  )
+}
+
+// Range slider with labels
+function RangeSlider({
+  min = 0,
+  max = 100,
+  value,
+  onChange,
+}: {
+  min?: number
+  max?: number
+  value?: [number, number]
+  onChange?: (value: [number, number]) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <Slider
+        min={min}
+        max={max}
+        value={value || [min, max]}
+        onValueChange={(v) => onChange?.(v as [number, number])}
+        className="[&_[data-slot=slider-track]]:bg-[#e2e8f0] [&_[data-slot=slider-range]]:bg-[#4a5568] [&_[data-slot=slider-thumb]]:border-[#4a5568] [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
+      />
+      <div className="flex justify-between text-xs text-[#718096]">
+        <span>{min}</span>
+        <span>{max}</span>
+      </div>
     </div>
   )
 }
@@ -117,76 +160,20 @@ export function FiltersModule({
   totalCount,
   filteredCount,
 }: FiltersModuleProps) {
-  const sections: FilterSection[] = [
-    {
-      id: "game-context",
-      title: "Game Context",
-      options: [
-        { label: "Down", category: "down", items: ["1", "2", "3", "4"], type: "toggle" },
-        { label: "Distance to first", category: "distanceType", items: ["Short: 1-3", "Medium: 4-7", "Long: 8+"], type: "toggle" },
-        { label: "Hash", category: "hash", items: ["L", "M", "R"], type: "toggle" },
-      ],
-    },
-    {
-      id: "play-context",
-      title: "Play Context",
-      options: [
-        { label: "Play Type", category: "playType", items: ["Pass", "Run"], type: "toggle" },
-        { label: "Personnel (O)", category: "personnelO", items: ["11", "12", "21", "22", "10", "Empty"], type: "toggle" },
-        { label: "Personnel (D)", category: "personnelD", items: ["Base", "Nickel", "Dime", "Goal Line"], type: "toggle" },
-        { label: "Touchdown", category: "isTouchdown", items: ["Yes", "No"], type: "toggle" },
-        { label: "First down earned", category: "isFirstDown", items: ["Yes", "No"], type: "toggle" },
-        { label: "Penalty", category: "isPenalty", items: ["Yes", "No"], type: "toggle" },
-      ],
-    },
-    {
-      id: "passing",
-      title: "Passing",
-      options: [
-        { label: "Pass Result", category: "passResult", items: ["Complete", "Incomplete", "Sack", "Interception", "Throwaway"], type: "checkbox" },
-      ],
-    },
-    {
-      id: "rushing",
-      title: "Rushing",
-      options: [
-        { label: "Run Direction", category: "runDirection", items: ["Left", "Middle", "Right"], type: "toggle" },
-        { label: "Gain/Loss", category: "gainLoss", items: ["Gn", "Ls"], type: "toggle" },
-      ],
-    },
-    {
-      id: "defense",
-      title: "Defense",
-      options: [
-        { label: "Coverage", category: "coverage", items: ["Cov 1", "Cov 2", "Cov 3", "Quarters"], type: "checkbox" },
-        { label: "Blitz", category: "blitz", items: ["Yes", "No"], type: "toggle" },
-        { label: "Front", category: "defFront", items: ["Over", "Under", "Bear", "Okie"], type: "checkbox" },
-      ],
-    },
-    {
-      id: "game",
-      title: "Game",
-      options: [
-        { label: "Opponent / Game", category: "game", items: uniqueGames, type: "checkbox" },
-      ],
-    },
-  ]
-
+  
   // Count active filters per section
-  const getSectionCount = (section: FilterSection) => {
-    return section.options.reduce((acc, opt) => {
-      return acc + (filters[opt.category]?.size || 0)
-    }, 0)
+  const getCount = (categories: string[]) => {
+    return categories.reduce((acc, cat) => acc + (filters[cat]?.size || 0), 0)
   }
 
   return (
-    <div className="h-full flex flex-col bg-sidebar border-r border-border">
+    <div className="h-full flex flex-col bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e8f0]">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">Filters</span>
+          <span className="text-sm font-semibold text-[#2d3748]">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded">
+            <span className="px-1.5 py-0.5 text-xs bg-[#2d3748] text-white rounded">
               {activeFilterCount}
             </span>
           )}
@@ -196,17 +183,17 @@ export function FiltersModule({
             variant="ghost"
             size="sm"
             onClick={onClear}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-7 px-2 text-xs text-[#718096] hover:text-[#2d3748]"
           >
-            Clear
+            Clear all
           </Button>
         )}
       </div>
 
       {/* Results count */}
-      <div className="px-4 py-2 border-b border-border bg-muted/30">
-        <span className="text-xs text-muted-foreground">
-          Showing <span className="text-foreground font-medium">{filteredCount}</span> of {totalCount} plays
+      <div className="px-4 py-2 border-b border-[#e2e8f0] bg-[#f7fafc]">
+        <span className="text-xs text-[#718096]">
+          Showing <span className="text-[#2d3748] font-medium">{filteredCount}</span> of {totalCount} plays
         </span>
       </div>
 
@@ -215,64 +202,459 @@ export function FiltersModule({
         <Accordion
           type="multiple"
           defaultValue={["game-context", "play-context"]}
-          className="px-2 py-2"
+          className="px-4"
         >
-          {sections.map((section) => {
-            const sectionCount = getSectionCount(section)
-            return (
-              <AccordionItem
-                key={section.id}
-                value={section.id}
-                className="border-b border-border/50 last:border-b-0"
-              >
-                <AccordionTrigger className="py-3 px-2 hover:no-underline hover:bg-muted/50 rounded-md [&[data-state=open]>svg]:rotate-180">
-                  <div className="flex items-center justify-between w-full pr-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {section.title}
-                    </span>
-                    {sectionCount > 0 && (
-                      <span className="text-xs text-primary font-medium">
-                        {sectionCount}
-                      </span>
-                    )}
+          {/* Game Context */}
+          <AccordionItem value="game-context" className="border-b border-[#e2e8f0]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Game Context
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-4">
+              <FilterRow label="Down" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "1", label: "1st" },
+                    { value: "2", label: "2nd" },
+                    { value: "3", label: "3rd" },
+                    { value: "4", label: "4th" },
+                  ]}
+                  category="down"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Distance to first" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Short: 1-3", label: "Short: 1-3" },
+                    { value: "Medium: 4-7", label: "Medium: 4-7" },
+                    { value: "Long: 8+", label: "Long: 8+" },
+                  ]}
+                  category="distanceType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <RangeSlider min={0} max={100} />
+              </FilterRow>
+
+              <FilterRow label="Yard line" count={128}>
+                <div className="pt-1">
+                  <Slider
+                    min={0}
+                    max={100}
+                    defaultValue={[50]}
+                    className="[&_[data-slot=slider-track]]:bg-[#e2e8f0] [&_[data-slot=slider-range]]:bg-[#4a5568] [&_[data-slot=slider-thumb]]:border-[#4a5568] [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
+                  />
+                  <div className="flex justify-center text-xs text-[#718096] mt-2">
+                    <span>50</span>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-2 pb-3">
-                  <div className="space-y-4">
-                    {section.options.map((opt) => (
-                      <div key={opt.category} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                            {opt.label}
-                          </span>
-                          {filters[opt.category]?.size > 0 && (
-                            <span className="text-xs text-primary">
-                              {filters[opt.category].size}
-                            </span>
-                          )}
-                        </div>
-                        {opt.type === "toggle" ? (
-                          <ToggleGroup
-                            items={opt.items}
-                            category={opt.category}
-                            filters={filters}
-                            onToggle={onToggle}
-                          />
-                        ) : (
-                          <CheckboxGroup
-                            items={opt.items}
-                            category={opt.category}
-                            filters={filters}
-                            onToggle={onToggle}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            )
-          })}
+                </div>
+              </FilterRow>
+
+              <FilterRow label="Hash" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "L", label: "Left" },
+                    { value: "M", label: "Middle" },
+                    { value: "R", label: "Right" },
+                  ]}
+                  category="hash"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Play Context */}
+          <AccordionItem value="play-context" className="border-b border-[#e2e8f0]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Play Context
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-3">
+              <SubsectionHeader label="Play Development" />
+              
+              <FilterRow label="Play-action" count={123} />
+              
+              <FilterRow label="RPO" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Pass", label: "Pass" },
+                    { value: "Run", label: "Run" },
+                  ]}
+                  category="playType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Screen" count={123} />
+              <FilterRow label="Designed rollout" count={123} />
+              <FilterRow label="Broken Play" count={123} />
+
+              <SubsectionHeader label="Play Result" />
+
+              <FilterRow label="Touchdown" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "Pass", label: "Pass" },
+                    { value: "Run", label: "Run" },
+                    { value: "Defensive", label: "Defensive" },
+                  ]}
+                  category="touchdownType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="First down earned" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Pass", label: "Pass" },
+                    { value: "Run", label: "Run" },
+                  ]}
+                  category="firstDownType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Turnover" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "Fumble", label: "Fumble" },
+                    { value: "Interception", label: "Interception" },
+                    { value: "On downs", label: "On downs" },
+                  ]}
+                  category="turnoverType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <div className="pt-1">
+                  <ToggleGroup
+                    items={[{ value: "Safety", label: "Safety" }]}
+                    category="turnoverType"
+                    filters={filters}
+                    onToggle={onToggle}
+                  />
+                </div>
+              </FilterRow>
+
+              <FilterRow label="Penalty" count={123}>
+                <Select>
+                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                    <SelectValue placeholder="Select penalty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="holding">Holding</SelectItem>
+                    <SelectItem value="false-start">False Start</SelectItem>
+                    <SelectItem value="offsides">Offsides</SelectItem>
+                    <SelectItem value="pass-interference">Pass Interference</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterRow>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Passing */}
+          <AccordionItem value="passing" className="border-b border-[#e2e8f0]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Passing
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-3">
+              <SubsectionHeader label="Passing (Quarterback)" />
+
+              <FilterRow label="Pass thrown" count={62}>
+                <ToggleGroup
+                  items={[
+                    { value: "Complete", label: "Complete" },
+                    { value: "Incomplete", label: "Incomplete" },
+                  ]}
+                  category="passResult"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Pass thrown under pressure" count={59}>
+                <ToggleGroup
+                  items={[
+                    { value: "Complete", label: "Complete" },
+                    { value: "Incomplete", label: "Incomplete" },
+                  ]}
+                  category="passPressureResult"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Scramble" count={17} />
+              <FilterRow label="Sack taken" count={123} />
+              <FilterRow label="Throwaway" count={123} />
+
+              <SubsectionHeader label="Receiving" />
+
+              <FilterRow label="Target / Pass targeted" count={13} />
+              <FilterRow label="Reception" count={7} />
+              <FilterRow label="Drop" count={17} />
+              <FilterRow label="Contested catch" count={123} />
+
+              <FilterRow label="Route type" count={123}>
+                <Select>
+                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                    <SelectValue placeholder="Select route type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="slant">Slant</SelectItem>
+                    <SelectItem value="go">Go</SelectItem>
+                    <SelectItem value="out">Out</SelectItem>
+                    <SelectItem value="curl">Curl</SelectItem>
+                    <SelectItem value="post">Post</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterRow>
+
+              <FilterRow label="Depth of target" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "Behind LOS", label: "Behind LOS" },
+                    { value: "0-10", label: "0-10" },
+                    { value: "10-20", label: "10-20" },
+                    { value: "20+", label: "20+" },
+                  ]}
+                  category="depthOfTarget"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <SubsectionHeader label="Pass Defense" />
+
+              <FilterRow label="Pass defended / Breakup" count={13} />
+              <FilterRow label="Interception" count={7} />
+              <FilterRow label="Sack made" count={17} />
+              <FilterRow label="Pressure generated" count={123} />
+
+              <FilterRow label="Coverage" count={123}>
+                <Select>
+                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                    <SelectValue placeholder="Select coverage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cov-1">Cover 1</SelectItem>
+                    <SelectItem value="cov-2">Cover 2</SelectItem>
+                    <SelectItem value="cov-3">Cover 3</SelectItem>
+                    <SelectItem value="cov-4">Cover 4 / Quarters</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterRow>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Rushing */}
+          <AccordionItem value="rushing" className="border-b border-[#e2e8f0]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Rushing
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-3">
+              <SubsectionHeader label="Rushing (Ball Carrier)" />
+
+              <FilterRow label="Rush attempt" count={62}>
+                <ToggleGroup
+                  items={[
+                    { value: "Gn", label: "Gain" },
+                    { value: "Ls", label: "Loss / No gain" },
+                  ]}
+                  category="gainLoss"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Yards gained after contact" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Short: 1-3", label: "Short: 1-3" },
+                    { value: "Medium: 4-7", label: "Medium: 4-7" },
+                    { value: "Long: 8+", label: "Long: 8+" },
+                  ]}
+                  category="yardsAfterContact"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <RangeSlider min={0} max={100} />
+              </FilterRow>
+
+              <FilterRow label="Rush direction" count={17}>
+                <ToggleGroup
+                  items={[
+                    { value: "Left", label: "Left end" },
+                    { value: "LeftTackle", label: "Left tackle" },
+                    { value: "LeftGuard", label: "Left guard" },
+                  ]}
+                  category="runDirection"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <div className="pt-1">
+                  <ToggleGroup
+                    items={[
+                      { value: "Middle", label: "Center" },
+                      { value: "RightGuard", label: "Right guard" },
+                      { value: "RightTackle", label: "Right tackle" },
+                    ]}
+                    category="runDirection"
+                    filters={filters}
+                    onToggle={onToggle}
+                  />
+                </div>
+                <div className="pt-1">
+                  <ToggleGroup
+                    items={[{ value: "Right", label: "Right end" }]}
+                    category="runDirection"
+                    filters={filters}
+                    onToggle={onToggle}
+                  />
+                </div>
+              </FilterRow>
+
+              <SubsectionHeader label="Rush Defense" />
+
+              <FilterRow label="Tackle made" count={13} />
+              <FilterRow label="Tackle missed" count={7} />
+              <FilterRow label="Tackle for loss made" count={17} />
+              <FilterRow label="Forced fumble" count={123} />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Blocking */}
+          <AccordionItem value="blocking" className="border-b border-[#e2e8f0]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Blocking
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-3">
+              <SubsectionHeader label="Offensive Line" />
+
+              <FilterRow label="Pass block" count={62} />
+              <FilterRow label="Run block" count={128} />
+              <FilterRow label="Allowed pressure" count={17} />
+              <FilterRow label="Allowed sack" count={123} />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Special Teams */}
+          <AccordionItem value="special-teams" className="border-b-0">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+              Special Teams
+            </AccordionTrigger>
+            <AccordionContent className="pb-4 space-y-3">
+              <FilterRow label="Field goal attempt" count={17}>
+                <ToggleGroup
+                  items={[
+                    { value: "Made", label: "Made" },
+                    { value: "Missed", label: "Missed" },
+                    { value: "Blocked", label: "Blocked" },
+                    { value: "Fake", label: "Fake" },
+                  ]}
+                  category="fieldGoalResult"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="PAT attempt" count={17}>
+                <ToggleGroup
+                  items={[
+                    { value: "Made", label: "Made" },
+                    { value: "Missed", label: "Missed" },
+                    { value: "Blocked", label: "Blocked" },
+                  ]}
+                  category="patResult"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+              </FilterRow>
+
+              <FilterRow label="Punt" count={62}>
+                <ToggleGroup
+                  items={[
+                    { value: "Regular", label: "Regular" },
+                    { value: "Fake", label: "Fake" },
+                    { value: "Touchback", label: "Touchback" },
+                  ]}
+                  category="puntType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <div className="pt-1">
+                  <ToggleGroup
+                    items={[
+                      { value: "Out of bounds", label: "Out of bounds" },
+                      { value: "Returned", label: "Returned" },
+                      { value: "Downed", label: "Downed" },
+                    ]}
+                    category="puntType"
+                    filters={filters}
+                    onToggle={onToggle}
+                  />
+                </div>
+              </FilterRow>
+
+              <FilterRow label="Punt return" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Short: 0-10", label: "Short: 0-10" },
+                    { value: "Medium: 10-20", label: "Medium: 10-20" },
+                    { value: "Long: 20+", label: "Long: 20+" },
+                  ]}
+                  category="puntReturnYards"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <RangeSlider min={0} max={100} />
+              </FilterRow>
+
+              <FilterRow label="Kickoff" count={123}>
+                <ToggleGroup
+                  items={[
+                    { value: "Regular", label: "Regular" },
+                    { value: "Onside", label: "Onside" },
+                    { value: "Touchback", label: "Touchback" },
+                  ]}
+                  category="kickoffType"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <div className="pt-1">
+                  <ToggleGroup
+                    items={[
+                      { value: "Out of bounds", label: "Out of bounds" },
+                      { value: "Returned", label: "Returned" },
+                      { value: "Downed", label: "Downed" },
+                    ]}
+                    category="kickoffType"
+                    filters={filters}
+                    onToggle={onToggle}
+                  />
+                </div>
+              </FilterRow>
+
+              <FilterRow label="Kickoff return" count={128}>
+                <ToggleGroup
+                  items={[
+                    { value: "Short: 0-10", label: "Short: 0-10" },
+                    { value: "Medium: 10-20", label: "Medium: 10-20" },
+                    { value: "Long: 20+", label: "Long: 20+" },
+                  ]}
+                  category="kickoffReturnYards"
+                  filters={filters}
+                  onToggle={onToggle}
+                />
+                <RangeSlider min={0} max={100} />
+              </FilterRow>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
       </ScrollArea>
     </div>

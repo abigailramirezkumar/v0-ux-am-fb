@@ -23,27 +23,31 @@ export default function ExplorePage() {
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
-      <div className="flex flex-col h-full w-full bg-sidebar">
+      <div className="flex flex-col h-full w-full bg-muted/30">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <FiltersModule
-              filters={filters}
-              onToggle={toggleFilter}
-              onClear={clearFilters}
-              uniqueGames={uniqueGames}
-              activeFilterCount={activeFilterCount}
-              totalCount={allClipsDataset.plays.length}
-              filteredCount={filteredPlays.length}
-            />
+          <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
+            <div className="h-full p-3 pr-0">
+              <FiltersModule
+                filters={filters}
+                onToggle={toggleFilter}
+                onClear={clearFilters}
+                uniqueGames={uniqueGames}
+                activeFilterCount={activeFilterCount}
+                totalCount={allClipsDataset.plays.length}
+                filteredCount={filteredPlays.length}
+              />
+            </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={80}>
-            <div className="h-full overflow-hidden">
-              <GridModule 
-                showTabs={false} 
-                selectionActions={<AddToPlaylistMenu />} 
-                dataset={filteredDataset}
-              />
+          <ResizablePanel defaultSize={78}>
+            <div className="h-full overflow-hidden p-3 pl-0">
+              <div className="h-full bg-background rounded-lg border border-border overflow-hidden">
+                <GridModule 
+                  showTabs={false} 
+                  selectionActions={<AddToPlaylistMenu />} 
+                  dataset={filteredDataset}
+                />
+              </div>
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

@@ -8,7 +8,11 @@ import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
 
-export function GridModule() {
+interface GridModuleProps {
+  showTabs?: boolean
+}
+
+export function GridModule({ showTabs = true }: GridModuleProps) {
   const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
     useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
@@ -39,54 +43,56 @@ export function GridModule() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-0 border-none">
-      <div className="flex items-center gap-1 p-1 bg-muted/30 border-b border-border overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const isActive = tab.id === activeTabId
-          const isPlaying = tab.id === playingTabId
+      {showTabs && (
+        <div className="flex items-center gap-1 p-1 bg-muted/30 border-b border-border overflow-x-auto no-scrollbar">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTabId
+            const isPlaying = tab.id === playingTabId
 
-          return (
-            <div
-              key={tab.id}
-              onClick={() => activateTab(tab.id)}
-              className={cn(
-                "group flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all min-w-[140px] max-w-[200px] border select-none relative",
-                isActive
-                  ? "bg-background text-foreground border-border shadow-sm"
-                  : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50",
-              )}
-            >
-              {/* Playing Indicator - Green dot */}
+            return (
               <div
+                key={tab.id}
+                onClick={() => activateTab(tab.id)}
                 className={cn(
-                  "w-2 h-2 rounded-full shrink-0 transition-colors",
-                  isPlaying ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-transparent",
+                  "group flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all min-w-[140px] max-w-[200px] border select-none relative",
+                  isActive
+                    ? "bg-background text-foreground border-border shadow-sm"
+                    : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50",
                 )}
-              />
-
-              <span className="truncate flex-1">{tab.name}</span>
-
-              {/* Close Button (Visible on Hover or Active) */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className={cn(
-                  "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted",
-                  isActive && "opacity-100",
-                )}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  closeTab(tab.id)
-                }}
               >
-                <Icon name="x" className="w-3 h-3" />
-              </Button>
+                {/* Playing Indicator - Green dot */}
+                <div
+                  className={cn(
+                    "w-2 h-2 rounded-full shrink-0 transition-colors",
+                    isPlaying ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-transparent",
+                  )}
+                />
 
-              {/* Active Stripe Bottom */}
-              {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
-            </div>
-          )
-        })}
-      </div>
+                <span className="truncate flex-1">{tab.name}</span>
+
+                {/* Close Button (Visible on Hover or Active) */}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={cn(
+                    "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted",
+                    isActive && "opacity-100",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    closeTab(tab.id)
+                  }}
+                >
+                  <Icon name="x" className="w-3 h-3" />
+                </Button>
+
+                {/* Active Stripe Bottom */}
+                {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">

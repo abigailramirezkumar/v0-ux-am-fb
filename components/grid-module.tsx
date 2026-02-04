@@ -85,11 +85,9 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
                 <span className="truncate flex-1">{tab.name}</span>
 
                 {/* Close Button (Visible on Hover or Active) */}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
                   className={cn(
-                    "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted",
+                    "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center hover:bg-muted/80",
                     isActive && "opacity-100",
                   )}
                   onClick={(e) => {
@@ -97,8 +95,10 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
                     closeTab(tab.id)
                   }}
                 >
-                  <Icon name="x" className="w-3 h-3" />
-                </Button>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground" />
+                  </svg>
+                </button>
 
                 {/* Active Stripe Bottom */}
                 {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
@@ -112,9 +112,14 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
         {selectedPlayIds.size > 0 ? (
           <>
             <div className="flex items-center gap-3">
-              <Button size="sm" variant="ghost" onClick={clearPlaySelection} className="h-7 px-2">
-                <Icon name="x" className="w-4 h-4" />
-              </Button>
+              <button
+                onClick={clearPlaySelection}
+                className="w-7 h-7 rounded-md flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/70 dark:text-foreground/60" />
+                </svg>
+              </button>
               <span className="text-sm font-medium">{selectedPlayIds.size} selected</span>
             </div>
             <div className="flex items-center gap-2">

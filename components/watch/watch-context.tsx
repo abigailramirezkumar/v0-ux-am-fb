@@ -132,15 +132,30 @@ export function WatchProvider({
       let datasetWithId: Dataset
 
       if (item && item.type === "playlist") {
-        // Initialize EMPTY dataset for playlists
+        // Map persisted playData from items back to plays array
+        const plays: PlayData[] = (item.items || [])
+          .filter(subItem => subItem.playData)
+          .map((subItem, index) => ({
+            ...subItem.playData!,
+            id: subItem.playData!.id || subItem.id,
+            playNumber: index + 1,
+          }))
+        
         datasetWithId = {
           id: activeWatchItemId,
           name: item.name,
-          plays: [], // Empty by default for new playlists
+          plays,
         }
-        // Stop playback for empty playlist
-        setVideoUrl(null)
-        setCurrentPlay(null)
+        
+        if (plays.length === 0) {
+          // Stop playback for empty playlist
+          setVideoUrl(null)
+          setCurrentPlay(null)
+        } else {
+          // Play first clip if playlist has items
+          playRandomVideo()
+          setCurrentPlay(plays[0])
+        }
       } else {
         // Use Mock data for games/other videos
         const newDataset = getDatasetForItem(activeWatchItemId)
@@ -183,12 +198,21 @@ export function WatchProvider({
         let datasetWithId: Dataset
 
         if (item && item.type === "playlist") {
+          // Map persisted playData from items back to plays array
+          const plays: PlayData[] = (item.items || [])
+            .filter(subItem => subItem.playData)
+            .map((subItem, index) => ({
+              ...subItem.playData!,
+              id: subItem.playData!.id || subItem.id,
+              playNumber: index + 1,
+            }))
+          
           datasetWithId = {
             id: itemId,
             name: item.name,
-            plays: [],
+            plays,
           }
-          if (!firstNewId) firstNewIsPlaylist = true
+          if (!firstNewId) firstNewIsPlaylist = plays.length === 0
         } else {
           const newDataset = getDatasetForItem(itemId)
           datasetWithId = {

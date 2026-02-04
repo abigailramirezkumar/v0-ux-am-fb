@@ -34,14 +34,15 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
 
-    // Convert PlayData back to LibraryItemData structure
+    // Convert PlayData back to LibraryItemData structure with persisted playData
     const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
       id: play.id,
-      name: play.description || "Untitled Clip",
+      name: play.game || play.result || "Untitled Clip",
       type: "video",
-      thumbnailUrl: play.thumbnailUrl,
+      thumbnailUrl: "/football-field.png",
       duration: "0:10",
       createdDate: new Date().toLocaleDateString(),
+      playData: play, // Persist the full play data for Watch experience
     }))
 
     openCreatePlaylistModal(itemsToSave)

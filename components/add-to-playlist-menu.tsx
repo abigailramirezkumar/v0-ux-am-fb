@@ -18,8 +18,8 @@ import type { LibraryItemData } from "@/components/library-item"
 export function AddToPlaylistMenu() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { folders, rootItems, recentPlaylists, addToPlaylist } = useLibraryContext()
-  const { selectedPlayIds, clearPlaySelection } = useWatchContext()
+  const { folders, rootItems, recentPlaylists, addToPlaylist, openCreatePlaylistModal } = useLibraryContext()
+  const { selectedPlayIds, activeDataset, clearPlaySelection } = useWatchContext()
 
   // Gather all playlists from folders and root items
   const allPlaylists = useMemo(() => {
@@ -59,9 +59,33 @@ export function AddToPlaylistMenu() {
     return allPlaylists.filter(p => p.name.toLowerCase().includes(query))
   }, [allPlaylists, searchQuery])
 
+  // Convert selected plays to LibraryItemData for adding to playlist
+  const getSelectedItems = (): LibraryItemData[] => {
+    if (!activeDataset) return []
+    return activeDataset.plays
+      .filter(play => selectedPlayIds.has(play.id))
+      .map(play => ({
+        id: play.id,
+        name: play.game || play.result || "Untitled Clip",
+        type: "video" as const,
+        thumbnailUrl: "/football-field.png",
+        duration: "0:10",
+        createdDate: new Date().toLocaleDateString(),
+        playData: play, // Persist the full play data
+      }))
+  }
+
   const handleAddToPlaylist = (playlistId: string) => {
-    const clipIds = Array.from(selectedPlayIds)
-    addToPlaylist(playlistId, clipIds)
+    const items = getSelectedItems()
+    addToPlaylist(playlistId, items)
+    clearPlaySelection()
+    setOpen(false)
+    setSearchQuery("")
+  }
+
+  const handleCreateNewPlaylist = () => {
+    const items = getSelectedItems()
+    openCreatePlaylistModal(items)
     clearPlaySelection()
     setOpen(false)
     setSearchQuery("")
@@ -136,6 +160,7 @@ export function AddToPlaylistMenu() {
         {/* Create New Playlist */}
         <div className="p-2 border-t border-border">
           <button
+            onClick={handleCreateNewPlaylist}
             className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left text-primary"
           >
             <Icon name="plus" className="w-4 h-4" />

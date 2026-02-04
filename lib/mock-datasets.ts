@@ -97,3 +97,28 @@ export function getDatasetForItem(itemId: string | null): Dataset {
   const index = itemId.length % MOCK_DATASETS.length
   return MOCK_DATASETS[index]
 }
+
+export function getAllUniqueClips(): Dataset {
+  const allPlays: PlayData[] = []
+  const seenIds = new Set<string>()
+
+  MOCK_DATASETS.forEach((dataset) => {
+    dataset.plays.forEach((play) => {
+      // Create a unique key combining dataset and play id
+      const uniqueKey = `${dataset.id}-${play.id}`
+      if (!seenIds.has(uniqueKey)) {
+        seenIds.add(uniqueKey)
+        allPlays.push({
+          ...play,
+          id: uniqueKey, // Use unique key as the play id
+        })
+      }
+    })
+  })
+
+  return {
+    id: "all-clips",
+    name: "All Clips",
+    plays: allPlays,
+  }
+}

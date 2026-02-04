@@ -64,13 +64,26 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
   return null
 }
 
-export function WatchProvider({ children }: { children: ReactNode }) {
+export function WatchProvider({ 
+  children,
+  initialTabs = [] 
+}: { 
+  children: ReactNode
+  initialTabs?: Dataset[] 
+}) {
   const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
 
-  const [tabs, setTabs] = useState<Dataset[]>([])
-  const [activeTabId, setActiveTabId] = useState<string | null>(null)
-  const [playingTabId, setPlayingTabId] = useState<string | null>(null)
+  // Initialize with provided tabs if any
+  const [tabs, setTabs] = useState<Dataset[]>(initialTabs)
+  
+  // Set initial active/playing tab if initialTabs exist
+  const [activeTabId, setActiveTabId] = useState<string | null>(
+    initialTabs.length > 0 ? initialTabs[0].id : null
+  )
+  const [playingTabId, setPlayingTabId] = useState<string | null>(
+    initialTabs.length > 0 ? initialTabs[0].id : null
+  )
   const [currentPlay, setCurrentPlay] = useState<PlayData | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const frameRate = 30

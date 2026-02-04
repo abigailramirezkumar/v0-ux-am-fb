@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
+import type { LibraryItemData } from "@/components/library-item"
 
 interface GridModuleProps {
   showTabs?: boolean
@@ -32,8 +33,18 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
-    const ids = activeDataset.plays.map(p => p.id)
-    openCreatePlaylistModal(ids)
+
+    // Convert PlayData back to LibraryItemData structure
+    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
+      id: play.id,
+      name: play.description || "Untitled Clip",
+      type: "video",
+      thumbnailUrl: play.thumbnailUrl,
+      duration: "0:10",
+      createdDate: new Date().toLocaleDateString(),
+    }))
+
+    openCreatePlaylistModal(itemsToSave)
   }
 
   if (!activeDataset) {

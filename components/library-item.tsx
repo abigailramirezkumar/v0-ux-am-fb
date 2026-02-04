@@ -26,8 +26,6 @@ import {
 import { useDensity, getDensitySpacing } from "@/lib/density-context"
 import { useLibraryContext } from "@/lib/library-context"
 
-import type { PlayData } from "@/lib/mock-datasets"
-
 export interface LibraryItemData {
   id: string
   name: string
@@ -42,8 +40,6 @@ export interface LibraryItemData {
   angles?: number
   comments?: number
   items?: LibraryItemData[]
-  clipIds?: string[] // List of clip IDs for playlists
-  playData?: PlayData // Persisted clip data for Watch experience
 }
 
 interface LibraryItemProps {

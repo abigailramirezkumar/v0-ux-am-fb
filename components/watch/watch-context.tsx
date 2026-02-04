@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, getRandomVideoUrl, findPlaysByIds, type PlayData } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 
 import { useRouter } from "next/navigation"
 
@@ -132,24 +132,15 @@ export function WatchProvider({
       let datasetWithId: Dataset
 
       if (item && item.type === "playlist") {
-        // Resolve clip IDs to actual PlayData
-        const plays = findPlaysByIds(item.clipIds || [])
-        
+        // Initialize EMPTY dataset for playlists
         datasetWithId = {
           id: activeWatchItemId,
           name: item.name,
-          plays,
+          plays: [], // Empty by default for new playlists
         }
-        
-        if (plays.length === 0) {
-          // Stop playback for empty playlist
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          // Play first clip if playlist has items
-          playRandomVideo()
-          setCurrentPlay(plays[0])
-        }
+        // Stop playback for empty playlist
+        setVideoUrl(null)
+        setCurrentPlay(null)
       } else {
         // Use Mock data for games/other videos
         const newDataset = getDatasetForItem(activeWatchItemId)
@@ -192,15 +183,12 @@ export function WatchProvider({
         let datasetWithId: Dataset
 
         if (item && item.type === "playlist") {
-          // Resolve clip IDs to actual PlayData
-          const plays = findPlaysByIds(item.clipIds || [])
-          
           datasetWithId = {
             id: itemId,
             name: item.name,
-            plays,
+            plays: [],
           }
-          if (!firstNewId) firstNewIsPlaylist = plays.length === 0
+          if (!firstNewId) firstNewIsPlaylist = true
         } else {
           const newDataset = getDatasetForItem(itemId)
           datasetWithId = {

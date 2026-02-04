@@ -723,7 +723,7 @@ interface LibraryContextType {
   itemForPermissions: string | null
   layoutMode: "list" | "grid"
   isCreatePlaylistModalOpen: boolean
-  pendingPlaylistItems: LibraryItemData[]
+  pendingPlaylistClipIds: string[]
   recentPlaylists: RecentPlaylist[]
   addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
@@ -753,10 +753,10 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
-  openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
+  openCreatePlaylistModal: (initialClipIds?: string[]) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string) => void
-  clearPendingPlaylistItems: () => void
+  createPlaylist: (targetFolderId: string | null, name: string, clipIds?: string[]) => void
+  clearPendingPlaylistClipIds: () => void
 }
 
 export interface MoveItem {
@@ -793,7 +793,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [clipboard, setClipboard] = useState<{ mode: "full" | "structure"; data: FolderData } | null>(null)
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
-  const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
+  const [pendingPlaylistClipIds, setPendingPlaylistClipIds] = useState<string[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
@@ -1357,30 +1357,32 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
-  const openCreatePlaylistModal = (initialItems?: LibraryItemData[]) => {
-    if (initialItems) {
-      setPendingPlaylistItems(initialItems)
+  const openCreatePlaylistModal = (initialClipIds?: string[]) => {
+    if (initialClipIds) {
+      setPendingPlaylistClipIds(initialClipIds)
     } else {
-      setPendingPlaylistItems([])
+      setPendingPlaylistClipIds([])
     }
     setIsCreatePlaylistModalOpen(true)
   }
   const closeCreatePlaylistModal = () => {
     setIsCreatePlaylistModalOpen(false)
-    setPendingPlaylistItems([])
+    setPendingPlaylistClipIds([])
   }
-  const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
+  const clearPendingPlaylistClipIds = () => setPendingPlaylistClipIds([])
 
-  const createPlaylist = (targetFolderId: string | null, name: string) => {
+  const createPlaylist = (targetFolderId: string | null, name: string, clipIds?: string[]) => {
+    // Use provided clipIds or fall back to pending IDs from modal
+    const idsToUse = clipIds ?? pendingPlaylistClipIds
     const newPlaylist: LibraryItemData = {
       id: `playlist-${Date.now()}`,
       name: name,
       type: "playlist",
       createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
       dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      itemCount: pendingPlaylistItems.length,
+      itemCount: idsToUse.length,
       thumbnailUrl: "/placeholder-logo.png",
-      items: pendingPlaylistItems,
+      clipIds: idsToUse, // Store IDs instead of full objects
     }
 
     if (targetFolderId === null) {
@@ -1446,8 +1448,40 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       })
     }
 
-    // Here you would actually add clips to the playlist
-    // For now, we just update the recent playlists tracking
+    // Actually add the clip IDs to the playlist
+    const updatePlaylistClipIds = (items: LibraryItemData[]): LibraryItemData[] => {
+      return items.map(item => {
+        if (item.id === playlistId && item.type === "playlist") {
+          const existingIds = item.clipIds || []
+          // Filter out duplicates
+          const newIds = clipIds.filter(id => !existingIds.includes(id))
+          return {
+            ...item,
+            clipIds: [...existingIds, ...newIds],
+            itemCount: existingIds.length + newIds.length,
+          }
+        }
+        return item
+      })
+    }
+
+    // Check rootItems first
+    if (rootItems.some(item => item.id === playlistId)) {
+      setRootItems(prev => updatePlaylistClipIds(prev))
+    } else {
+      // Update in folders recursively
+      setFolders(prev => {
+        const updateInFolders = (nodes: FolderData[]): FolderData[] => {
+          return nodes.map(node => ({
+            ...node,
+            items: node.items ? updatePlaylistClipIds(node.items) : undefined,
+            children: node.children ? updateInFolders(node.children) : undefined,
+          }))
+        }
+        return updateInFolders(prev)
+      })
+    }
+
     console.log(`Added ${clipIds.length} clips to playlist ${playlistId}`)
   }
 
@@ -1492,7 +1526,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         itemForPermissions,
         layoutMode,
         isCreatePlaylistModalOpen,
-        pendingPlaylistItems,
+        pendingPlaylistClipIds,
         recentPlaylists,
         addToPlaylist,
         setSort,
@@ -1525,7 +1559,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
         createPlaylist,
-        clearPendingPlaylistItems,
+        clearPendingPlaylistClipIds,
       }}
     >
       {children}

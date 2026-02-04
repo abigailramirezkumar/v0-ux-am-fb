@@ -137,9 +137,6 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
   }
 
   const bottomNavItems = [
-    { name: "Calendar", icon: "calendar", badge: null },
-    { name: "Messages", icon: "messages", badge: null },
-    { name: "Notifications", icon: "notifications", badge: null },
     { name: "Settings", icon: "settings", badge: null },
   ]
 
@@ -166,6 +163,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname.startsWith("/explore")} tooltip="Explore">
               <Link href="/explore">
@@ -174,6 +172,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarContent>
 

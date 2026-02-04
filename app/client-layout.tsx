@@ -11,7 +11,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { CatapultImportProvider } from "@/lib/catapult-import-context"
 import { DensityProvider } from "@/lib/density-context"
 import { LibraryProvider } from "@/lib/library-context"
-import { FilterProvider, useFilter } from "@/lib/filter-context"
+
 import { WatchProvider } from "@/components/watch/watch-context"
 
 function ClientLayoutInner({ 
@@ -27,8 +27,6 @@ function ClientLayoutInner({
   router: ReturnType<typeof useRouter>
   children: React.ReactNode
 }) {
-  const { toggleFilterSidebar } = useFilter()
-  
   return (
     <div className="h-screen w-full flex bg-sidebar">
       {!isWatchPage && <HudlSidebar />}
@@ -39,7 +37,6 @@ function ClientLayoutInner({
           searchValue={searchValue}
           onSearchChange={setSearchValue}
           searchPlaceholder="Search components..."
-          onFilterClick={toggleFilterSidebar}
           onShareClick={() => console.log("Share clicked")}
           onDownloadClick={() => console.log("Download clicked")}
           className="bg-sidebar border-b border-sidebar-border"
@@ -72,14 +69,12 @@ export default function ClientLayout({
         <DensityProvider>
           <LibraryProvider>
             <WatchProvider>
-              <FilterProvider>
-                <SidebarProvider defaultOpen={true}>
-                  <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
-                    {children}
-                  </ClientLayoutInner>
-                  <Analytics />
-                </SidebarProvider>
-              </FilterProvider>
+              <SidebarProvider defaultOpen={true}>
+                <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
+                  {children}
+                </ClientLayoutInner>
+                <Analytics />
+              </SidebarProvider>
             </WatchProvider>
           </LibraryProvider>
         </DensityProvider>

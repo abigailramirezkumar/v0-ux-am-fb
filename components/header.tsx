@@ -8,7 +8,6 @@ import { ArrowLeft } from "lucide-react"
 interface HeaderProps {
   className?: string
   title?: string
-  onFilterClick?: () => void
   onShareClick?: () => void
   onDownloadClick?: () => void
   searchValue?: string
@@ -21,7 +20,6 @@ interface HeaderProps {
 export function Header({
   className,
   title = "Content Title",
-  onFilterClick,
   onShareClick,
   onDownloadClick,
   searchValue,
@@ -42,11 +40,6 @@ export function Header({
         )}
 
         <span className="text-foreground font-medium">{title}</span>
-
-        {/* Filter Button */}
-        <button onClick={onFilterClick} className="p-1 hover:bg-muted rounded transition-colors" aria-label="Filter">
-          <Icon name="filter" className="w-5 h-5 text-muted-foreground" />
-        </button>
 
         <div className="flex-1 relative">
           <Input

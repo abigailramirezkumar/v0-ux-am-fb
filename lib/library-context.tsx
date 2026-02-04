@@ -693,6 +693,12 @@ const generateRamsLibrary = (): FolderData[] => {
 
 // --- CONTEXT ---
 
+export interface RecentPlaylist {
+  id: string
+  name: string
+  folderId: string | null
+}
+
 interface LibraryContextType {
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
@@ -718,6 +724,8 @@ interface LibraryContextType {
   layoutMode: "list" | "grid"
   isCreatePlaylistModalOpen: boolean
   pendingPlaylistItems: LibraryItemData[]
+  recentPlaylists: RecentPlaylist[]
+  addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
   toggleColumnVisibility: (columnId: string) => void
   setColumns: (columns: Column[]) => void
@@ -786,6 +794,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
+  const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -1395,6 +1404,53 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     closeCreatePlaylistModal()
   }
 
+  const addToPlaylist = (playlistId: string, clipIds: string[]) => {
+    // Find the playlist in folders or rootItems
+    let playlistName = ""
+    let playlistFolderId: string | null = null
+
+    // Search in rootItems first
+    const rootPlaylist = rootItems.find(item => item.id === playlistId && item.type === "playlist")
+    if (rootPlaylist) {
+      playlistName = rootPlaylist.name
+      playlistFolderId = null
+    } else {
+      // Search recursively in folders
+      const findPlaylist = (nodes: FolderData[], parentId: string | null): { name: string; folderId: string | null } | null => {
+        for (const node of nodes) {
+          if (node.items) {
+            const playlist = node.items.find(item => item.id === playlistId && item.type === "playlist")
+            if (playlist) {
+              return { name: playlist.name, folderId: node.id }
+            }
+          }
+          if (node.children) {
+            const found = findPlaylist(node.children, node.id)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      const found = findPlaylist(folders, null)
+      if (found) {
+        playlistName = found.name
+        playlistFolderId = found.folderId
+      }
+    }
+
+    // Update recent playlists (keep last 5, most recent first)
+    if (playlistName) {
+      setRecentPlaylists(prev => {
+        const filtered = prev.filter(p => p.id !== playlistId)
+        return [{ id: playlistId, name: playlistName, folderId: playlistFolderId }, ...filtered].slice(0, 5)
+      })
+    }
+
+    // Here you would actually add clips to the playlist
+    // For now, we just update the recent playlists tracking
+    console.log(`Added ${clipIds.length} clips to playlist ${playlistId}`)
+  }
+
   const handleSetViewMode = (mode: "folder" | "schedule") => {
     setViewModeState(mode)
     // Reset Navigation
@@ -1437,6 +1493,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         layoutMode,
         isCreatePlaylistModalOpen,
         pendingPlaylistItems,
+        recentPlaylists,
+        addToPlaylist,
         setSort,
         toggleColumnVisibility,
         setColumns,

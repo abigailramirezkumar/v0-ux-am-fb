@@ -12,7 +12,7 @@ interface DensityContextType {
 const DensityContext = createContext<DensityContextType | undefined>(undefined)
 
 export function DensityProvider({ children }: { children: ReactNode }) {
-  const [density, setDensity] = useState<Density>("default")
+  const [density, setDensity] = useState<Density>("dense")
 
   return <DensityContext.Provider value={{ density, setDensity }}>{children}</DensityContext.Provider>
 }

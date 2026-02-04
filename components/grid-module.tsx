@@ -3,14 +3,32 @@
 import { useWatchContext } from "@/components/watch/watch-context"
 import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
 
-export function GridModule() {
-  const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
-    useWatchContext()
+interface GridModuleProps {
+  showTabs?: boolean
+  selectionActions?: React.ReactNode | null
+}
+
+export function GridModule({ showTabs = true, selectionActions }: GridModuleProps) {
+  const { 
+    tabs, 
+    activeTabId, 
+    playingTabId, 
+    activeDataset, 
+    currentPlay, 
+    activateTab, 
+    closeTab, 
+    seekToPlay,
+    selectedPlayIds,
+    togglePlaySelection,
+    selectAllPlays,
+    clearPlaySelection
+  } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
 
   const handleSaveAsPlaylist = () => {
@@ -39,72 +57,87 @@ export function GridModule() {
 
   return (
     <div className="h-full w-full flex flex-col bg-background rounded-xl border border-border shadow-sm overflow-hidden pt-0 border-none">
-      <div className="flex items-center gap-1 p-1 bg-muted/30 border-b border-border overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const isActive = tab.id === activeTabId
-          const isPlaying = tab.id === playingTabId
+      {showTabs && (
+        <div className="flex items-center gap-1 p-1 bg-muted/30 border-b border-border overflow-x-auto no-scrollbar">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTabId
+            const isPlaying = tab.id === playingTabId
 
-          return (
-            <div
-              key={tab.id}
-              onClick={() => activateTab(tab.id)}
-              className={cn(
-                "group flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all min-w-[140px] max-w-[200px] border select-none relative",
-                isActive
-                  ? "bg-background text-foreground border-border shadow-sm"
-                  : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50",
-              )}
-            >
-              {/* Playing Indicator - Green dot */}
+            return (
               <div
+                key={tab.id}
+                onClick={() => activateTab(tab.id)}
                 className={cn(
-                  "w-2 h-2 rounded-full shrink-0 transition-colors",
-                  isPlaying ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-transparent",
+                  "group flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-all min-w-[140px] max-w-[200px] border select-none relative",
+                  isActive
+                    ? "bg-background text-foreground border-border shadow-sm"
+                    : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/50",
                 )}
-              />
-
-              <span className="truncate flex-1">{tab.name}</span>
-
-              {/* Close Button (Visible on Hover or Active) */}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className={cn(
-                  "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-muted",
-                  isActive && "opacity-100",
-                )}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  closeTab(tab.id)
-                }}
               >
-                <Icon name="x" className="w-3 h-3" />
-              </Button>
+                {/* Playing Indicator - Green dot */}
+                <div
+                  className={cn(
+                    "w-2 h-2 rounded-full shrink-0 transition-colors",
+                    isPlaying ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-transparent",
+                  )}
+                />
 
-              {/* Active Stripe Bottom */}
-              {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
-            </div>
-          )
-        })}
-      </div>
+                <span className="truncate flex-1">{tab.name}</span>
 
-      <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
-        <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
-          {activeDataset.name}
-          {activeTabId === playingTabId && activeDataset.plays.length > 0 && (
-            <span className="text-[10px] bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-bold border border-green-500/20">
-              LIVE
-            </span>
-          )}
-        </h3>
-        <div className="flex items-center gap-2">
-          {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-            <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
-              Save as Playlist
-            </Button>
-          )}
-          <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+                {/* Close Button (Visible on Hover or Active) */}
+                <button
+                  className={cn(
+                    "w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity rounded-full flex items-center justify-center hover:bg-muted/80",
+                    isActive && "opacity-100",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    closeTab(tab.id)
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground" />
+                  </svg>
+                </button>
+
+                {/* Active Stripe Bottom */}
+                {isActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-t-full" />}
+              </div>
+            )
+          })}
         </div>
+      )}
+
+      <div className="px-4 py-2 border-b border-border flex items-center bg-background">
+        {selectedPlayIds.size > 0 ? (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={clearPlaySelection}
+              className="w-6 h-6 rounded flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors"
+              aria-label="Clear selection"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground" />
+              </svg>
+            </button>
+            <span className="text-sm font-medium text-[#0273e3]">
+              {selectedPlayIds.size} Selected
+            </span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-muted-foreground/50">
+              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {selectionActions}
+          </div>
+        ) : (
+          <>
+            <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+            {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
+                Save as Playlist
+              </Button>
+            )}
+          </>
+        )}
       </div>
 
       {/* --- GRID TABLE or EMPTY STATE --- */}
@@ -119,6 +152,18 @@ export function GridModule() {
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
+              <TableHead className="w-[40px] text-center">
+                <Checkbox
+                  checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      selectAllPlays()
+                    } else {
+                      clearPlaySelection()
+                    }
+                  }}
+                />
+              </TableHead>
               <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 #
               </TableHead>
@@ -179,6 +224,12 @@ export function GridModule() {
                   )}
                   onClick={() => seekToPlay(play)}
                 >
+                  <TableCell className="text-center py-1.5" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedPlayIds.has(play.id)}
+                      onCheckedChange={() => togglePlaySelection(play.id)}
+                    />
+                  </TableCell>
                   <TableCell className="text-center font-medium py-1.5">{play.playNumber}</TableCell>
                   <TableCell className="text-center py-1.5">{play.odk}</TableCell>
                   <TableCell className="text-center py-1.5">{play.quarter}</TableCell>

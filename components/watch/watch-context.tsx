@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
-import type { Clip } from "@/lib/mock-clips"
+
 import { useRouter } from "next/navigation"
 
 // Extended Dataset type to support unsaved playlists
@@ -30,13 +30,18 @@ interface WatchContextType {
   videoUrl: string | null
   frameRate: number
 
+  // Selection State
+  selectedPlayIds: Set<string>
+  togglePlaySelection: (playId: string) => void
+  selectAllPlays: () => void
+  clearPlaySelection: () => void
+
   // Actions
   activateTab: (tabId: string) => void
   closeTab: (tabId: string) => void
   playTab: (tabId: string) => void
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
-  playUnsavedPlaylist: (clips: Clip[]) => void
 
   // Module Visibility
   visibleModules: {
@@ -65,16 +70,32 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
   return null
 }
 
-export function WatchProvider({ children }: { children: ReactNode }) {
+export function WatchProvider({ 
+  children,
+  initialTabs = [] 
+}: { 
+  children: ReactNode
+  initialTabs?: Dataset[] 
+}) {
   const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
 
-  const [tabs, setTabs] = useState<Dataset[]>([])
-  const [activeTabId, setActiveTabId] = useState<string | null>(null)
-  const [playingTabId, setPlayingTabId] = useState<string | null>(null)
+  // Initialize with provided tabs if any
+  const [tabs, setTabs] = useState<Dataset[]>(initialTabs)
+  
+  // Set initial active/playing tab if initialTabs exist
+  const [activeTabId, setActiveTabId] = useState<string | null>(
+    initialTabs.length > 0 ? initialTabs[0].id : null
+  )
+  const [playingTabId, setPlayingTabId] = useState<string | null>(
+    initialTabs.length > 0 ? initialTabs[0].id : null
+  )
   const [currentPlay, setCurrentPlay] = useState<PlayData | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const frameRate = 30
+
+  // Selection state
+  const [selectedPlayIds, setSelectedPlayIds] = useState<Set<string>>(new Set())
 
   const [visibleModules, setVisibleModules] = useState({
     library: true,
@@ -236,60 +257,31 @@ export function WatchProvider({ children }: { children: ReactNode }) {
     setCurrentPlay(play)
   }
 
-  const playUnsavedPlaylist = (clips: Clip[]) => {
-    // 1. Convert Clips to Plays
-    const unsavedPlays: PlayData[] = clips.map((clip, index) => ({
-      id: clip.id,
-      playNumber: index + 1,
-      description: `${clip.matchup} - Q${clip.quarter}`,
-      startTime: 0,
-      duration: 10,
-      videoUrl: clip.videoUrl,
-      thumbnailUrl: clip.thumbnailUrl,
-      status: "live" as const,
-      odk: "O",
-      quarter: clip.quarter,
-      down: clip.down,
-      distance: clip.distance,
-      yardLine: clip.yardLine,
-      hash: clip.hash,
-      yards: clip.gain,
-      result: clip.passing?.result || (clip.rushing ? "Rush" : "-"),
-      gainLoss: clip.gain >= 0 ? "Gn" : "Ls",
-      defFront: "4-3",
-      defStr: "R",
-      coverage: "C3",
-      blitz: "N",
-      game: clip.matchup,
-    }))
-
-    // 2. Create Unsaved Dataset
-    const unsavedDataset: Dataset = {
-      id: "unsaved-playlist",
-      name: "Unsaved Playlist",
-      plays: unsavedPlays,
-      isUnsaved: true,
-    }
-
-    // 3. Update State
-    setTabs((prev) => {
-      // Remove existing unsaved tab if present to avoid dupes
-      const clean = prev.filter((t) => t.id !== "unsaved-playlist")
-      return [unsavedDataset, ...clean]
-    })
-    setActiveTabId("unsaved-playlist")
-    setPlayingTabId("unsaved-playlist")
-    if (unsavedPlays.length > 0) {
-      setCurrentPlay(unsavedPlays[0])
-      setVideoUrl(unsavedPlays[0].videoUrl)
-    }
-
-    // 4. Navigate
-    router.push("/watch")
-  }
-
   const activeDataset = tabs.find((t) => t.id === activeTabId) || null
   const playingDataset = tabs.find((t) => t.id === playingTabId) || null
+
+  // Selection handlers
+  const togglePlaySelection = (playId: string) => {
+    setSelectedPlayIds((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(playId)) {
+        newSet.delete(playId)
+      } else {
+        newSet.add(playId)
+      }
+      return newSet
+    })
+  }
+
+  const selectAllPlays = () => {
+    if (activeDataset) {
+      setSelectedPlayIds(new Set(activeDataset.plays.map((p) => p.id)))
+    }
+  }
+
+  const clearPlaySelection = () => {
+    setSelectedPlayIds(new Set())
+  }
 
   return (
     <WatchContext.Provider
@@ -302,12 +294,15 @@ export function WatchProvider({ children }: { children: ReactNode }) {
         currentPlay,
         videoUrl,
         frameRate,
+        selectedPlayIds,
+        togglePlaySelection,
+        selectAllPlays,
+        clearPlaySelection,
         activateTab,
         closeTab,
         playTab,
         seekToPlay,
         setVideoUrl,
-        playUnsavedPlaylist,
         visibleModules,
         toggleModule,
       }}

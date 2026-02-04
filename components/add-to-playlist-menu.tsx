@@ -60,18 +60,19 @@ export function AddToPlaylistMenu() {
   }, [allPlaylists, searchQuery])
 
   // Convert selected plays to LibraryItemData for adding to playlist
+  // Ensures all playData fields (Result, ODK, Quarter, etc.) are captured
   const getSelectedItems = (): LibraryItemData[] => {
     if (!activeDataset) return []
     return activeDataset.plays
       .filter(play => selectedPlayIds.has(play.id))
-      .map(play => ({
-        id: play.id,
-        name: play.game || play.result || "Untitled Clip",
+      .map((play, index) => ({
+        id: `${activeDataset.id}-${play.id}-${Date.now()}-${index}`, // Unique ID to avoid duplicates
+        name: play.game || play.description || play.result || "Untitled Clip",
         type: "video" as const,
-        thumbnailUrl: "/football-field.png",
-        duration: "0:10",
+        thumbnailUrl: play.thumbnailUrl || "/football-field.png",
+        duration: play.duration ? `${Math.floor(play.duration / 60)}:${String(play.duration % 60).padStart(2, '0')}` : "0:10",
         createdDate: new Date().toLocaleDateString(),
-        playData: play, // Persist the full play data
+        playData: { ...play }, // Persist the full play data with all fields
       }))
   }
 

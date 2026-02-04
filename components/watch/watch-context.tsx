@@ -132,9 +132,10 @@ export function WatchProvider({
       let datasetWithId: Dataset
 
       if (item && item.type === "playlist") {
-        // Map persisted playData from items back to plays array
+        // STRICT SEPARATION: Playlist shows ONLY what's stored in items
+        // No auto-generation of mock data for playlists
         const plays: PlayData[] = (item.items || [])
-          .filter(subItem => subItem.playData)
+          .filter(subItem => subItem.playData) // Only include items with playData
           .map((subItem, index) => ({
             ...subItem.playData!,
             id: subItem.playData!.id || subItem.id,
@@ -144,16 +145,20 @@ export function WatchProvider({
         datasetWithId = {
           id: activeWatchItemId,
           name: item.name,
-          plays,
+          plays, // What you see is what you get - only stored items
         }
         
         if (plays.length === 0) {
-          // Stop playback for empty playlist
+          // Empty playlist - stop playback
           setVideoUrl(null)
           setCurrentPlay(null)
         } else {
-          // Play first clip if playlist has items
-          playRandomVideo()
+          // Playlist has items - play first clip
+          if (plays[0].videoUrl) {
+            setVideoUrl(plays[0].videoUrl)
+          } else {
+            playRandomVideo()
+          }
           setCurrentPlay(plays[0])
         }
       } else {
@@ -198,7 +203,7 @@ export function WatchProvider({
         let datasetWithId: Dataset
 
         if (item && item.type === "playlist") {
-          // Map persisted playData from items back to plays array
+          // STRICT SEPARATION: Playlist shows ONLY what's stored in items
           const plays: PlayData[] = (item.items || [])
             .filter(subItem => subItem.playData)
             .map((subItem, index) => ({
@@ -210,9 +215,15 @@ export function WatchProvider({
           datasetWithId = {
             id: itemId,
             name: item.name,
-            plays,
+            plays, // Only stored items, no auto-generation
           }
-          if (!firstNewId) firstNewIsPlaylist = plays.length === 0
+          // Track if first item is an empty playlist
+          if (!firstNewId) {
+            firstNewIsPlaylist = true
+            if (plays.length > 0 && plays[0].videoUrl) {
+              // Has video URL - will use it instead of random
+            }
+          }
         } else {
           const newDataset = getDatasetForItem(itemId)
           datasetWithId = {
@@ -230,16 +241,24 @@ export function WatchProvider({
         setActiveTabId(firstNewId)
         setPlayingTabId(firstNewId)
         
-        if (firstNewIsPlaylist) {
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          playRandomVideo()
-          // Set current play for the first new tab
-          const firstDataset = newTabs.find((t) => t.id === firstNewId)
-          if (firstDataset && firstDataset.plays.length > 0) {
-            setCurrentPlay(firstDataset.plays[0])
+        const firstDataset = newTabs.find((t) => t.id === firstNewId)
+        if (firstNewIsPlaylist && firstDataset) {
+          // Playlist - use stored data only
+          if (firstDataset.plays.length === 0) {
+            setVideoUrl(null)
+            setCurrentPlay(null)
+          } else {
+            const firstPlay = firstDataset.plays[0]
+            if (firstPlay.videoUrl) {
+              setVideoUrl(firstPlay.videoUrl)
+            } else {
+              playRandomVideo()
+            }
+            setCurrentPlay(firstPlay)
           }
+        } else if (firstDataset && firstDataset.plays.length > 0) {
+          playRandomVideo()
+          setCurrentPlay(firstDataset.plays[0])
         }
       }
 

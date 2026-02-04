@@ -101,7 +101,7 @@ function WatchContent() {
             order={2}
           >
             <div className="h-full overflow-hidden">
-              <GridModule />
+              <GridModule selectionActions={null} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

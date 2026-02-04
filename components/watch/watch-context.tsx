@@ -30,6 +30,12 @@ interface WatchContextType {
   videoUrl: string | null
   frameRate: number
 
+  // Selection State
+  selectedPlayIds: Set<string>
+  togglePlaySelection: (playId: string) => void
+  selectAllPlays: () => void
+  clearPlaySelection: () => void
+
   // Actions
   activateTab: (tabId: string) => void
   closeTab: (tabId: string) => void
@@ -87,6 +93,9 @@ export function WatchProvider({
   const [currentPlay, setCurrentPlay] = useState<PlayData | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const frameRate = 30
+
+  // Selection state
+  const [selectedPlayIds, setSelectedPlayIds] = useState<Set<string>>(new Set())
 
   const [visibleModules, setVisibleModules] = useState({
     library: true,
@@ -251,6 +260,29 @@ export function WatchProvider({
   const activeDataset = tabs.find((t) => t.id === activeTabId) || null
   const playingDataset = tabs.find((t) => t.id === playingTabId) || null
 
+  // Selection handlers
+  const togglePlaySelection = (playId: string) => {
+    setSelectedPlayIds((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(playId)) {
+        newSet.delete(playId)
+      } else {
+        newSet.add(playId)
+      }
+      return newSet
+    })
+  }
+
+  const selectAllPlays = () => {
+    if (activeDataset) {
+      setSelectedPlayIds(new Set(activeDataset.plays.map((p) => p.id)))
+    }
+  }
+
+  const clearPlaySelection = () => {
+    setSelectedPlayIds(new Set())
+  }
+
   return (
     <WatchContext.Provider
       value={{
@@ -262,6 +294,10 @@ export function WatchProvider({
         currentPlay,
         videoUrl,
         frameRate,
+        selectedPlayIds,
+        togglePlaySelection,
+        selectAllPlays,
+        clearPlaySelection,
         activateTab,
         closeTab,
         playTab,

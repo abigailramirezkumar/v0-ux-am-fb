@@ -3,6 +3,7 @@
 import { useWatchContext } from "@/components/watch/watch-context"
 import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
@@ -10,11 +11,24 @@ import type { LibraryItemData } from "@/components/library-item"
 
 interface GridModuleProps {
   showTabs?: boolean
+  selectionActions?: React.ReactNode | null
 }
 
-export function GridModule({ showTabs = true }: GridModuleProps) {
-  const { tabs, activeTabId, playingTabId, activeDataset, currentPlay, activateTab, closeTab, seekToPlay } =
-    useWatchContext()
+export function GridModule({ showTabs = true, selectionActions }: GridModuleProps) {
+  const { 
+    tabs, 
+    activeTabId, 
+    playingTabId, 
+    activeDataset, 
+    currentPlay, 
+    activateTab, 
+    closeTab, 
+    seekToPlay,
+    selectedPlayIds,
+    togglePlaySelection,
+    selectAllPlays,
+    clearPlaySelection
+  } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
 
   const handleSaveAsPlaylist = () => {
@@ -95,11 +109,27 @@ export function GridModule({ showTabs = true }: GridModuleProps) {
       )}
 
       <div className="px-4 py-2 border-b border-border flex items-center justify-between bg-background">
-        <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
-        {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-          <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
-            Save as Playlist
-          </Button>
+        {selectedPlayIds.size > 0 ? (
+          <>
+            <div className="flex items-center gap-3">
+              <Button size="sm" variant="ghost" onClick={clearPlaySelection} className="h-7 px-2">
+                <Icon name="x" className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-medium">{selectedPlayIds.size} selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectionActions}
+            </div>
+          </>
+        ) : (
+          <>
+            <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+            {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+              <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
+                Save as Playlist
+              </Button>
+            )}
+          </>
         )}
       </div>
 
@@ -115,6 +145,18 @@ export function GridModule({ showTabs = true }: GridModuleProps) {
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
+              <TableHead className="w-[40px] text-center">
+                <Checkbox
+                  checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      selectAllPlays()
+                    } else {
+                      clearPlaySelection()
+                    }
+                  }}
+                />
+              </TableHead>
               <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 #
               </TableHead>
@@ -175,6 +217,12 @@ export function GridModule({ showTabs = true }: GridModuleProps) {
                   )}
                   onClick={() => seekToPlay(play)}
                 >
+                  <TableCell className="text-center py-1.5" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedPlayIds.has(play.id)}
+                      onCheckedChange={() => togglePlaySelection(play.id)}
+                    />
+                  </TableCell>
                   <TableCell className="text-center font-medium py-1.5">{play.playNumber}</TableCell>
                   <TableCell className="text-center py-1.5">{play.odk}</TableCell>
                   <TableCell className="text-center py-1.5">{play.quarter}</TableCell>

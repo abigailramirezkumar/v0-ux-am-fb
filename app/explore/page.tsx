@@ -12,7 +12,7 @@ export default function ExplorePage() {
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
         <div className="flex-1 overflow-hidden">
-          <GridModule showTabs={false} />
+          <GridModule showTabs={false} selectionActions={null} />
         </div>
       </div>
     </WatchProvider>

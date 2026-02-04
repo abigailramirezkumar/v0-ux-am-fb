@@ -122,9 +122,3 @@ export function getAllUniqueClips(): Dataset {
     plays: allPlays,
   }
 }
-
-// Lookup function to retrieve full video data using only IDs
-export function findPlaysByIds(ids: string[]): PlayData[] {
-  const allClips = getAllUniqueClips().plays
-  return allClips.filter((play) => ids.includes(play.id))
-}

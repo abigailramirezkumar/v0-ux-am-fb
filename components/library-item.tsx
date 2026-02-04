@@ -40,7 +40,6 @@ export interface LibraryItemData {
   angles?: number
   comments?: number
   items?: LibraryItemData[]
-  clipIds?: string[] // Array of clip IDs for playlists (references to PlayData)
 }
 
 interface LibraryItemProps {

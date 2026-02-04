@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, getRandomVideoUrl, findPlaysByIds, type PlayData } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 
 import { useRouter } from "next/navigation"
 
@@ -132,24 +132,15 @@ export function WatchProvider({
       let datasetWithId: Dataset
 
       if (item && item.type === "playlist") {
-        // Hydrate playlist by converting stored IDs into playable video objects
-        const clipIds = item.clipIds || []
-        const hydratedPlays = findPlaysByIds(clipIds)
-        
+        // Initialize EMPTY dataset for playlists
         datasetWithId = {
           id: activeWatchItemId,
           name: item.name,
-          plays: hydratedPlays,
+          plays: [], // Empty by default for new playlists
         }
-        
-        // Stop playback if playlist is empty, otherwise play first clip
-        if (hydratedPlays.length === 0) {
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          playRandomVideo()
-          setCurrentPlay(hydratedPlays[0])
-        }
+        // Stop playback for empty playlist
+        setVideoUrl(null)
+        setCurrentPlay(null)
       } else {
         // Use Mock data for games/other videos
         const newDataset = getDatasetForItem(activeWatchItemId)
@@ -192,16 +183,12 @@ export function WatchProvider({
         let datasetWithId: Dataset
 
         if (item && item.type === "playlist") {
-          // Hydrate playlist by converting stored IDs into playable video objects
-          const clipIds = item.clipIds || []
-          const hydratedPlays = findPlaysByIds(clipIds)
-          
           datasetWithId = {
             id: itemId,
             name: item.name,
-            plays: hydratedPlays,
+            plays: [],
           }
-          if (!firstNewId) firstNewIsPlaylist = hydratedPlays.length === 0
+          if (!firstNewId) firstNewIsPlaylist = true
         } else {
           const newDataset = getDatasetForItem(itemId)
           datasetWithId = {

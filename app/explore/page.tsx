@@ -1,7 +1,7 @@
 "use client"
 
 import { WatchProvider } from "@/components/watch/watch-context"
-import { WatchGrid } from "@/components/watch/watch-grid"
+import { GridModule } from "@/components/grid-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 
 export default function ExplorePage() {
@@ -12,7 +12,7 @@ export default function ExplorePage() {
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
         <div className="flex-1 overflow-hidden">
-          <WatchGrid />
+          <GridModule />
         </div>
       </div>
     </WatchProvider>

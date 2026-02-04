@@ -122,3 +122,8 @@ export function getAllUniqueClips(): Dataset {
     plays: allPlays,
   }
 }
+
+export function findPlaysByIds(ids: string[]): PlayData[] {
+  const allClips = getAllUniqueClips().plays
+  return allClips.filter((play) => ids.includes(play.id))
+}

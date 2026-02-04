@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
-import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
+import { getDatasetForItem, getRandomVideoUrl, findPlaysByIds, type PlayData } from "@/lib/mock-datasets"
 
 import { useRouter } from "next/navigation"
 
@@ -132,14 +132,8 @@ export function WatchProvider({
       let datasetWithId: Dataset
 
       if (item && item.type === "playlist") {
-        // Map persisted playData from items back to plays array
-        const plays: PlayData[] = (item.items || [])
-          .filter(subItem => subItem.playData)
-          .map((subItem, index) => ({
-            ...subItem.playData!,
-            id: subItem.playData!.id || subItem.id,
-            playNumber: index + 1,
-          }))
+        // Resolve clip IDs to actual PlayData
+        const plays = findPlaysByIds(item.clipIds || [])
         
         datasetWithId = {
           id: activeWatchItemId,
@@ -198,14 +192,8 @@ export function WatchProvider({
         let datasetWithId: Dataset
 
         if (item && item.type === "playlist") {
-          // Map persisted playData from items back to plays array
-          const plays: PlayData[] = (item.items || [])
-            .filter(subItem => subItem.playData)
-            .map((subItem, index) => ({
-              ...subItem.playData!,
-              id: subItem.playData!.id || subItem.id,
-              playNumber: index + 1,
-            }))
+          // Resolve clip IDs to actual PlayData
+          const plays = findPlaysByIds(item.clipIds || [])
           
           datasetWithId = {
             id: itemId,

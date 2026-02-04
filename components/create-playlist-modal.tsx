@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import type { FolderData } from "@/components/folder"
 
 export function CreatePlaylistModal() {
-  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders } = useLibraryContext()
+  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, pendingPlaylistClipIds } = useLibraryContext()
   const [playlistName, setPlaylistName] = useState("")
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null)
@@ -77,7 +77,7 @@ export function CreatePlaylistModal() {
 
   const handleCreate = () => {
     if (playlistName.trim()) {
-      createPlaylist(currentFolderId, playlistName.trim())
+      createPlaylist(currentFolderId, playlistName.trim(), pendingPlaylistClipIds)
       setPlaylistName("")
       setCurrentFolderId(null)
     }

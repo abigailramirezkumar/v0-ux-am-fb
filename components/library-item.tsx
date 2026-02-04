@@ -42,6 +42,7 @@ export interface LibraryItemData {
   angles?: number
   comments?: number
   items?: LibraryItemData[]
+  clipIds?: string[] // List of clip IDs for playlists
   playData?: PlayData // Persisted clip data for Watch experience
 }
 

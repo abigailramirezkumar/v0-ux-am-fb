@@ -182,7 +182,16 @@ export function LibraryItem({
             {/* Icon/Thumbnail - fixed width */}
             <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
               {isHovered && item.type === "video" ? (
-                <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpen?.(item.id)
+                  }}
+                  className="w-full h-full flex items-center justify-center hover:bg-black/10 transition-colors"
+                  aria-label={`Play ${item.name}`}
+                >
+                  <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                </button>
               ) : item.thumbnailUrl ? (
                 <img
                   src={item.thumbnailUrl || "/placeholder.svg"}

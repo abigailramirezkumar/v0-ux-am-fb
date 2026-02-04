@@ -7,6 +7,7 @@ import { VideoModule } from "@/components/video-module"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { WatchToolbar } from "@/components/watch/watch-toolbar"
+import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
 function WatchContent() {
@@ -101,7 +102,7 @@ function WatchContent() {
             order={2}
           >
             <div className="h-full overflow-hidden">
-              <GridModule selectionActions={null} />
+              <GridModule selectionActions={<AddToPlaylistMenu />} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

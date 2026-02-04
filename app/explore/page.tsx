@@ -3,6 +3,7 @@
 import { WatchProvider } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
+import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 
 export default function ExplorePage() {
   // Get all unique clips combined into one dataset
@@ -12,7 +13,7 @@ export default function ExplorePage() {
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
         <div className="flex-1 overflow-hidden">
-          <GridModule showTabs={false} selectionActions={null} />
+          <GridModule showTabs={false} selectionActions={<AddToPlaylistMenu />} />
         </div>
       </div>
     </WatchProvider>

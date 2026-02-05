@@ -5,13 +5,16 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { FilterState } from "@/hooks/use-explore-filters"
+import { FilterState, RangeFilterState } from "@/hooks/use-explore-filters"
 import { Button } from "@/components/ui/button"
 
 interface FiltersModuleProps {
   filters: FilterState
+  rangeFilters: RangeFilterState
   onToggle: (category: string, value: string) => void
   onToggleAll: (category: string, allValues: string[]) => void
+  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
+  onSinglePointChange: (category: string, value: number, defaultValue: number) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -143,7 +146,7 @@ function SubsectionHeader({ label }: { label: string }) {
   )
 }
 
-// Range slider with labels
+// Range slider with labels (dual-thumb)
 function RangeSlider({
   min = 0,
   max = 100,
@@ -152,21 +155,21 @@ function RangeSlider({
 }: {
   min?: number
   max?: number
-  value?: [number, number]
-  onChange?: (value: [number, number]) => void
+  value: [number, number]
+  onChange: (value: [number, number]) => void
 }) {
   return (
     <div className="space-y-2">
       <Slider
         min={min}
         max={max}
-        value={value || [min, max]}
-        onValueChange={(v) => onChange?.(v as [number, number])}
+        value={value}
+        onValueChange={(v) => onChange(v as [number, number])}
         className="[&_[data-slot=slider-track]]:bg-muted [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
       />
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{min}</span>
-        <span>{max}</span>
+        <span>{value[0]}</span>
+        <span>{value[1]}</span>
       </div>
     </div>
   )
@@ -174,8 +177,11 @@ function RangeSlider({
 
 export function FiltersModule({
   filters,
+  rangeFilters,
   onToggle,
   onToggleAll,
+  onRangeChange,
+  onSinglePointChange,
   onClear,
   uniqueGames,
   activeFilterCount,
@@ -271,7 +277,12 @@ export function FiltersModule({
                   filters={filters}
                   onToggle={onToggle}
                 />
-                <RangeSlider min={0} max={100} />
+                <RangeSlider 
+                  min={0} 
+                  max={100} 
+                  value={rangeFilters["distanceRange"] || [0, 100]}
+                  onChange={(v) => onRangeChange("distanceRange", v, [0, 100])}
+                />
               </FilterRow>
 
               <FilterRow label="Yard line" count={128} filters={filters} onToggle={onToggle}>
@@ -279,11 +290,12 @@ export function FiltersModule({
                   <Slider
                     min={0}
                     max={100}
-                    defaultValue={[50]}
+                    value={[rangeFilters["yardLine"]?.[0] ?? 50]}
+                    onValueChange={(v) => onSinglePointChange("yardLine", v[0], 50)}
                     className="[&_[data-slot=slider-track]]:bg-muted [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
                   />
                   <div className="flex justify-center text-xs text-muted-foreground mt-2">
-                    <span>50</span>
+                    <span>{rangeFilters["yardLine"]?.[0] ?? 50}</span>
                   </div>
                 </div>
               </FilterRow>
@@ -589,7 +601,12 @@ export function FiltersModule({
                   filters={filters}
                   onToggle={onToggle}
                 />
-                <RangeSlider min={0} max={100} />
+                <RangeSlider 
+                  min={0} 
+                  max={100}
+                  value={rangeFilters["yardsAfterContactRange"] || [0, 100]}
+                  onChange={(v) => onRangeChange("yardsAfterContactRange", v, [0, 100])}
+                />
               </FilterRow>
 
               <FilterRow 
@@ -753,7 +770,12 @@ export function FiltersModule({
                   filters={filters}
                   onToggle={onToggle}
                 />
-                <RangeSlider min={0} max={100} />
+                <RangeSlider 
+                  min={0} 
+                  max={100}
+                  value={rangeFilters["puntReturnRange"] || [0, 100]}
+                  onChange={(v) => onRangeChange("puntReturnRange", v, [0, 100])}
+                />
               </FilterRow>
 
               <FilterRow 
@@ -806,7 +828,12 @@ export function FiltersModule({
                   filters={filters}
                   onToggle={onToggle}
                 />
-                <RangeSlider min={0} max={100} />
+                <RangeSlider 
+                  min={0} 
+                  max={100}
+                  value={rangeFilters["kickoffReturnRange"] || [0, 100]}
+                  onChange={(v) => onRangeChange("kickoffReturnRange", v, [0, 100])}
+                />
               </FilterRow>
             </AccordionContent>
           </AccordionItem>

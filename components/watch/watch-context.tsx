@@ -277,13 +277,12 @@ export function WatchProvider({
   }
 
   const closeTab = (tabId: string) => {
-    setTabs((prev) => {
-      const newTabs = prev.filter((t) => t.id !== tabId)
-      if (activeTabId === tabId && newTabs.length > 0) {
-        setActiveTabId(newTabs[0].id)
-      }
-      return newTabs
-    })
+    const currentTabs = tabsRef.current
+    const newTabs = currentTabs.filter((t) => t.id !== tabId)
+    setTabs(newTabs)
+    if (activeTabId === tabId && newTabs.length > 0) {
+      setActiveTabId(newTabs[0].id)
+    }
   }
 
   const seekToPlay = (play: PlayData) => {

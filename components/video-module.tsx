@@ -181,13 +181,18 @@ export function VideoModule() {
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
-      {videoUrl ? (
-        <>
-          <div className="relative flex-1 bg-black">
-            <div id="youtube-player" className="h-full w-full" />
-            <div className="absolute inset-0 bg-transparent" onClick={togglePlay} onDoubleClick={toggleFullscreen} />
-          </div>
+      {/* 
+        Always render the youtube-player div so the YouTube IFrame API's DOM 
+        nodes are never unmounted by React (which causes removeChild crashes).
+        Show/hide via CSS instead of conditional rendering.
+      */}
+      <div className={cn("relative flex-1 bg-black", !videoUrl && "hidden")}>
+        <div id="youtube-player" className="h-full w-full" />
+        <div className="absolute inset-0 bg-transparent" onClick={togglePlay} onDoubleClick={toggleFullscreen} />
+      </div>
 
+      {videoUrl && (
+        <>
           <div
             className={cn(
               "absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded text-sm pointer-events-none transition-opacity duration-300 backdrop-blur-sm z-10",
@@ -252,7 +257,9 @@ export function VideoModule() {
             </div>
           </div>
         </>
-      ) : (
+      )}
+
+      {!videoUrl && (
         <div className="h-full w-full flex flex-col items-center justify-center gap-6 p-8 bg-zinc-950 text-white">
           <Icon name="video" className="w-12 h-12 mx-auto text-zinc-600" />
           <h3 className="text-xl font-semibold">No Video Source</h3>

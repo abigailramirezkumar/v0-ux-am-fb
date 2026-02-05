@@ -26,7 +26,7 @@ export default function ExplorePage() {
       <div className="flex flex-col h-full w-full bg-muted/30">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
-            <div className="h-full p-3 pr-1">
+            <div className="h-full pr-1 pb-3">
               <FiltersModule
                 filters={filters}
                 onToggle={toggleFilter}
@@ -41,7 +41,7 @@ export default function ExplorePage() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={78}>
-            <div className="h-full overflow-hidden p-3 pl-1">
+            <div className="h-full overflow-hidden pl-1 pb-3 pr-3">
               <div className="h-full bg-background rounded-lg overflow-hidden">
                 <GridModule 
                   showTabs={false} 

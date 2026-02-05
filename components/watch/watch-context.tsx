@@ -78,7 +78,7 @@ export function WatchProvider({
   initialTabs?: Dataset[] 
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem } = useLibraryContext()
 
   // Stable refs so useEffects don't re-fire when these change
   const foldersRef = useRef(folders)
@@ -278,10 +278,40 @@ export function WatchProvider({
 
   const closeTab = (tabId: string) => {
     const currentTabs = tabsRef.current
+    const closedIndex = currentTabs.findIndex((t) => t.id === tabId)
     const newTabs = currentTabs.filter((t) => t.id !== tabId)
     setTabs(newTabs)
-    if (activeTabId === tabId && newTabs.length > 0) {
-      setActiveTabId(newTabs[0].id)
+
+    // Clear the library-context watch ID so the item can be re-opened
+    if (activeWatchItemId === tabId) {
+      setWatchItem(null)
+    }
+
+    if (newTabs.length === 0) {
+      // Last tab closed -- clear everything
+      setActiveTabId(null)
+      setPlayingTabId(null)
+      setVideoUrl(null)
+      setCurrentPlay(null)
+    } else {
+      // Pick the next tab: prefer the one that was to the right, else the last one
+      const nextTab = newTabs[Math.min(closedIndex, newTabs.length - 1)]
+
+      if (activeTabId === tabId) {
+        setActiveTabId(nextTab.id)
+      }
+
+      if (playingTabId === tabId) {
+        // Switch playback to the next tab
+        setPlayingTabId(nextTab.id)
+        if (nextTab.plays.length > 0) {
+          setVideoUrl((prev) => getRandomVideoUrl(prev))
+          setCurrentPlay(nextTab.plays[0])
+        } else {
+          setVideoUrl(null)
+          setCurrentPlay(null)
+        }
+      }
     }
   }
 

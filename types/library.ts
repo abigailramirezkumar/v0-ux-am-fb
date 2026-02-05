@@ -1,16 +1,20 @@
 /**
- * Centralized data types for the Library/Clip architecture.
+ * Centralized data types for the Library architecture.
  *
- * ClipData merges the concept of PlayData (mock-datasets) with a
- * unique identifier so that copied clips in different playlists
- * remain independent.
+ * Separates Structure (FolderNode) from Content (MediaItemData).
+ * Media items live in a flat list with parentId references instead of
+ * being nested inside folder objects.
  */
+
+// ---------------------------------------------------------------------------
+// Clip-level data
+// ---------------------------------------------------------------------------
 
 export interface ClipData {
   /** Globally unique clip identifier */
   id: string
 
-  // --- Play-level fields (mirrors PlayData) ---
+  // --- Play-level fields (mirrors PlayData from mock-datasets) ---
   playNumber?: number
   odk?: "O" | "D" | "K"
   quarter?: number
@@ -42,29 +46,54 @@ export interface ClipData {
   duration?: number
 }
 
-export interface LibraryItemMetadata {
-  clipCount: number
-  duration?: string
-  createdDate: string
-  modifiedDate: string
-}
+// ---------------------------------------------------------------------------
+// Media Item (Content) -- flat list, references parent folder via parentId
+// ---------------------------------------------------------------------------
 
-export interface LibraryItem {
+export interface MediaItemData {
   id: string
   name: string
-  type: "folder" | "video" | "playlist"
+  type: "video" | "playlist"
+  /** Folder this item belongs to. null = library root. */
   parentId: string | null
-  metadata: LibraryItemMetadata
+  clips: ClipData[]
+  createdAt: string
+  modifiedAt: string
 }
 
+// ---------------------------------------------------------------------------
+// Folder (Structure) -- tree of folders, NO embedded media items
+// ---------------------------------------------------------------------------
+
+export interface FolderNode {
+  id: string
+  name: string
+  parentId: string | null
+  children?: FolderNode[]
+  // Note: MediaItems are NOT stored here -- use getMediaItemsByFolderId
+}
+
+// ---------------------------------------------------------------------------
+// Legacy compatibility re-exports
+// ---------------------------------------------------------------------------
+
 /**
- * A user-created playlist that owns its clips directly.
- * Clips are stored inline so the playlist is self-contained and
- * independent of the original source data.
+ * @deprecated Use the new types directly from this module instead of
+ * importing from component files. Kept temporarily so existing consumers
+ * continue to work while we migrate.
  */
-export interface CreatedLibraryItem extends LibraryItem {
+export interface CreatedLibraryItem {
+  id: string
+  name: string
   type: "playlist"
+  parentId: string | null
   clips: ClipData[]
+  metadata: {
+    clipCount: number
+    duration?: string
+    createdDate: string
+    modifiedDate: string
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -4,9 +4,8 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useMemo } from "react"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
-import { useCustomItems } from "@/hooks/use-custom-items"
-import { useItemClips } from "@/hooks/use-item-clips"
-import type { ClipData, CreatedLibraryItem } from "@/types/library"
+import { useMediaItems } from "@/hooks/use-media-items"
+import type { ClipData, MediaItemData } from "@/types/library"
 import { copyClipsWithNewIds } from "@/types/library"
 
 export type SortDirection = "asc" | "desc" | null
@@ -762,12 +761,14 @@ interface LibraryContextType {
   createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => void
   clearPendingPlaylistItems: () => void
 
-  // --- New Media-Item architecture ---
-  customItems: CreatedLibraryItem[]
-  getClips: (itemId: string) => ClipData[]
+  // --- Segregated Data/Structure model ---
+  mediaItems: MediaItemData[]
+  getMediaItemsByFolderId: (folderId: string | null) => MediaItemData[]
+  getMediaItem: (id: string) => MediaItemData | undefined
   addClipsToPlaylist: (playlistId: string, clips: ClipData[]) => void
   removeClipsFromPlaylist: (playlistId: string, clipIds: string[]) => void
-  deleteCustomItem: (itemId: string) => void
+  deleteMediaItem: (itemId: string) => void
+  moveMediaItem: (itemId: string, newParentId: string | null) => void
 }
 
 export interface MoveItem {
@@ -807,9 +808,17 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
-  // --- New Media-Item hooks ---
-  const { customItems, createItem, updateItemClips, deleteItem } = useCustomItems()
-  const { getClips, addClipsToItem, removeClipsFromItem } = useItemClips(customItems, updateItemClips)
+  // --- Segregated Data/Structure hooks ---
+  const {
+    mediaItems,
+    createMediaItem,
+    addClipsToMediaItem,
+    removeClipsFromMediaItem,
+    moveMediaItem: moveMediaItemHook,
+    deleteMediaItem: deleteMediaItemHook,
+    getMediaItemsByFolderId,
+    getMediaItem,
+  } = useMediaItems()
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -1389,7 +1398,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
     // Determine which clips to seed: explicit initialClips > pendingPlaylistItems (converted) > empty
     const seedClips: ClipData[] = initialClips
-      ? copyClipsWithNewIds(initialClips)
+      ? initialClips
       : pendingPlaylistItems.length > 0
         ? pendingPlaylistItems.map((item, idx) => ({
             id: `clip-${Date.now()}-${idx}`,
@@ -1398,28 +1407,28 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
           } as ClipData))
         : []
 
-    // Create the custom item via the new hook
-    const created = createItem(name, targetFolderId, seedClips)
+    // Create via the flat media-items list (copy-on-add happens inside the hook)
+    const created = createMediaItem(name, targetFolderId, seedClips)
 
     // Also insert a matching LibraryItemData into the folder/root tree so the
-    // existing folder UI continues to render it.
+    // existing folder UI continues to render it alongside static data.
     const newPlaylist: LibraryItemData = {
       id: created.id,
       name: name,
       type: "playlist",
-      createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      dateModified: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       itemCount: seedClips.length,
       thumbnailUrl: "/placeholder-logo.png",
       items: pendingPlaylistItems,
     }
 
     if (targetFolderId === null) {
-      setRootItems(prev => [...prev, newPlaylist])
+      setRootItems((prev) => [...prev, newPlaylist])
     } else {
-      setFolders(prev => {
+      setFolders((prev) => {
         const updateRecursive = (nodes: FolderData[]): FolderData[] => {
-          return nodes.map(node => {
+          return nodes.map((node) => {
             if (node.id === targetFolderId) {
               return { ...node, items: [...(node.items || []), newPlaylist] }
             }
@@ -1478,24 +1487,22 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // --- New clip-level helpers exposed via context ---
+  // --- Clip-level helpers (delegate to useMediaItems) ---
 
   /** Add clips to a playlist using Copy on Add (new unique IDs). */
   const addClipsToPlaylist = (playlistId: string, clips: ClipData[]) => {
-    addClipsToItem(playlistId, clips)
+    addClipsToMediaItem(playlistId, clips)
 
-    // Also update the itemCount on the folder-tree representation
+    // Also update the itemCount on the legacy folder-tree representation
     const updateCount = (items: LibraryItemData[]): LibraryItemData[] =>
-      items.map(item =>
-        item.id === playlistId
-          ? { ...item, itemCount: (item.itemCount ?? 0) + clips.length }
-          : item
+      items.map((item) =>
+        item.id === playlistId ? { ...item, itemCount: (item.itemCount ?? 0) + clips.length } : item,
       )
 
-    setRootItems(prev => updateCount(prev))
-    setFolders(prev => {
+    setRootItems((prev) => updateCount(prev))
+    setFolders((prev) => {
       const walk = (nodes: FolderData[]): FolderData[] =>
-        nodes.map(node => ({
+        nodes.map((node) => ({
           ...node,
           items: node.items ? updateCount(node.items) : node.items,
           children: node.children ? walk(node.children) : node.children,
@@ -1506,19 +1513,24 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
   /** Remove clips from a playlist by id. */
   const removeClipsFromPlaylist = (playlistId: string, clipIds: string[]) => {
-    removeClipsFromItem(playlistId, clipIds)
+    removeClipsFromMediaItem(playlistId, clipIds)
   }
 
-  /** Delete a custom playlist entirely. */
-  const deleteCustomItem = (itemId: string) => {
-    deleteItem(itemId)
-    // Also remove from folder tree / rootItems
-    setRootItems(prev => prev.filter(item => item.id !== itemId))
-    setFolders(prev => {
+  /** Move a media item to a different folder. */
+  const moveMediaItem = (itemId: string, newParentId: string | null) => {
+    moveMediaItemHook(itemId, newParentId)
+  }
+
+  /** Delete a media item entirely. */
+  const deleteMediaItem = (itemId: string) => {
+    deleteMediaItemHook(itemId)
+    // Also remove from legacy folder tree / rootItems
+    setRootItems((prev) => prev.filter((item) => item.id !== itemId))
+    setFolders((prev) => {
       const walk = (nodes: FolderData[]): FolderData[] =>
-        nodes.map(node => ({
+        nodes.map((node) => ({
           ...node,
-          items: node.items ? node.items.filter(item => item.id !== itemId) : node.items,
+          items: node.items ? node.items.filter((item) => item.id !== itemId) : node.items,
           children: node.children ? walk(node.children) : node.children,
         }))
       return walk(prev)
@@ -1601,12 +1613,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   createPlaylist,
   clearPendingPlaylistItems,
 
-  // New Media-Item architecture
-  customItems,
-  getClips,
+  // Segregated Data/Structure model
+  mediaItems,
+  getMediaItemsByFolderId,
+  getMediaItem,
   addClipsToPlaylist,
   removeClipsFromPlaylist,
-  deleteCustomItem,
+  deleteMediaItem,
+  moveMediaItem,
   }}
     >
       {children}

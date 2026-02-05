@@ -44,7 +44,7 @@ function ClientLayoutInner({
           onBackClick={() => router.push("/library")}
         />
 
-        <main className={`flex-1 overflow-hidden p-2 pt-0 pr-0 ${isWatchPage ? "pl-2" : "px-0"}`}>
+        <main className={`flex-1 overflow-hidden ${isWatchPage ? "pl-2" : ""}`}>
           <Suspense fallback={null}>{children}</Suspense>
         </main>
       </SidebarInset>

@@ -165,10 +165,14 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
-  /* Ensure html and body take full width without constraints */
+  /* Ensure html and body take full dimensions without extra space */
   html,
   body {
     width: 100%;
+    height: 100%;
     max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 }

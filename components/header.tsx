@@ -1,7 +1,7 @@
 "use client"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/button"
-import { Input } from "@/components/input"
+import { GlobalSearch } from "@/components/global-search"
 import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
 
@@ -10,9 +10,6 @@ interface HeaderProps {
   title?: string
   onShareClick?: () => void
   onDownloadClick?: () => void
-  searchValue?: string
-  onSearchChange?: (value: string) => void
-  searchPlaceholder?: string
   showBack?: boolean
   onBackClick?: () => void
 }
@@ -22,9 +19,6 @@ export function Header({
   title = "Content Title",
   onShareClick,
   onDownloadClick,
-  searchValue,
-  onSearchChange,
-  searchPlaceholder = "Search or filter...",
   showBack,
   onBackClick,
 }: HeaderProps) {
@@ -41,17 +35,8 @@ export function Header({
 
         <span className="text-foreground font-medium">{title}</span>
 
-        <div className="flex-1 relative">
-          <Input
-            type="text"
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(e) => onSearchChange?.(e.target.value)}
-            className="pr-10 bg-background border-input focus:border-primary focus:ring-primary"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Icon name="search" className="w-4 h-4 text-muted-foreground" />
-          </div>
+        <div className="flex-1 px-4">
+          <GlobalSearch />
         </div>
 
         {/* Action Buttons */}

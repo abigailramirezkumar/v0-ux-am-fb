@@ -8,18 +8,21 @@ import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
+import type { Dataset } from "@/lib/mock-datasets"
 
 interface GridModuleProps {
   showTabs?: boolean
   selectionActions?: React.ReactNode | null
+  dataset?: Dataset | null
+  onClearFilters?: () => void
 }
 
-export function GridModule({ showTabs = true, selectionActions }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, onClearFilters }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
     playingTabId, 
-    activeDataset, 
+    activeDataset: contextDataset, 
     currentPlay, 
     activateTab, 
     closeTab, 
@@ -30,6 +33,9 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
     clearPlaySelection
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
+
+  // Use prop if provided, otherwise context
+  const activeDataset = datasetProp || contextDataset
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
@@ -143,10 +149,25 @@ export function GridModule({ showTabs = true, selectionActions }: GridModuleProp
       {/* --- GRID TABLE or EMPTY STATE --- */}
       <div className="flex-1 overflow-auto bg-background">
         {activeDataset.plays.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-            <Icon name="playlist" className="w-12 h-12 opacity-20" />
-            <p>This playlist is empty</p>
-            <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
+            {onClearFilters ? (
+              <>
+                <p className="text-sm">No clips match these filters</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClearFilters}
+                >
+                  Clear all filters
+                </Button>
+              </>
+            ) : (
+              <>
+                <Icon name="playlist" className="w-12 h-12 opacity-20" />
+                <p>This playlist is empty</p>
+                <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+              </>
+            )}
           </div>
         ) : (
         <Table>

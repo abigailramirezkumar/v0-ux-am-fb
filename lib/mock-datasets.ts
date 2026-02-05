@@ -15,6 +15,16 @@ export interface PlayData {
   coverage: string
   blitz: string
   game: string
+  // Enhanced fields for filtering
+  playType: "Pass" | "Run" | "Special Teams"
+  passResult?: "Complete" | "Incomplete" | "Sack" | "Interception" | "Throwaway"
+  runDirection?: "Left" | "Middle" | "Right"
+  personnelO: "11" | "12" | "21" | "22" | "10" | "Empty"
+  personnelD: "Base" | "Nickel" | "Dime" | "Goal Line"
+  isTouchdown: boolean
+  isFirstDown: boolean
+  isPenalty: boolean
+  penaltyType?: string
 }
 
 export interface Dataset {
@@ -46,25 +56,46 @@ export function getRandomVideoUrl(excludeUrl?: string | null): string {
 }
 
 const generatePlays = (count: number, gameName: string): PlayData[] => {
+  const personnelOOptions: PlayData["personnelO"][] = ["11", "12", "21", "22", "10", "Empty"]
+  const personnelDOptions: PlayData["personnelD"][] = ["Base", "Nickel", "Dime", "Goal Line"]
+  const passResults: PlayData["passResult"][] = ["Complete", "Incomplete", "Sack", "Interception", "Throwaway"]
+  const runDirections: PlayData["runDirection"][] = ["Left", "Middle", "Right"]
+  const penaltyTypes = ["Holding", "False Start", "Offsides", "Pass Interference", "Illegal Formation"]
+
   return Array.from({ length: count }).map((_, i) => {
     const gain = Math.floor(Math.random() * 20) - 5
+    const odk = Math.random() > 0.5 ? "O" : Math.random() > 0.5 ? "D" : "K"
+    const playType: PlayData["playType"] = odk === "K" ? "Special Teams" : Math.random() > 0.5 ? "Pass" : "Run"
+    const distance = Math.floor(Math.random() * 10) + 1
+    const isPenalty = Math.random() > 0.9
+    
     return {
       id: `play-${i}`,
       playNumber: i + 1,
-      odk: Math.random() > 0.5 ? "O" : Math.random() > 0.5 ? "D" : "K",
+      odk,
       quarter: Math.floor(i / (count / 4)) + 1,
       down: (i % 4) + 1,
-      distance: Math.floor(Math.random() * 10) + 1,
+      distance,
       yardLine: `${Math.random() > 0.5 ? "-" : "+"}${Math.floor(Math.random() * 50)}`,
       hash: ["L", "R", "M"][Math.floor(Math.random() * 3)] as "L" | "R" | "M",
       yards: Math.abs(gain),
-      result: gain > 10 ? "Run" : "Pass",
+      result: playType === "Pass" ? passResults[Math.floor(Math.random() * 2)] || "Pass" : "Run",
       gainLoss: gain >= 0 ? "Gn" : "Ls",
       defFront: ["Over", "Under", "Bear", "Okie"][Math.floor(Math.random() * 4)],
       defStr: ["Strong", "Weak"][Math.floor(Math.random() * 2)],
       coverage: ["Cov 1", "Cov 2", "Cov 3", "Quarters"][Math.floor(Math.random() * 4)],
       blitz: Math.random() > 0.8 ? "Yes" : "No",
       game: gameName,
+      // Enhanced fields
+      playType,
+      passResult: playType === "Pass" ? passResults[Math.floor(Math.random() * passResults.length)] : undefined,
+      runDirection: playType === "Run" ? runDirections[Math.floor(Math.random() * runDirections.length)] : undefined,
+      personnelO: personnelOOptions[Math.floor(Math.random() * personnelOOptions.length)],
+      personnelD: personnelDOptions[Math.floor(Math.random() * personnelDOptions.length)],
+      isTouchdown: Math.random() > 0.9,
+      isFirstDown: gain >= distance,
+      isPenalty,
+      penaltyType: isPenalty ? penaltyTypes[Math.floor(Math.random() * penaltyTypes.length)] : undefined,
     }
   })
 }

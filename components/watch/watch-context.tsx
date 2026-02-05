@@ -78,7 +78,7 @@ export function WatchProvider({
   initialTabs?: Dataset[] 
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem } = useLibraryContext()
 
   // Initialize with provided tabs if any
   const [tabs, setTabs] = useState<Dataset[]>(initialTabs)
@@ -127,31 +127,68 @@ export function WatchProvider({
         return prevTabs
       }
 
-      // 2. New Tab Logic - Check if it's a playlist
-      const item = findItemById(folders, activeWatchItemId)
+      // 2. New Tab Logic - look up in folders, rootItems, then mediaItems
+      const folderItem = findItemById(folders, activeWatchItemId)
+      const rootItem = !folderItem ? rootItems.find((i) => i.id === activeWatchItemId) : null
+      const item = folderItem || rootItem || null
+      const mediaItem = !item ? getMediaItem(activeWatchItemId) : null
+
+      const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
       let datasetWithId: Dataset
 
-      if (item && item.type === "playlist") {
-        // Initialize EMPTY dataset for playlists
+      if (isPlaylist) {
+        // Resolve existing clips from the media-item model (may be empty)
+        const existingClips: PlayData[] = mediaItem
+          ? mediaItem.clips.map((clip, idx) => ({
+              id: clip.id,
+              playNumber: clip.playNumber ?? idx + 1,
+              odk: clip.odk ?? "O",
+              quarter: clip.quarter ?? 1,
+              down: clip.down ?? 1,
+              distance: clip.distance ?? 10,
+              yardLine: clip.yardLine ?? "",
+              hash: clip.hash ?? "M",
+              yards: clip.yards ?? 0,
+              result: clip.result ?? "",
+              gainLoss: clip.gainLoss ?? "Gn",
+              defFront: clip.defFront ?? "",
+              defStr: clip.defStr ?? "",
+              coverage: clip.coverage ?? "",
+              blitz: clip.blitz ?? "",
+              game: clip.game ?? "",
+              playType: clip.playType ?? "Pass",
+              passResult: clip.passResult,
+              runDirection: clip.runDirection,
+              personnelO: clip.personnelO ?? "11",
+              personnelD: clip.personnelD ?? "Base",
+              isTouchdown: clip.isTouchdown ?? false,
+              isFirstDown: clip.isFirstDown ?? false,
+              isPenalty: clip.isPenalty ?? false,
+              penaltyType: clip.penaltyType,
+            }))
+          : []
+
         datasetWithId = {
           id: activeWatchItemId,
-          name: item.name,
-          plays: [], // Empty by default for new playlists
+          name: mediaItem?.name || item?.name || "Untitled Playlist",
+          plays: existingClips,
         }
-        // Stop playback for empty playlist
-        setVideoUrl(null)
-        setCurrentPlay(null)
+        if (existingClips.length === 0) {
+          setVideoUrl(null)
+          setCurrentPlay(null)
+        } else {
+          playRandomVideo()
+          setCurrentPlay(existingClips[0])
+        }
       } else {
         // Use Mock data for games/other videos
         const newDataset = getDatasetForItem(activeWatchItemId)
         datasetWithId = {
           ...newDataset,
           id: activeWatchItemId,
-          name: item?.name || newDataset.name, // Use real name or fallback to mock name
+          name: item?.name || newDataset.name,
         }
-        // Pick a random video to start
         playRandomVideo()
-        // Set first play as current
         if (datasetWithId.plays.length > 0) {
           setCurrentPlay(datasetWithId.plays[0])
         }
@@ -165,7 +202,7 @@ export function WatchProvider({
 
       return [datasetWithId, ...prevTabs]
     })
-  }, [activeWatchItemId, folders])
+  }, [activeWatchItemId, folders, rootItems, getMediaItem])
 
   useEffect(() => {
     if (!activeWatchItems || activeWatchItems.length === 0) return
@@ -179,13 +216,18 @@ export function WatchProvider({
         // Check if already exists
         if (newTabs.some((t) => t.id === itemId)) return
 
-        const item = findItemById(folders, itemId)
+        const folderItem = findItemById(folders, itemId)
+        const rootItem = !folderItem ? rootItems.find((i) => i.id === itemId) : null
+        const item = folderItem || rootItem || null
+        const mediaItem = !item ? getMediaItem(itemId) : null
+        const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
+
         let datasetWithId: Dataset
 
-        if (item && item.type === "playlist") {
+        if (isPlaylist) {
           datasetWithId = {
             id: itemId,
-            name: item.name,
+            name: mediaItem?.name || item?.name || "Untitled Playlist",
             plays: [],
           }
           if (!firstNewId) firstNewIsPlaylist = true
@@ -221,7 +263,7 @@ export function WatchProvider({
 
       return newTabs
     })
-  }, [activeWatchItems, folders])
+  }, [activeWatchItems, folders, rootItems, getMediaItem])
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)

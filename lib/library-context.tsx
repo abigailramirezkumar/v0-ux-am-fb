@@ -4,6 +4,10 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useMemo } from "react"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
+import { useCustomItems } from "@/hooks/use-custom-items"
+import { useItemClips } from "@/hooks/use-item-clips"
+import type { ClipData, CreatedLibraryItem } from "@/types/library"
+import { copyClipsWithNewIds } from "@/types/library"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -755,8 +759,15 @@ interface LibraryContextType {
   setLayoutMode: (mode: "list" | "grid") => void
   openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string) => void
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => void
   clearPendingPlaylistItems: () => void
+
+  // --- New Media-Item architecture ---
+  customItems: CreatedLibraryItem[]
+  getClips: (itemId: string) => ClipData[]
+  addClipsToPlaylist: (playlistId: string, clips: ClipData[]) => void
+  removeClipsFromPlaylist: (playlistId: string, clipIds: string[]) => void
+  deleteCustomItem: (itemId: string) => void
 }
 
 export interface MoveItem {
@@ -795,6 +806,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
+
+  // --- New Media-Item hooks ---
+  const { customItems, createItem, updateItemClips, deleteItem } = useCustomItems()
+  const { getClips, addClipsToItem, removeClipsFromItem } = useItemClips(customItems, updateItemClips)
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -1371,14 +1386,30 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   }
   const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
 
-  const createPlaylist = (targetFolderId: string | null, name: string) => {
+  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
+    // Determine which clips to seed: explicit initialClips > pendingPlaylistItems (converted) > empty
+    const seedClips: ClipData[] = initialClips
+      ? copyClipsWithNewIds(initialClips)
+      : pendingPlaylistItems.length > 0
+        ? pendingPlaylistItems.map((item, idx) => ({
+            id: `clip-${Date.now()}-${idx}`,
+            game: item.name,
+            duration: item.duration ? parseFloat(item.duration) : undefined,
+          } as ClipData))
+        : []
+
+    // Create the custom item via the new hook
+    const created = createItem(name, targetFolderId, seedClips)
+
+    // Also insert a matching LibraryItemData into the folder/root tree so the
+    // existing folder UI continues to render it.
     const newPlaylist: LibraryItemData = {
-      id: `playlist-${Date.now()}`,
+      id: created.id,
       name: name,
       type: "playlist",
       createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
       dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      itemCount: pendingPlaylistItems.length,
+      itemCount: seedClips.length,
       thumbnailUrl: "/placeholder-logo.png",
       items: pendingPlaylistItems,
     }
@@ -1445,10 +1476,53 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         return [{ id: playlistId, name: playlistName, folderId: playlistFolderId }, ...filtered].slice(0, 5)
       })
     }
+  }
 
-    // Here you would actually add clips to the playlist
-    // For now, we just update the recent playlists tracking
-    console.log(`Added ${clipIds.length} clips to playlist ${playlistId}`)
+  // --- New clip-level helpers exposed via context ---
+
+  /** Add clips to a playlist using Copy on Add (new unique IDs). */
+  const addClipsToPlaylist = (playlistId: string, clips: ClipData[]) => {
+    addClipsToItem(playlistId, clips)
+
+    // Also update the itemCount on the folder-tree representation
+    const updateCount = (items: LibraryItemData[]): LibraryItemData[] =>
+      items.map(item =>
+        item.id === playlistId
+          ? { ...item, itemCount: (item.itemCount ?? 0) + clips.length }
+          : item
+      )
+
+    setRootItems(prev => updateCount(prev))
+    setFolders(prev => {
+      const walk = (nodes: FolderData[]): FolderData[] =>
+        nodes.map(node => ({
+          ...node,
+          items: node.items ? updateCount(node.items) : node.items,
+          children: node.children ? walk(node.children) : node.children,
+        }))
+      return walk(prev)
+    })
+  }
+
+  /** Remove clips from a playlist by id. */
+  const removeClipsFromPlaylist = (playlistId: string, clipIds: string[]) => {
+    removeClipsFromItem(playlistId, clipIds)
+  }
+
+  /** Delete a custom playlist entirely. */
+  const deleteCustomItem = (itemId: string) => {
+    deleteItem(itemId)
+    // Also remove from folder tree / rootItems
+    setRootItems(prev => prev.filter(item => item.id !== itemId))
+    setFolders(prev => {
+      const walk = (nodes: FolderData[]): FolderData[] =>
+        nodes.map(node => ({
+          ...node,
+          items: node.items ? node.items.filter(item => item.id !== itemId) : node.items,
+          children: node.children ? walk(node.children) : node.children,
+        }))
+      return walk(prev)
+    })
   }
 
   const handleSetViewMode = (mode: "folder" | "schedule") => {
@@ -1524,9 +1598,16 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setLayoutMode,
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
-        createPlaylist,
-        clearPendingPlaylistItems,
-      }}
+  createPlaylist,
+  clearPendingPlaylistItems,
+
+  // New Media-Item architecture
+  customItems,
+  getClips,
+  addClipsToPlaylist,
+  removeClipsFromPlaylist,
+  deleteCustomItem,
+  }}
     >
       {children}
     </LibraryContext.Provider>

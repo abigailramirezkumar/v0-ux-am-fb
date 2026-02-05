@@ -9,15 +9,18 @@ import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
 import type { Dataset } from "@/lib/mock-datasets"
+import type { ClipData } from "@/types/library"
 
 interface GridModuleProps {
   showTabs?: boolean
   selectionActions?: React.ReactNode | null
   dataset?: Dataset | null
+  /** Optional clip data passed directly, decoupled from WatchContext. */
+  clips?: ClipData[] | null
   onClearFilters?: () => void
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, onClearFilters }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -34,8 +37,45 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
 
+  // Bridge: if clipsProp is provided, wrap it into a Dataset shape so the
+  // rest of the component works unchanged. This decouples GridModule from
+  // WatchContext when used in Library/Explore views.
+  const clipsAsDataset: Dataset | null = clipsProp
+    ? {
+        id: "clips-prop",
+        name: "Clips",
+        plays: clipsProp.map((clip, idx) => ({
+          id: clip.id,
+          playNumber: clip.playNumber ?? idx + 1,
+          odk: clip.odk ?? "O",
+          quarter: clip.quarter ?? 1,
+          down: clip.down ?? 1,
+          distance: clip.distance ?? 10,
+          yardLine: clip.yardLine ?? "",
+          hash: clip.hash ?? "M",
+          yards: clip.yards ?? 0,
+          result: clip.result ?? "",
+          gainLoss: clip.gainLoss ?? "Gn",
+          defFront: clip.defFront ?? "",
+          defStr: clip.defStr ?? "",
+          coverage: clip.coverage ?? "",
+          blitz: clip.blitz ?? "",
+          game: clip.game ?? "",
+          playType: clip.playType ?? "Pass",
+          passResult: clip.passResult,
+          runDirection: clip.runDirection,
+          personnelO: clip.personnelO ?? "11",
+          personnelD: clip.personnelD ?? "Base",
+          isTouchdown: clip.isTouchdown ?? false,
+          isFirstDown: clip.isFirstDown ?? false,
+          isPenalty: clip.isPenalty ?? false,
+          penaltyType: clip.penaltyType,
+        })),
+      }
+    : null
+
   // Use prop if provided, otherwise context
-  const activeDataset = datasetProp || contextDataset
+  const activeDataset = clipsAsDataset || datasetProp || contextDataset
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return

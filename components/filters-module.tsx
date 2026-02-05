@@ -34,8 +34,8 @@ function ToggleButton({
       className={cn(
         "px-3 py-1.5 text-xs font-medium rounded border transition-colors",
         isSelected
-          ? "bg-[#2d3748] text-white border-[#2d3748]"
-          : "bg-white text-[#4a5568] border-[#e2e8f0] hover:border-[#cbd5e0]"
+          ? "bg-foreground text-background border-foreground"
+          : "bg-background text-muted-foreground border-border hover:border-muted-foreground/50"
       )}
     >
       {label}
@@ -93,19 +93,19 @@ function FilterRow({
               className={cn(
                 "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
                 isSelected
-                  ? "border-[#2d3748] bg-[#2d3748]"
-                  : "border-[#cbd5e0] bg-white hover:border-[#a0aec0]"
+                  ? "border-foreground bg-foreground"
+                  : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
               )}
             >
               {isSelected && (
-                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                <div className="w-1.5 h-1.5 rounded-full bg-background" />
               )}
             </button>
           )}
-          <span className="text-sm text-[#2d3748]">{label}</span>
+          <span className="text-sm text-foreground">{label}</span>
         </div>
         {count !== undefined && (
-          <span className="text-xs text-[#718096]">{count}</span>
+          <span className="text-xs text-muted-foreground">{count}</span>
         )}
       </div>
       {children}
@@ -116,7 +116,7 @@ function FilterRow({
 // Subsection header
 function SubsectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-[11px] font-semibold text-[#718096] uppercase tracking-wider pt-2 pb-1">
+    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-2 pb-1">
       {label}
     </div>
   )
@@ -141,9 +141,9 @@ function RangeSlider({
         max={max}
         value={value || [min, max]}
         onValueChange={(v) => onChange?.(v as [number, number])}
-        className="[&_[data-slot=slider-track]]:bg-[#e2e8f0] [&_[data-slot=slider-range]]:bg-[#4a5568] [&_[data-slot=slider-thumb]]:border-[#4a5568] [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
+        className="[&_[data-slot=slider-track]]:bg-muted [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
       />
-      <div className="flex justify-between text-xs text-[#718096]">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>{min}</span>
         <span>{max}</span>
       </div>
@@ -167,13 +167,13 @@ export function FiltersModule({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-lg border border-[#e2e8f0] overflow-hidden">
+    <div className="h-full flex flex-col bg-background rounded-lg border border-border overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#e2e8f0]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-[#2d3748]">Filters</span>
+          <span className="text-sm font-semibold text-foreground">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-[#2d3748] text-white rounded">
+            <span className="px-1.5 py-0.5 text-xs bg-foreground text-background rounded">
               {activeFilterCount}
             </span>
           )}
@@ -183,7 +183,7 @@ export function FiltersModule({
             variant="ghost"
             size="sm"
             onClick={onClear}
-            className="h-7 px-2 text-xs text-[#718096] hover:text-[#2d3748]"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             Clear all
           </Button>
@@ -191,9 +191,9 @@ export function FiltersModule({
       </div>
 
       {/* Results count */}
-      <div className="px-4 py-2 border-b border-[#e2e8f0] bg-[#f7fafc]">
-        <span className="text-xs text-[#718096]">
-          Showing <span className="text-[#2d3748] font-medium">{filteredCount}</span> of {totalCount} plays
+      <div className="px-4 py-2 border-b border-border bg-muted/50">
+        <span className="text-xs text-muted-foreground">
+          Showing <span className="text-foreground font-medium">{filteredCount}</span> of {totalCount} plays
         </span>
       </div>
 
@@ -205,8 +205,8 @@ export function FiltersModule({
           className="px-4"
         >
           {/* Game Context */}
-          <AccordionItem value="game-context" className="border-b border-[#e2e8f0]">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+          <AccordionItem value="game-context" className="border-b border-border">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Game Context
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-4">
@@ -244,9 +244,9 @@ export function FiltersModule({
                     min={0}
                     max={100}
                     defaultValue={[50]}
-                    className="[&_[data-slot=slider-track]]:bg-[#e2e8f0] [&_[data-slot=slider-range]]:bg-[#4a5568] [&_[data-slot=slider-thumb]]:border-[#4a5568] [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
+                    className="[&_[data-slot=slider-track]]:bg-muted [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
                   />
-                  <div className="flex justify-center text-xs text-[#718096] mt-2">
+                  <div className="flex justify-center text-xs text-muted-foreground mt-2">
                     <span>50</span>
                   </div>
                 </div>
@@ -268,8 +268,8 @@ export function FiltersModule({
           </AccordionItem>
 
           {/* Play Context */}
-          <AccordionItem value="play-context" className="border-b border-[#e2e8f0]">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+          <AccordionItem value="play-context" className="border-b border-border">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Play Context
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
@@ -343,7 +343,7 @@ export function FiltersModule({
 
               <FilterRow label="Penalty" count={123}>
                 <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select penalty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -358,8 +358,8 @@ export function FiltersModule({
           </AccordionItem>
 
           {/* Passing */}
-          <AccordionItem value="passing" className="border-b border-[#e2e8f0]">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+          <AccordionItem value="passing" className="border-b border-border">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Passing
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
@@ -402,7 +402,7 @@ export function FiltersModule({
 
               <FilterRow label="Route type" count={123}>
                 <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select route type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -438,7 +438,7 @@ export function FiltersModule({
 
               <FilterRow label="Coverage" count={123}>
                 <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-[#e2e8f0] text-[#718096]">
+                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select coverage" />
                   </SelectTrigger>
                   <SelectContent>
@@ -453,8 +453,8 @@ export function FiltersModule({
           </AccordionItem>
 
           {/* Rushing */}
-          <AccordionItem value="rushing" className="border-b border-[#e2e8f0]">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+          <AccordionItem value="rushing" className="border-b border-border">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Rushing
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
@@ -529,8 +529,8 @@ export function FiltersModule({
           </AccordionItem>
 
           {/* Blocking */}
-          <AccordionItem value="blocking" className="border-b border-[#e2e8f0]">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+          <AccordionItem value="blocking" className="border-b border-border">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Blocking
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
@@ -545,7 +545,7 @@ export function FiltersModule({
 
           {/* Special Teams */}
           <AccordionItem value="special-teams" className="border-b-0">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-[#2d3748] [&>svg]:text-[#718096]">
+            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Special Teams
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">

@@ -13,7 +13,7 @@ export default function ExplorePage() {
   const allClipsDataset = getAllUniqueClips()
   
   // Use hook to filter clips
-  const { filters, toggleFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
+  const { filters, toggleFilter, toggleAllInCategory, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
 
   // Construct filtered dataset to pass to Grid
   const filteredDataset = {
@@ -30,6 +30,7 @@ export default function ExplorePage() {
               <FiltersModule
                 filters={filters}
                 onToggle={toggleFilter}
+                onToggleAll={toggleAllInCategory}
                 onClear={clearFilters}
                 uniqueGames={uniqueGames}
                 activeFilterCount={activeFilterCount}

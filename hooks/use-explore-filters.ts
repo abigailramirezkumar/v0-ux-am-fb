@@ -27,6 +27,24 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     })
   }, [])
 
+  // Toggle all values in a category - if any selected, clear all; if none selected, select all
+  const toggleAllInCategory = useCallback((category: string, allValues: string[]) => {
+    setFilters((prev) => {
+      const next = { ...prev }
+      const currentSet = next[category]
+      const hasAnySelected = currentSet && currentSet.size > 0
+
+      if (hasAnySelected) {
+        // Clear all
+        delete next[category]
+      } else {
+        // Select all
+        next[category] = new Set(allValues)
+      }
+      return next
+    })
+  }, [])
+
   const clearFilters = useCallback(() => setFilters({}), [])
 
   const filteredPlays = useMemo(() => {
@@ -79,6 +97,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
   return {
     filters,
     toggleFilter,
+    toggleAllInCategory,
     clearFilters,
     filteredPlays,
     uniqueGames,

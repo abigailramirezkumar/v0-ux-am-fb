@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 interface FiltersModuleProps {
   filters: FilterState
   onToggle: (category: string, value: string) => void
+  onToggleAll: (category: string, allValues: string[]) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -69,35 +70,50 @@ function ToggleGroup({
   )
 }
 
-// Filter row with circular checkbox
+// Filter row with circular checkbox that toggles all sub-filters
 function FilterRow({
   label,
   count,
-  isSelected,
-  onClick,
+  category,
+  allValues,
+  filters,
+  onToggleAll,
   children,
 }: {
   label: string
   count?: number
-  isSelected?: boolean
-  onClick?: () => void
+  category?: string
+  allValues?: string[]
+  filters?: FilterState
+  onToggleAll?: (category: string, allValues: string[]) => void
   children?: React.ReactNode
 }) {
+  // Check if any values in this category are selected
+  const hasAnySelected = category && filters && filters[category]?.size > 0
+
+  const handleCircleClick = () => {
+    if (category && allValues && onToggleAll) {
+      onToggleAll(category, allValues)
+    }
+  }
+
+  const showCircle = category && allValues && onToggleAll
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {onClick !== undefined && (
+          {showCircle && (
             <button
-              onClick={onClick}
+              onClick={handleCircleClick}
               className={cn(
                 "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
-                isSelected
+                hasAnySelected
                   ? "border-foreground bg-foreground"
                   : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
               )}
             >
-              {isSelected && (
+              {hasAnySelected && (
                 <div className="w-1.5 h-1.5 rounded-full bg-background" />
               )}
             </button>
@@ -154,6 +170,7 @@ function RangeSlider({
 export function FiltersModule({
   filters,
   onToggle,
+  onToggleAll,
   onClear,
   uniqueGames,
   activeFilterCount,
@@ -210,7 +227,14 @@ export function FiltersModule({
               Game Context
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-4">
-              <FilterRow label="Down" count={123}>
+              <FilterRow 
+                label="Down" 
+                count={123}
+                category="down"
+                allValues={["1", "2", "3", "4"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "1", label: "1st" },
@@ -224,7 +248,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Distance to first" count={128}>
+              <FilterRow 
+                label="Distance to first" 
+                count={128}
+                category="distanceType"
+                allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Short: 1-3", label: "Short: 1-3" },
@@ -252,7 +283,14 @@ export function FiltersModule({
                 </div>
               </FilterRow>
 
-              <FilterRow label="Hash" count={123}>
+              <FilterRow 
+                label="Hash" 
+                count={123}
+                category="hash"
+                allValues={["L", "M", "R"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "L", label: "Left" },
@@ -277,7 +315,14 @@ export function FiltersModule({
               
               <FilterRow label="Play-action" count={123} />
               
-              <FilterRow label="RPO" count={128}>
+              <FilterRow 
+                label="RPO" 
+                count={128}
+                category="playType"
+                allValues={["Pass", "Run"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Pass", label: "Pass" },
@@ -295,7 +340,14 @@ export function FiltersModule({
 
               <SubsectionHeader label="Play Result" />
 
-              <FilterRow label="Touchdown" count={123}>
+              <FilterRow 
+                label="Touchdown" 
+                count={123}
+                category="touchdownType"
+                allValues={["Pass", "Run", "Defensive"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Pass", label: "Pass" },
@@ -308,7 +360,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="First down earned" count={128}>
+              <FilterRow 
+                label="First down earned" 
+                count={128}
+                category="firstDownType"
+                allValues={["Pass", "Run"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Pass", label: "Pass" },
@@ -320,7 +379,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Turnover" count={123}>
+              <FilterRow 
+                label="Turnover" 
+                count={123}
+                category="turnoverType"
+                allValues={["Fumble", "Interception", "On downs", "Safety"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Fumble", label: "Fumble" },
@@ -365,7 +431,14 @@ export function FiltersModule({
             <AccordionContent className="pb-4 space-y-3">
               <SubsectionHeader label="Passing (Quarterback)" />
 
-              <FilterRow label="Pass thrown" count={62}>
+              <FilterRow 
+                label="Pass thrown" 
+                count={62}
+                category="passResult"
+                allValues={["Complete", "Incomplete"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Complete", label: "Complete" },
@@ -377,7 +450,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Pass thrown under pressure" count={59}>
+              <FilterRow 
+                label="Pass thrown under pressure" 
+                count={59}
+                category="passPressureResult"
+                allValues={["Complete", "Incomplete"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Complete", label: "Complete" },
@@ -415,7 +495,14 @@ export function FiltersModule({
                 </Select>
               </FilterRow>
 
-              <FilterRow label="Depth of target" count={123}>
+              <FilterRow 
+                label="Depth of target" 
+                count={123}
+                category="depthOfTarget"
+                allValues={["Behind LOS", "0-10", "10-20", "20+"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Behind LOS", label: "Behind LOS" },
@@ -460,7 +547,14 @@ export function FiltersModule({
             <AccordionContent className="pb-4 space-y-3">
               <SubsectionHeader label="Rushing (Ball Carrier)" />
 
-              <FilterRow label="Rush attempt" count={62}>
+              <FilterRow 
+                label="Rush attempt" 
+                count={62}
+                category="gainLoss"
+                allValues={["Gn", "Ls"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Gn", label: "Gain" },
@@ -472,7 +566,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Yards gained after contact" count={128}>
+              <FilterRow 
+                label="Yards gained after contact" 
+                count={128}
+                category="yardsAfterContact"
+                allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Short: 1-3", label: "Short: 1-3" },
@@ -486,7 +587,14 @@ export function FiltersModule({
                 <RangeSlider min={0} max={100} />
               </FilterRow>
 
-              <FilterRow label="Rush direction" count={17}>
+              <FilterRow 
+                label="Rush direction" 
+                count={17}
+                category="runDirection"
+                allValues={["Left", "LeftTackle", "LeftGuard", "Middle", "RightGuard", "RightTackle", "Right"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Left", label: "Left end" },
@@ -549,7 +657,14 @@ export function FiltersModule({
               Special Teams
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
-              <FilterRow label="Field goal attempt" count={17}>
+              <FilterRow 
+                label="Field goal attempt" 
+                count={17}
+                category="fieldGoalResult"
+                allValues={["Made", "Missed", "Blocked", "Fake"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Made", label: "Made" },
@@ -563,7 +678,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="PAT attempt" count={17}>
+              <FilterRow 
+                label="PAT attempt" 
+                count={17}
+                category="patResult"
+                allValues={["Made", "Missed", "Blocked"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Made", label: "Made" },
@@ -576,7 +698,14 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Punt" count={62}>
+              <FilterRow 
+                label="Punt" 
+                count={62}
+                category="puntType"
+                allValues={["Regular", "Fake", "Touchback", "Out of bounds", "Returned", "Downed"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Regular", label: "Regular" },
@@ -601,7 +730,14 @@ export function FiltersModule({
                 </div>
               </FilterRow>
 
-              <FilterRow label="Punt return" count={128}>
+              <FilterRow 
+                label="Punt return" 
+                count={128}
+                category="puntReturnYards"
+                allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Short: 0-10", label: "Short: 0-10" },
@@ -615,7 +751,14 @@ export function FiltersModule({
                 <RangeSlider min={0} max={100} />
               </FilterRow>
 
-              <FilterRow label="Kickoff" count={123}>
+              <FilterRow 
+                label="Kickoff" 
+                count={123}
+                category="kickoffType"
+                allValues={["Regular", "Onside", "Touchback", "Out of bounds", "Returned", "Downed"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Regular", label: "Regular" },
@@ -640,7 +783,14 @@ export function FiltersModule({
                 </div>
               </FilterRow>
 
-              <FilterRow label="Kickoff return" count={128}>
+              <FilterRow 
+                label="Kickoff return" 
+                count={128}
+                category="kickoffReturnYards"
+                allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
+                filters={filters}
+                onToggleAll={onToggleAll}
+              >
                 <ToggleGroup
                   items={[
                     { value: "Short: 0-10", label: "Short: 0-10" },

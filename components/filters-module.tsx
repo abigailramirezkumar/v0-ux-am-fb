@@ -215,7 +215,7 @@ export function FiltersModule({
       </div>
 
       {/* Filter Sections */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <Accordion
           type="multiple"
           defaultValue={["game-context", "play-context"]}

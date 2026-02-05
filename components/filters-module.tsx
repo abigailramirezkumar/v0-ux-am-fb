@@ -78,6 +78,7 @@ function FilterRow({
   allValues,
   filters,
   onToggleAll,
+  onToggle,
   children,
 }: {
   label: string
@@ -86,38 +87,42 @@ function FilterRow({
   allValues?: string[]
   filters?: FilterState
   onToggleAll?: (category: string, allValues: string[]) => void
+  onToggle?: (category: string, value: string) => void
   children?: React.ReactNode
 }) {
+  // Derive a category key: use explicit category, or a normalized label for simple boolean filters
+  const effectiveCategory = category || `_filter_${label.toLowerCase().replace(/[\s\/]+/g, "_")}`
+  const effectiveValues = allValues || ["enabled"]
+  
   // Check if any values in this category are selected
-  const hasAnySelected = category && filters && filters[category]?.size > 0
+  const hasAnySelected = filters && filters[effectiveCategory]?.size > 0
 
   const handleCircleClick = () => {
-    if (category && allValues && onToggleAll) {
-      onToggleAll(category, allValues)
+    if (onToggleAll) {
+      onToggleAll(effectiveCategory, effectiveValues)
+    } else if (onToggle) {
+      // For simple filters without onToggleAll, toggle single value
+      onToggle(effectiveCategory, "enabled")
     }
   }
-
-  const showCircle = category && allValues && onToggleAll
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {showCircle && (
-            <button
-              onClick={handleCircleClick}
-              className={cn(
-                "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
-                hasAnySelected
-                  ? "border-foreground bg-foreground"
-                  : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
-              )}
-            >
-              {hasAnySelected && (
-                <div className="w-1.5 h-1.5 rounded-full bg-background" />
-              )}
-            </button>
-          )}
+          <button
+            onClick={handleCircleClick}
+            className={cn(
+              "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+              hasAnySelected
+                ? "border-foreground bg-foreground"
+                : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
+            )}
+          >
+            {hasAnySelected && (
+              <div className="w-1.5 h-1.5 rounded-full bg-background" />
+            )}
+          </button>
           <span className="text-sm text-foreground">{label}</span>
         </div>
         {count !== undefined && (
@@ -269,7 +274,7 @@ export function FiltersModule({
                 <RangeSlider min={0} max={100} />
               </FilterRow>
 
-              <FilterRow label="Yard line" count={128}>
+              <FilterRow label="Yard line" count={128} filters={filters} onToggle={onToggle}>
                 <div className="pt-1">
                   <Slider
                     min={0}
@@ -313,7 +318,7 @@ export function FiltersModule({
             <AccordionContent className="pb-4 space-y-3">
               <SubsectionHeader label="Play Development" />
               
-              <FilterRow label="Play-action" count={123} />
+              <FilterRow label="Play-action" count={123} filters={filters} onToggle={onToggle} />
               
               <FilterRow 
                 label="RPO" 
@@ -334,9 +339,9 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Screen" count={123} />
-              <FilterRow label="Designed rollout" count={123} />
-              <FilterRow label="Broken Play" count={123} />
+              <FilterRow label="Screen" count={123} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Designed rollout" count={123} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Broken Play" count={123} filters={filters} onToggle={onToggle} />
 
               <SubsectionHeader label="Play Result" />
 
@@ -407,7 +412,7 @@ export function FiltersModule({
                 </div>
               </FilterRow>
 
-              <FilterRow label="Penalty" count={123}>
+              <FilterRow label="Penalty" count={123} filters={filters} onToggle={onToggle}>
                 <Select>
                   <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select penalty" />
@@ -469,18 +474,18 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Scramble" count={17} />
-              <FilterRow label="Sack taken" count={123} />
-              <FilterRow label="Throwaway" count={123} />
+              <FilterRow label="Scramble" count={17} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Sack taken" count={123} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Throwaway" count={123} filters={filters} onToggle={onToggle} />
 
               <SubsectionHeader label="Receiving" />
 
-              <FilterRow label="Target / Pass targeted" count={13} />
-              <FilterRow label="Reception" count={7} />
-              <FilterRow label="Drop" count={17} />
-              <FilterRow label="Contested catch" count={123} />
+              <FilterRow label="Target / Pass targeted" count={13} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Reception" count={7} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Drop" count={17} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Contested catch" count={123} filters={filters} onToggle={onToggle} />
 
-              <FilterRow label="Route type" count={123}>
+              <FilterRow label="Route type" count={123} filters={filters} onToggle={onToggle}>
                 <Select>
                   <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select route type" />
@@ -518,12 +523,12 @@ export function FiltersModule({
 
               <SubsectionHeader label="Pass Defense" />
 
-              <FilterRow label="Pass defended / Breakup" count={13} />
-              <FilterRow label="Interception" count={7} />
-              <FilterRow label="Sack made" count={17} />
-              <FilterRow label="Pressure generated" count={123} />
+              <FilterRow label="Pass defended / Breakup" count={13} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Interception" count={7} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Sack made" count={17} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Pressure generated" count={123} filters={filters} onToggle={onToggle} />
 
-              <FilterRow label="Coverage" count={123}>
+              <FilterRow label="Coverage" count={123} filters={filters} onToggle={onToggle}>
                 <Select>
                   <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
                     <SelectValue placeholder="Select coverage" />
@@ -629,10 +634,10 @@ export function FiltersModule({
 
               <SubsectionHeader label="Rush Defense" />
 
-              <FilterRow label="Tackle made" count={13} />
-              <FilterRow label="Tackle missed" count={7} />
-              <FilterRow label="Tackle for loss made" count={17} />
-              <FilterRow label="Forced fumble" count={123} />
+              <FilterRow label="Tackle made" count={13} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Tackle missed" count={7} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Tackle for loss made" count={17} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Forced fumble" count={123} filters={filters} onToggle={onToggle} />
             </AccordionContent>
           </AccordionItem>
 
@@ -644,10 +649,10 @@ export function FiltersModule({
             <AccordionContent className="pb-4 space-y-3">
               <SubsectionHeader label="Offensive Line" />
 
-              <FilterRow label="Pass block" count={62} />
-              <FilterRow label="Run block" count={128} />
-              <FilterRow label="Allowed pressure" count={17} />
-              <FilterRow label="Allowed sack" count={123} />
+              <FilterRow label="Pass block" count={62} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Run block" count={128} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Allowed pressure" count={17} filters={filters} onToggle={onToggle} />
+              <FilterRow label="Allowed sack" count={123} filters={filters} onToggle={onToggle} />
             </AccordionContent>
           </AccordionItem>
 

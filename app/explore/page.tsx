@@ -13,7 +13,7 @@ export default function ExplorePage() {
   const allClipsDataset = getAllUniqueClips()
   
   // Use hook to filter clips
-  const { filters, rangeFilters, toggleFilter, toggleAllInCategory, setRangeFilter, setSinglePointFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
+  const { filters, rangeFilters, toggleFilter, toggleAllInCategory, setRangeFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
 
   // Construct filtered dataset to pass to Grid
   const filteredDataset = {
@@ -33,7 +33,6 @@ export default function ExplorePage() {
                 onToggle={toggleFilter}
                 onToggleAll={toggleAllInCategory}
                 onRangeChange={setRangeFilter}
-                onSinglePointChange={setSinglePointFilter}
                 onClear={clearFilters}
                 uniqueGames={uniqueGames}
                 activeFilterCount={activeFilterCount}
@@ -50,6 +49,7 @@ export default function ExplorePage() {
                   showTabs={false} 
                   selectionActions={<AddToPlaylistMenu />} 
                   dataset={filteredDataset}
+                  onClearFilters={clearFilters}
                 />
               </div>
             </div>

@@ -14,7 +14,6 @@ interface FiltersModuleProps {
   onToggle: (category: string, value: string) => void
   onToggleAll: (category: string, allValues: string[]) => void
   onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
-  onSinglePointChange: (category: string, value: number, defaultValue: number) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -80,8 +79,12 @@ function FilterRow({
   category,
   allValues,
   filters,
+  rangeFilters,
+  rangeCategory,
+  rangeDefault,
   onToggleAll,
   onToggle,
+  onRangeReset,
   children,
 }: {
   label: string
@@ -89,23 +92,43 @@ function FilterRow({
   category?: string
   allValues?: string[]
   filters?: FilterState
+  rangeFilters?: RangeFilterState
+  rangeCategory?: string
+  rangeDefault?: [number, number]
   onToggleAll?: (category: string, allValues: string[]) => void
   onToggle?: (category: string, value: string) => void
+  onRangeReset?: (category: string, defaultRange: [number, number]) => void
   children?: React.ReactNode
 }) {
   // Derive a category key: use explicit category, or a normalized label for simple boolean filters
   const effectiveCategory = category || `_filter_${label.toLowerCase().replace(/[\s\/]+/g, "_")}`
   const effectiveValues = allValues || ["enabled"]
   
-  // Check if any values in this category are selected
-  const hasAnySelected = filters && filters[effectiveCategory]?.size > 0
+  // Check if any set-based values in this category are selected
+  const hasSetSelected = filters && filters[effectiveCategory]?.size > 0
+  // Check if the associated range slider is active
+  const hasRangeSelected = rangeCategory && rangeFilters && rangeCategory in rangeFilters
+  
+  const isActive = hasSetSelected || hasRangeSelected
 
   const handleCircleClick = () => {
-    if (onToggleAll) {
-      onToggleAll(effectiveCategory, effectiveValues)
-    } else if (onToggle) {
-      // For simple filters without onToggleAll, toggle single value
-      onToggle(effectiveCategory, "enabled")
+    if (isActive) {
+      // Clear everything: set-based filters and range filter
+      if (hasSetSelected && onToggleAll) {
+        onToggleAll(effectiveCategory, effectiveValues)
+      } else if (hasSetSelected && onToggle) {
+        onToggle(effectiveCategory, "enabled")
+      }
+      if (hasRangeSelected && onRangeReset && rangeDefault) {
+        onRangeReset(rangeCategory!, rangeDefault)
+      }
+    } else {
+      // Select all set-based values (but NOT range - sliders activate on their own)
+      if (onToggleAll) {
+        onToggleAll(effectiveCategory, effectiveValues)
+      } else if (onToggle) {
+        onToggle(effectiveCategory, "enabled")
+      }
     }
   }
 
@@ -117,12 +140,12 @@ function FilterRow({
             onClick={handleCircleClick}
             className={cn(
               "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors",
-              hasAnySelected
+              isActive
                 ? "border-foreground bg-foreground"
                 : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
             )}
           >
-            {hasAnySelected && (
+            {isActive && (
               <div className="w-1.5 h-1.5 rounded-full bg-background" />
             )}
           </button>
@@ -181,13 +204,16 @@ export function FiltersModule({
   onToggle,
   onToggleAll,
   onRangeChange,
-  onSinglePointChange,
   onClear,
   uniqueGames,
   activeFilterCount,
   totalCount,
   filteredCount,
 }: FiltersModuleProps) {
+  // Helper to reset a range filter to its default
+  const resetRange = (category: string, defaultRange: [number, number]) => {
+    onRangeChange(category, defaultRange, defaultRange)
+  }
   
   // Count active filters per section
   const getCount = (categories: string[]) => {
@@ -265,7 +291,11 @@ export function FiltersModule({
                 category="distanceType"
                 allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
                 filters={filters}
+                rangeFilters={rangeFilters}
+                rangeCategory="distanceRange"
+                rangeDefault={[0, 100]}
                 onToggleAll={onToggleAll}
+                onRangeReset={resetRange}
               >
                 <ToggleGroup
                   items={[
@@ -285,19 +315,22 @@ export function FiltersModule({
                 />
               </FilterRow>
 
-              <FilterRow label="Yard line" count={128} filters={filters} onToggle={onToggle}>
-                <div className="pt-1">
-                  <Slider
-                    min={0}
-                    max={100}
-                    value={[rangeFilters["yardLine"]?.[0] ?? 50]}
-                    onValueChange={(v) => onSinglePointChange("yardLine", v[0], 50)}
-                    className="[&_[data-slot=slider-track]]:bg-muted [&_[data-slot=slider-range]]:bg-foreground [&_[data-slot=slider-thumb]]:border-foreground [&_[data-slot=slider-thumb]]:w-3.5 [&_[data-slot=slider-thumb]]:h-3.5"
-                  />
-                  <div className="flex justify-center text-xs text-muted-foreground mt-2">
-                    <span>{rangeFilters["yardLine"]?.[0] ?? 50}</span>
-                  </div>
-                </div>
+              <FilterRow 
+                label="Yard line" 
+                count={128} 
+                filters={filters} 
+                onToggle={onToggle}
+                rangeFilters={rangeFilters}
+                rangeCategory="yardLine"
+                rangeDefault={[0, 100]}
+                onRangeReset={resetRange}
+              >
+                <RangeSlider
+                  min={0}
+                  max={100}
+                  value={rangeFilters["yardLine"] || [0, 100]}
+                  onChange={(v) => onRangeChange("yardLine", v, [0, 100])}
+                />
               </FilterRow>
 
               <FilterRow 
@@ -589,7 +622,11 @@ export function FiltersModule({
                 category="yardsAfterContact"
                 allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
                 filters={filters}
+                rangeFilters={rangeFilters}
+                rangeCategory="yardsAfterContactRange"
+                rangeDefault={[0, 100]}
                 onToggleAll={onToggleAll}
+                onRangeReset={resetRange}
               >
                 <ToggleGroup
                   items={[
@@ -758,7 +795,11 @@ export function FiltersModule({
                 category="puntReturnYards"
                 allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
                 filters={filters}
+                rangeFilters={rangeFilters}
+                rangeCategory="puntReturnRange"
+                rangeDefault={[0, 100]}
                 onToggleAll={onToggleAll}
+                onRangeReset={resetRange}
               >
                 <ToggleGroup
                   items={[
@@ -816,7 +857,11 @@ export function FiltersModule({
                 category="kickoffReturnYards"
                 allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
                 filters={filters}
+                rangeFilters={rangeFilters}
+                rangeCategory="kickoffReturnRange"
+                rangeDefault={[0, 100]}
                 onToggleAll={onToggleAll}
+                onRangeReset={resetRange}
               >
                 <ToggleGroup
                   items={[

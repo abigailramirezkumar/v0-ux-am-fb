@@ -138,7 +138,6 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     toggleFilter,
     toggleAllInCategory,
     setRangeFilter,
-    setSinglePointFilter,
     clearFilters,
     filteredPlays,
     uniqueGames,

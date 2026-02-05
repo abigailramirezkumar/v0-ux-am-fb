@@ -14,9 +14,10 @@ interface GridModuleProps {
   showTabs?: boolean
   selectionActions?: React.ReactNode | null
   dataset?: Dataset | null
+  onClearFilters?: () => void
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, onClearFilters }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -148,10 +149,25 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
       {/* --- GRID TABLE or EMPTY STATE --- */}
       <div className="flex-1 overflow-auto bg-background">
         {activeDataset.plays.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-            <Icon name="playlist" className="w-12 h-12 opacity-20" />
-            <p>This playlist is empty</p>
-            <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
+            {onClearFilters ? (
+              <>
+                <p className="text-sm">No clips match these filters</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onClearFilters}
+                >
+                  Clear all filters
+                </Button>
+              </>
+            ) : (
+              <>
+                <Icon name="playlist" className="w-12 h-12 opacity-20" />
+                <p>This playlist is empty</p>
+                <p className="text-xs opacity-60">Add clips from the Library to build your playlist.</p>
+              </>
+            )}
           </div>
         ) : (
         <Table>

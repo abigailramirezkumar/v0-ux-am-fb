@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 
@@ -80,6 +80,14 @@ export function WatchProvider({
   const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem } = useLibraryContext()
 
+  // Stable refs so useEffects don't re-fire when these change
+  const foldersRef = useRef(folders)
+  foldersRef.current = folders
+  const rootItemsRef = useRef(rootItems)
+  rootItemsRef.current = rootItems
+  const getMediaItemRef = useRef(getMediaItem)
+  getMediaItemRef.current = getMediaItem
+
   // Initialize with provided tabs if any
   const [tabs, setTabs] = useState<Dataset[]>(initialTabs)
   
@@ -127,11 +135,11 @@ export function WatchProvider({
         return prevTabs
       }
 
-      // 2. New Tab Logic - look up in folders, rootItems, then mediaItems
-      const folderItem = findItemById(folders, activeWatchItemId)
-      const rootItem = !folderItem ? rootItems.find((i) => i.id === activeWatchItemId) : null
+      // 2. New Tab Logic - look up in folders, rootItems, then mediaItems (via refs)
+      const folderItem = findItemById(foldersRef.current, activeWatchItemId)
+      const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
       const item = folderItem || rootItem || null
-      const mediaItem = !item ? getMediaItem(activeWatchItemId) : null
+      const mediaItem = !item ? getMediaItemRef.current(activeWatchItemId) : null
 
       const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
       let datasetWithId: Dataset
@@ -202,7 +210,7 @@ export function WatchProvider({
 
       return [datasetWithId, ...prevTabs]
     })
-  }, [activeWatchItemId, folders, rootItems, getMediaItem])
+  }, [activeWatchItemId])
 
   useEffect(() => {
     if (!activeWatchItems || activeWatchItems.length === 0) return
@@ -216,10 +224,10 @@ export function WatchProvider({
         // Check if already exists
         if (newTabs.some((t) => t.id === itemId)) return
 
-        const folderItem = findItemById(folders, itemId)
-        const rootItem = !folderItem ? rootItems.find((i) => i.id === itemId) : null
+        const folderItem = findItemById(foldersRef.current, itemId)
+        const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
         const item = folderItem || rootItem || null
-        const mediaItem = !item ? getMediaItem(itemId) : null
+        const mediaItem = !item ? getMediaItemRef.current(itemId) : null
         const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
 
         let datasetWithId: Dataset
@@ -263,7 +271,7 @@ export function WatchProvider({
 
       return newTabs
     })
-  }, [activeWatchItems, folders, rootItems, getMediaItem])
+  }, [activeWatchItems])
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)

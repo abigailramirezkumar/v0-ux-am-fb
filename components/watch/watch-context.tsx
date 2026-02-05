@@ -125,152 +125,158 @@ export function WatchProvider({
   useEffect(() => {
     if (!activeWatchItemId) return
 
+    // Check if already open — if so, just switch the active tab
     setTabs((prevTabs) => {
-      // 1. Check if already open
       const existing = prevTabs.find((t) => t.id === activeWatchItemId)
-
       if (existing) {
-        // Just switch the GRID to it. Do not change video.
-        setActiveTabId(existing.id)
+        // Defer the tab switch to avoid calling setState inside setState
+        queueMicrotask(() => setActiveTabId(existing.id))
         return prevTabs
       }
+      return prevTabs
+    })
 
-      // 2. New Tab Logic - look up in folders, rootItems, then mediaItems (via refs)
-      const folderItem = findItemById(foldersRef.current, activeWatchItemId)
-      const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
-      const item = folderItem || rootItem || null
-      const mediaItem = !item ? getMediaItemRef.current(activeWatchItemId) : null
+    // Build the new tab outside of setTabs to avoid nested setState calls
+    const folderItem = findItemById(foldersRef.current, activeWatchItemId)
+    const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
+    const item = folderItem || rootItem || null
+    const mediaItem = !item ? getMediaItemRef.current(activeWatchItemId) : null
 
-      const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
-      let datasetWithId: Dataset
+    const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
+    let datasetWithId: Dataset
 
-      if (isPlaylist) {
-        // Resolve existing clips from the media-item model (may be empty)
-        const existingClips: PlayData[] = mediaItem
-          ? mediaItem.clips.map((clip, idx) => ({
-              id: clip.id,
-              playNumber: clip.playNumber ?? idx + 1,
-              odk: clip.odk ?? "O",
-              quarter: clip.quarter ?? 1,
-              down: clip.down ?? 1,
-              distance: clip.distance ?? 10,
-              yardLine: clip.yardLine ?? "",
-              hash: clip.hash ?? "M",
-              yards: clip.yards ?? 0,
-              result: clip.result ?? "",
-              gainLoss: clip.gainLoss ?? "Gn",
-              defFront: clip.defFront ?? "",
-              defStr: clip.defStr ?? "",
-              coverage: clip.coverage ?? "",
-              blitz: clip.blitz ?? "",
-              game: clip.game ?? "",
-              playType: clip.playType ?? "Pass",
-              passResult: clip.passResult,
-              runDirection: clip.runDirection,
-              personnelO: clip.personnelO ?? "11",
-              personnelD: clip.personnelD ?? "Base",
-              isTouchdown: clip.isTouchdown ?? false,
-              isFirstDown: clip.isFirstDown ?? false,
-              isPenalty: clip.isPenalty ?? false,
-              penaltyType: clip.penaltyType,
-            }))
-          : []
+    if (isPlaylist) {
+      const existingClips: PlayData[] = mediaItem
+        ? mediaItem.clips.map((clip, idx) => ({
+            id: clip.id,
+            playNumber: clip.playNumber ?? idx + 1,
+            odk: clip.odk ?? "O",
+            quarter: clip.quarter ?? 1,
+            down: clip.down ?? 1,
+            distance: clip.distance ?? 10,
+            yardLine: clip.yardLine ?? "",
+            hash: clip.hash ?? "M",
+            yards: clip.yards ?? 0,
+            result: clip.result ?? "",
+            gainLoss: clip.gainLoss ?? "Gn",
+            defFront: clip.defFront ?? "",
+            defStr: clip.defStr ?? "",
+            coverage: clip.coverage ?? "",
+            blitz: clip.blitz ?? "",
+            game: clip.game ?? "",
+            playType: clip.playType ?? "Pass",
+            passResult: clip.passResult,
+            runDirection: clip.runDirection,
+            personnelO: clip.personnelO ?? "11",
+            personnelD: clip.personnelD ?? "Base",
+            isTouchdown: clip.isTouchdown ?? false,
+            isFirstDown: clip.isFirstDown ?? false,
+            isPenalty: clip.isPenalty ?? false,
+            penaltyType: clip.penaltyType,
+          }))
+        : []
 
-        datasetWithId = {
-          id: activeWatchItemId,
-          name: mediaItem?.name || item?.name || "Untitled Playlist",
-          plays: existingClips,
-        }
-        if (existingClips.length === 0) {
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          playRandomVideo()
-          setCurrentPlay(existingClips[0])
-        }
-      } else {
-        // Use Mock data for games/other videos
-        const newDataset = getDatasetForItem(activeWatchItemId)
-        datasetWithId = {
-          ...newDataset,
-          id: activeWatchItemId,
-          name: item?.name || newDataset.name,
-        }
-        playRandomVideo()
-        if (datasetWithId.plays.length > 0) {
-          setCurrentPlay(datasetWithId.plays[0])
-        }
+      datasetWithId = {
+        id: activeWatchItemId,
+        name: mediaItem?.name || item?.name || "Untitled Playlist",
+        plays: existingClips,
       }
 
-      // Make it active in Grid
-      setActiveTabId(datasetWithId.id)
+      if (existingClips.length === 0) {
+        setVideoUrl(null)
+        setCurrentPlay(null)
+      } else {
+        playRandomVideo()
+        setCurrentPlay(existingClips[0])
+      }
+    } else {
+      const newDataset = getDatasetForItem(activeWatchItemId)
+      datasetWithId = {
+        ...newDataset,
+        id: activeWatchItemId,
+        name: item?.name || newDataset.name,
+      }
+      playRandomVideo()
+      if (datasetWithId.plays.length > 0) {
+        setCurrentPlay(datasetWithId.plays[0])
+      }
+    }
 
-      // Also make it the Playing Tab (Auto-play behavior for new items)
-      setPlayingTabId(datasetWithId.id)
-
+    // Now add the tab (only if not already present)
+    setTabs((prevTabs) => {
+      if (prevTabs.some((t) => t.id === activeWatchItemId)) return prevTabs
       return [datasetWithId, ...prevTabs]
     })
+
+    // Set active / playing tab
+    setActiveTabId(datasetWithId.id)
+    setPlayingTabId(datasetWithId.id)
   }, [activeWatchItemId])
 
   useEffect(() => {
     if (!activeWatchItems || activeWatchItems.length === 0) return
 
-    setTabs((prevTabs) => {
-      const newTabs = [...prevTabs]
-      let firstNewId: string | null = null
-      let firstNewIsPlaylist = false
+    // Build all new datasets outside of setTabs
+    const newDatasets: Dataset[] = []
+    let firstNewId: string | null = null
+    let firstNewIsPlaylist = false
 
-      activeWatchItems.forEach((itemId) => {
-        // Check if already exists
-        if (newTabs.some((t) => t.id === itemId)) return
+    activeWatchItems.forEach((itemId) => {
+      const folderItem = findItemById(foldersRef.current, itemId)
+      const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
+      const item = folderItem || rootItem || null
+      const mediaItem = !item ? getMediaItemRef.current(itemId) : null
+      const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
 
-        const folderItem = findItemById(foldersRef.current, itemId)
-        const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
-        const item = folderItem || rootItem || null
-        const mediaItem = !item ? getMediaItemRef.current(itemId) : null
-        const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
+      let datasetWithId: Dataset
 
-        let datasetWithId: Dataset
-
-        if (isPlaylist) {
-          datasetWithId = {
-            id: itemId,
-            name: mediaItem?.name || item?.name || "Untitled Playlist",
-            plays: [],
-          }
-          if (!firstNewId) firstNewIsPlaylist = true
-        } else {
-          const newDataset = getDatasetForItem(itemId)
-          datasetWithId = {
-            ...newDataset,
-            id: itemId,
-            name: item?.name || newDataset.name,
-          }
+      if (isPlaylist) {
+        datasetWithId = {
+          id: itemId,
+          name: mediaItem?.name || item?.name || "Untitled Playlist",
+          plays: [],
         }
-
-        if (!firstNewId) firstNewId = itemId
-        newTabs.unshift(datasetWithId)
-      })
-
-      if (firstNewId) {
-        setActiveTabId(firstNewId)
-        setPlayingTabId(firstNewId)
-        
-        if (firstNewIsPlaylist) {
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          playRandomVideo()
-          // Set current play for the first new tab
-          const firstDataset = newTabs.find((t) => t.id === firstNewId)
-          if (firstDataset && firstDataset.plays.length > 0) {
-            setCurrentPlay(firstDataset.plays[0])
-          }
+        if (!firstNewId) firstNewIsPlaylist = true
+      } else {
+        const newDataset = getDatasetForItem(itemId)
+        datasetWithId = {
+          ...newDataset,
+          id: itemId,
+          name: item?.name || newDataset.name,
         }
       }
 
-      return newTabs
+      if (!firstNewId) firstNewId = itemId
+      newDatasets.push(datasetWithId)
     })
+
+    // Add new tabs (skip any that already exist)
+    setTabs((prevTabs) => {
+      const combined = [...prevTabs]
+      for (const ds of newDatasets) {
+        if (!combined.some((t) => t.id === ds.id)) {
+          combined.unshift(ds)
+        }
+      }
+      return combined
+    })
+
+    // Set active/playing and playback state OUTSIDE setTabs
+    if (firstNewId) {
+      setActiveTabId(firstNewId)
+      setPlayingTabId(firstNewId)
+
+      if (firstNewIsPlaylist) {
+        setVideoUrl(null)
+        setCurrentPlay(null)
+      } else {
+        playRandomVideo()
+        const firstDataset = newDatasets.find((t) => t.id === firstNewId)
+        if (firstDataset && firstDataset.plays.length > 0) {
+          setCurrentPlay(firstDataset.plays[0])
+        }
+      }
+    }
   }, [activeWatchItems])
 
   const activateTab = (tabId: string) => {

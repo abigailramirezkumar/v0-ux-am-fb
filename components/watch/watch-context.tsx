@@ -122,21 +122,21 @@ export function WatchProvider({
     setVideoUrl((prev) => getRandomVideoUrl(prev))
   }
 
+  // Keep a ref to the current tabs so we can read them synchronously in effects
+  const tabsRef = useRef(tabs)
+  tabsRef.current = tabs
+
   useEffect(() => {
     if (!activeWatchItemId) return
 
-    // Check if already open — if so, just switch the active tab
-    setTabs((prevTabs) => {
-      const existing = prevTabs.find((t) => t.id === activeWatchItemId)
-      if (existing) {
-        // Defer the tab switch to avoid calling setState inside setState
-        queueMicrotask(() => setActiveTabId(existing.id))
-        return prevTabs
-      }
-      return prevTabs
-    })
+    // Synchronous check: if already open, just switch the active tab and bail
+    const existingTab = tabsRef.current.find((t) => t.id === activeWatchItemId)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
 
-    // Build the new tab outside of setTabs to avoid nested setState calls
+    // Look up the item across all sources
     const folderItem = findItemById(foldersRef.current, activeWatchItemId)
     const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
     const item = folderItem || rootItem || null
@@ -181,14 +181,6 @@ export function WatchProvider({
         name: mediaItem?.name || item?.name || "Untitled Playlist",
         plays: existingClips,
       }
-
-      if (existingClips.length === 0) {
-        setVideoUrl(null)
-        setCurrentPlay(null)
-      } else {
-        playRandomVideo()
-        setCurrentPlay(existingClips[0])
-      }
     } else {
       const newDataset = getDatasetForItem(activeWatchItemId)
       datasetWithId = {
@@ -196,32 +188,36 @@ export function WatchProvider({
         id: activeWatchItemId,
         name: item?.name || newDataset.name,
       }
-      playRandomVideo()
+    }
+
+    // Batch all state updates together
+    setTabs((prev) => [datasetWithId, ...prev])
+    setActiveTabId(datasetWithId.id)
+    setPlayingTabId(datasetWithId.id)
+
+    if (isPlaylist && datasetWithId.plays.length === 0) {
+      setVideoUrl(null)
+      setCurrentPlay(null)
+    } else {
+      setVideoUrl((prev) => getRandomVideoUrl(prev))
       if (datasetWithId.plays.length > 0) {
         setCurrentPlay(datasetWithId.plays[0])
       }
     }
-
-    // Now add the tab (only if not already present)
-    setTabs((prevTabs) => {
-      if (prevTabs.some((t) => t.id === activeWatchItemId)) return prevTabs
-      return [datasetWithId, ...prevTabs]
-    })
-
-    // Set active / playing tab
-    setActiveTabId(datasetWithId.id)
-    setPlayingTabId(datasetWithId.id)
   }, [activeWatchItemId])
 
   useEffect(() => {
     if (!activeWatchItems || activeWatchItems.length === 0) return
 
-    // Build all new datasets outside of setTabs
+    const currentTabs = tabsRef.current
     const newDatasets: Dataset[] = []
     let firstNewId: string | null = null
     let firstNewIsPlaylist = false
 
-    activeWatchItems.forEach((itemId) => {
+    for (const itemId of activeWatchItems) {
+      // Skip if already open
+      if (currentTabs.some((t) => t.id === itemId)) continue
+
       const folderItem = findItemById(foldersRef.current, itemId)
       const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
       const item = folderItem || rootItem || null
@@ -248,20 +244,12 @@ export function WatchProvider({
 
       if (!firstNewId) firstNewId = itemId
       newDatasets.push(datasetWithId)
-    })
+    }
 
-    // Add new tabs (skip any that already exist)
-    setTabs((prevTabs) => {
-      const combined = [...prevTabs]
-      for (const ds of newDatasets) {
-        if (!combined.some((t) => t.id === ds.id)) {
-          combined.unshift(ds)
-        }
-      }
-      return combined
-    })
+    if (newDatasets.length === 0) return
 
-    // Set active/playing and playback state OUTSIDE setTabs
+    setTabs((prev) => [...newDatasets, ...prev])
+
     if (firstNewId) {
       setActiveTabId(firstNewId)
       setPlayingTabId(firstNewId)
@@ -270,7 +258,7 @@ export function WatchProvider({
         setVideoUrl(null)
         setCurrentPlay(null)
       } else {
-        playRandomVideo()
+        setVideoUrl((prev) => getRandomVideoUrl(prev))
         const firstDataset = newDatasets.find((t) => t.id === firstNewId)
         if (firstDataset && firstDataset.plays.length > 0) {
           setCurrentPlay(firstDataset.plays[0])

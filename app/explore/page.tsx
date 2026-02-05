@@ -41,7 +41,7 @@ export default function ExplorePage() {
               />
             </div>
           </ResizablePanel>
-          <ResizableHandle withHandle />
+          <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
           <ResizablePanel defaultSize={78}>
             <div className="h-full overflow-hidden pl-1 pb-3 pr-3">
               <div className="h-full bg-background rounded-lg overflow-hidden">

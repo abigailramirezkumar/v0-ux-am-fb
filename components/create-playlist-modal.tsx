@@ -10,6 +10,9 @@ import { LibraryBreadcrumbs } from "@/components/library-breadcrumbs"
 import { cn } from "@/lib/utils"
 import type { FolderData } from "@/components/folder"
 import type { ClipData } from "@/types/library"
+import { useToast } from "@/hooks/use-toast"
+import { ToastAction } from "@/components/ui/toast"
+import { useRouter } from "next/navigation"
 
 interface CreatePlaylistModalProps {
   /** Pre-populate the new playlist with these clips (e.g. from "Save Selection as Playlist"). */
@@ -17,7 +20,9 @@ interface CreatePlaylistModalProps {
 }
 
 export function CreatePlaylistModal({ initialClips }: CreatePlaylistModalProps = {}) {
-  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders } = useLibraryContext()
+  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, setWatchItem } = useLibraryContext()
+  const { toast } = useToast()
+  const router = useRouter()
   const [playlistName, setPlaylistName] = useState("")
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null)
@@ -83,9 +88,24 @@ export function CreatePlaylistModal({ initialClips }: CreatePlaylistModalProps =
 
   const handleCreate = () => {
     if (playlistName.trim()) {
-      createPlaylist(currentFolderId, playlistName.trim(), initialClips)
+      const createdId = createPlaylist(currentFolderId, playlistName.trim(), initialClips)
       setPlaylistName("")
       setCurrentFolderId(null)
+      toast({
+        description: "New playlist created.",
+        action: (
+          <ToastAction
+            altText="Open Playlist"
+            onClick={() => {
+              setWatchItem(createdId)
+              router.push("/watch")
+            }}
+            className="h-7 px-2 text-xs"
+          >
+            Open Playlist
+          </ToastAction>
+        ),
+      })
     }
   }
 

@@ -19,7 +19,7 @@ import type { ClipData } from "@/types/library"
 export function AddToPlaylistMenu() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist } = useLibraryContext()
+  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist, openCreatePlaylistModal } = useLibraryContext()
   const { selectedPlayIds, clearPlaySelection, activeDataset } = useWatchContext()
 
   // Gather all playlists from folders and root items
@@ -181,6 +181,11 @@ export function AddToPlaylistMenu() {
         {/* Create New Playlist */}
         <div className="p-2 border-t border-border">
           <button
+            onClick={() => {
+              setOpen(false)
+              setSearchQuery("")
+              openCreatePlaylistModal()
+            }}
             className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left text-primary"
           >
             <Icon name="plus" className="w-4 h-4" />

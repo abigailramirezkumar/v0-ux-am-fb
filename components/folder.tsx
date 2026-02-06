@@ -593,9 +593,7 @@ export function Folder({
             ? "bg-[#0273e3]"
             : isHovered
               ? "bg-muted"
-              : isAlternate
-                ? "bg-muted/20"
-                : "bg-background",
+              : "bg-transparent",
           isDragOver && "bg-accent",
         )}
       >

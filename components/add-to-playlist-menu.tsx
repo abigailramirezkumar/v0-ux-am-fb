@@ -14,12 +14,13 @@ import { useWatchContext } from "@/components/watch/watch-context"
 import { cn } from "@/lib/utils"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
+import type { ClipData } from "@/types/library"
 
 export function AddToPlaylistMenu() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { folders, rootItems, recentPlaylists, addToPlaylist } = useLibraryContext()
-  const { selectedPlayIds, clearPlaySelection } = useWatchContext()
+  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist } = useLibraryContext()
+  const { selectedPlayIds, clearPlaySelection, activeDataset } = useWatchContext()
 
   // Gather all playlists from folders and root items
   const allPlaylists = useMemo(() => {
@@ -49,8 +50,15 @@ export function AddToPlaylistMenu() {
     }
     findPlaylists(folders, null)
 
+    // Also include playlists from the flat mediaItems list (segregated model)
+    mediaItems.forEach((mi) => {
+      if (mi.type === "playlist" && !playlists.some((p) => p.id === mi.id)) {
+        playlists.push({ id: mi.id, name: mi.name, folderId: mi.parentId })
+      }
+    })
+
     return playlists
-  }, [folders, rootItems])
+  }, [folders, rootItems, mediaItems])
 
   // Filter playlists by search
   const filteredPlaylists = useMemo(() => {
@@ -61,6 +69,43 @@ export function AddToPlaylistMenu() {
 
   const handleAddToPlaylist = (playlistId: string) => {
     const clipIds = Array.from(selectedPlayIds)
+
+    // Resolve the selected play IDs into full ClipData from the active dataset
+    if (activeDataset) {
+      const selectedPlays = activeDataset.plays.filter((p) => clipIds.includes(p.id))
+      if (selectedPlays.length > 0) {
+        const clipsToAdd = selectedPlays.map((play) => ({
+          id: play.id,
+          playNumber: play.playNumber,
+          odk: play.odk,
+          quarter: play.quarter,
+          down: play.down,
+          distance: play.distance,
+          yardLine: play.yardLine,
+          hash: play.hash,
+          yards: play.yards,
+          result: play.result,
+          gainLoss: play.gainLoss,
+          defFront: play.defFront,
+          defStr: play.defStr,
+          coverage: play.coverage,
+          blitz: play.blitz,
+          game: play.game,
+          playType: play.playType,
+          passResult: play.passResult,
+          runDirection: play.runDirection,
+          personnelO: play.personnelO,
+          personnelD: play.personnelD,
+          isTouchdown: play.isTouchdown,
+          isFirstDown: play.isFirstDown,
+          isPenalty: play.isPenalty,
+          penaltyType: play.penaltyType,
+        }))
+        addClipsToPlaylist(playlistId, clipsToAdd)
+      }
+    }
+
+    // Also track in recent playlists via legacy function
     addToPlaylist(playlistId, clipIds)
     clearPlaySelection()
     setOpen(false)

@@ -131,12 +131,19 @@ export function Folder({
     }
   }, [renamingId, folder.id, folder.name, setRenamingId])
 
+  // Fetch media items from the flat list via context
+  const { getMediaItemsByFolderId } = useLibraryContext()
+  const dynamicMediaItems = getMediaItemsByFolderId(folder.id)
+
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
-  const hasChildren = (folder.children && folder.children.length > 0) || (folder.items && folder.items.length > 0)
+  const hasChildren =
+    (folder.children && folder.children.length > 0) ||
+    (folder.items && folder.items.length > 0) ||
+    dynamicMediaItems.length > 0
   const isImported = importedFolders.has(folder.id)
-
-  const totalItemCount = (folder.children?.length || 0) + (folder.items?.length || 0)
+  
+  const totalItemCount = (folder.children?.length || 0) + (folder.items?.length || 0) + dynamicMediaItems.length
 
   const isAlternate = index % 2 === 1
   const indentMargin = level * spacing.indent
@@ -155,7 +162,7 @@ export function Folder({
     onSelect?.(folder.id, checked)
   }
 
-  const isEmpty = !folder.children?.length && !folder.items?.length
+  const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
 
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement
@@ -586,9 +593,7 @@ export function Folder({
             ? "bg-[#0273e3]"
             : isHovered
               ? "bg-muted"
-              : isAlternate
-                ? "bg-muted/20"
-                : "bg-background",
+              : "bg-transparent",
           isDragOver && "bg-accent",
         )}
       >
@@ -822,6 +827,38 @@ export function Folder({
               }}
               level={level + 1}
               index={i + (folder.children?.length || 0)}
+              onSelect={onSelectItem}
+              selectedItems={selectedItems}
+              importedItems={importedItems}
+              onUpdateImported={onUpdateImported}
+              onMove={onMove}
+              onOpen={onOpen}
+            />
+          ))}
+
+          {/* Dynamic media items from the flat list (segregated model) */}
+          {dynamicMediaItems.map((mediaItem, i) => (
+            <LibraryItem
+              key={mediaItem.id}
+              item={{
+                id: mediaItem.id,
+                name: mediaItem.name,
+                type: mediaItem.type,
+                itemCount: mediaItem.clips.length,
+                thumbnailUrl: "/placeholder-logo.png",
+                dateModified: new Date(mediaItem.modifiedAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+                createdDate: new Date(mediaItem.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+              }}
+              level={level + 1}
+              index={i + (folder.children?.length || 0) + (folder.items?.length || 0)}
               onSelect={onSelectItem}
               selectedItems={selectedItems}
               importedItems={importedItems}

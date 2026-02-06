@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
 
@@ -78,7 +78,15 @@ export function WatchProvider({
   initialTabs?: Dataset[] 
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem } = useLibraryContext()
+
+  // Stable refs so useEffects don't re-fire when these change
+  const foldersRef = useRef(folders)
+  foldersRef.current = folders
+  const rootItemsRef = useRef(rootItems)
+  rootItemsRef.current = rootItems
+  const getMediaItemRef = useRef(getMediaItem)
+  getMediaItemRef.current = getMediaItem
 
   // Initialize with provided tabs if any
   const [tabs, setTabs] = useState<Dataset[]>(initialTabs)
@@ -114,114 +122,150 @@ export function WatchProvider({
     setVideoUrl((prev) => getRandomVideoUrl(prev))
   }
 
+  // Keep a ref to the current tabs so we can read them synchronously in effects
+  const tabsRef = useRef(tabs)
+  tabsRef.current = tabs
+
   useEffect(() => {
     if (!activeWatchItemId) return
 
-    setTabs((prevTabs) => {
-      // 1. Check if already open
-      const existing = prevTabs.find((t) => t.id === activeWatchItemId)
+    // Synchronous check: if already open, just switch the active tab and bail
+    const existingTab = tabsRef.current.find((t) => t.id === activeWatchItemId)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
 
-      if (existing) {
-        // Just switch the GRID to it. Do not change video.
-        setActiveTabId(existing.id)
-        return prevTabs
+    // Look up the item across all sources
+    const folderItem = findItemById(foldersRef.current, activeWatchItemId)
+    const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
+    const item = folderItem || rootItem || null
+    const mediaItem = !item ? getMediaItemRef.current(activeWatchItemId) : null
+
+    const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
+    let datasetWithId: Dataset
+
+    if (isPlaylist) {
+      const existingClips: PlayData[] = mediaItem
+        ? mediaItem.clips.map((clip, idx) => ({
+            id: clip.id,
+            playNumber: clip.playNumber ?? idx + 1,
+            odk: clip.odk ?? "O",
+            quarter: clip.quarter ?? 1,
+            down: clip.down ?? 1,
+            distance: clip.distance ?? 10,
+            yardLine: clip.yardLine ?? "",
+            hash: clip.hash ?? "M",
+            yards: clip.yards ?? 0,
+            result: clip.result ?? "",
+            gainLoss: clip.gainLoss ?? "Gn",
+            defFront: clip.defFront ?? "",
+            defStr: clip.defStr ?? "",
+            coverage: clip.coverage ?? "",
+            blitz: clip.blitz ?? "",
+            game: clip.game ?? "",
+            playType: clip.playType ?? "Pass",
+            passResult: clip.passResult,
+            runDirection: clip.runDirection,
+            personnelO: clip.personnelO ?? "11",
+            personnelD: clip.personnelD ?? "Base",
+            isTouchdown: clip.isTouchdown ?? false,
+            isFirstDown: clip.isFirstDown ?? false,
+            isPenalty: clip.isPenalty ?? false,
+            penaltyType: clip.penaltyType,
+          }))
+        : []
+
+      datasetWithId = {
+        id: activeWatchItemId,
+        name: mediaItem?.name || item?.name || "Untitled Playlist",
+        plays: existingClips,
       }
-
-      // 2. New Tab Logic - Check if it's a playlist
-      const item = findItemById(folders, activeWatchItemId)
-      let datasetWithId: Dataset
-
-      if (item && item.type === "playlist") {
-        // Initialize EMPTY dataset for playlists
-        datasetWithId = {
-          id: activeWatchItemId,
-          name: item.name,
-          plays: [], // Empty by default for new playlists
-        }
-        // Stop playback for empty playlist
-        setVideoUrl(null)
-        setCurrentPlay(null)
-      } else {
-        // Use Mock data for games/other videos
-        const newDataset = getDatasetForItem(activeWatchItemId)
-        datasetWithId = {
-          ...newDataset,
-          id: activeWatchItemId,
-          name: item?.name || newDataset.name, // Use real name or fallback to mock name
-        }
-        // Pick a random video to start
-        playRandomVideo()
-        // Set first play as current
-        if (datasetWithId.plays.length > 0) {
-          setCurrentPlay(datasetWithId.plays[0])
-        }
+    } else {
+      const newDataset = getDatasetForItem(activeWatchItemId)
+      datasetWithId = {
+        ...newDataset,
+        id: activeWatchItemId,
+        name: item?.name || newDataset.name,
       }
+    }
 
-      // Make it active in Grid
-      setActiveTabId(datasetWithId.id)
+    // Batch all state updates together
+    setTabs((prev) => [datasetWithId, ...prev])
+    setActiveTabId(datasetWithId.id)
+    setPlayingTabId(datasetWithId.id)
 
-      // Also make it the Playing Tab (Auto-play behavior for new items)
-      setPlayingTabId(datasetWithId.id)
-
-      return [datasetWithId, ...prevTabs]
-    })
-  }, [activeWatchItemId, folders])
+    if (isPlaylist && datasetWithId.plays.length === 0) {
+      setVideoUrl(null)
+      setCurrentPlay(null)
+    } else {
+      setVideoUrl((prev) => getRandomVideoUrl(prev))
+      if (datasetWithId.plays.length > 0) {
+        setCurrentPlay(datasetWithId.plays[0])
+      }
+    }
+  }, [activeWatchItemId])
 
   useEffect(() => {
     if (!activeWatchItems || activeWatchItems.length === 0) return
 
-    setTabs((prevTabs) => {
-      const newTabs = [...prevTabs]
-      let firstNewId: string | null = null
-      let firstNewIsPlaylist = false
+    const currentTabs = tabsRef.current
+    const newDatasets: Dataset[] = []
+    let firstNewId: string | null = null
+    let firstNewIsPlaylist = false
 
-      activeWatchItems.forEach((itemId) => {
-        // Check if already exists
-        if (newTabs.some((t) => t.id === itemId)) return
+    for (const itemId of activeWatchItems) {
+      // Skip if already open
+      if (currentTabs.some((t) => t.id === itemId)) continue
 
-        const item = findItemById(folders, itemId)
-        let datasetWithId: Dataset
+      const folderItem = findItemById(foldersRef.current, itemId)
+      const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
+      const item = folderItem || rootItem || null
+      const mediaItem = !item ? getMediaItemRef.current(itemId) : null
+      const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
 
-        if (item && item.type === "playlist") {
-          datasetWithId = {
-            id: itemId,
-            name: item.name,
-            plays: [],
-          }
-          if (!firstNewId) firstNewIsPlaylist = true
-        } else {
-          const newDataset = getDatasetForItem(itemId)
-          datasetWithId = {
-            ...newDataset,
-            id: itemId,
-            name: item?.name || newDataset.name,
-          }
+      let datasetWithId: Dataset
+
+      if (isPlaylist) {
+        datasetWithId = {
+          id: itemId,
+          name: mediaItem?.name || item?.name || "Untitled Playlist",
+          plays: [],
         }
-
-        if (!firstNewId) firstNewId = itemId
-        newTabs.unshift(datasetWithId)
-      })
-
-      if (firstNewId) {
-        setActiveTabId(firstNewId)
-        setPlayingTabId(firstNewId)
-        
-        if (firstNewIsPlaylist) {
-          setVideoUrl(null)
-          setCurrentPlay(null)
-        } else {
-          playRandomVideo()
-          // Set current play for the first new tab
-          const firstDataset = newTabs.find((t) => t.id === firstNewId)
-          if (firstDataset && firstDataset.plays.length > 0) {
-            setCurrentPlay(firstDataset.plays[0])
-          }
+        if (!firstNewId) firstNewIsPlaylist = true
+      } else {
+        const newDataset = getDatasetForItem(itemId)
+        datasetWithId = {
+          ...newDataset,
+          id: itemId,
+          name: item?.name || newDataset.name,
         }
       }
 
-      return newTabs
-    })
-  }, [activeWatchItems, folders])
+      if (!firstNewId) firstNewId = itemId
+      newDatasets.push(datasetWithId)
+    }
+
+    if (newDatasets.length === 0) return
+
+    setTabs((prev) => [...newDatasets, ...prev])
+
+    if (firstNewId) {
+      setActiveTabId(firstNewId)
+      setPlayingTabId(firstNewId)
+
+      if (firstNewIsPlaylist) {
+        setVideoUrl(null)
+        setCurrentPlay(null)
+      } else {
+        setVideoUrl((prev) => getRandomVideoUrl(prev))
+        const firstDataset = newDatasets.find((t) => t.id === firstNewId)
+        if (firstDataset && firstDataset.plays.length > 0) {
+          setCurrentPlay(firstDataset.plays[0])
+        }
+      }
+    }
+  }, [activeWatchItems])
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)
@@ -233,13 +277,42 @@ export function WatchProvider({
   }
 
   const closeTab = (tabId: string) => {
-    setTabs((prev) => {
-      const newTabs = prev.filter((t) => t.id !== tabId)
-      if (activeTabId === tabId && newTabs.length > 0) {
-        setActiveTabId(newTabs[0].id)
+    const currentTabs = tabsRef.current
+    const closedIndex = currentTabs.findIndex((t) => t.id === tabId)
+    const newTabs = currentTabs.filter((t) => t.id !== tabId)
+    setTabs(newTabs)
+
+    // Clear the library-context watch ID so the item can be re-opened
+    if (activeWatchItemId === tabId) {
+      setWatchItem(null)
+    }
+
+    if (newTabs.length === 0) {
+      // Last tab closed -- clear everything
+      setActiveTabId(null)
+      setPlayingTabId(null)
+      setVideoUrl(null)
+      setCurrentPlay(null)
+    } else {
+      // Pick the next tab: prefer the one that was to the right, else the last one
+      const nextTab = newTabs[Math.min(closedIndex, newTabs.length - 1)]
+
+      if (activeTabId === tabId) {
+        setActiveTabId(nextTab.id)
       }
-      return newTabs
-    })
+
+      if (playingTabId === tabId) {
+        // Switch playback to the next tab
+        setPlayingTabId(nextTab.id)
+        if (nextTab.plays.length > 0) {
+          setVideoUrl((prev) => getRandomVideoUrl(prev))
+          setCurrentPlay(nextTab.plays[0])
+        } else {
+          setVideoUrl(null)
+          setCurrentPlay(null)
+        }
+      }
+    }
   }
 
   const seekToPlay = (play: PlayData) => {

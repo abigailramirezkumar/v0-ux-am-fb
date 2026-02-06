@@ -9,8 +9,14 @@ import { useLibraryContext } from "@/lib/library-context"
 import { LibraryBreadcrumbs } from "@/components/library-breadcrumbs"
 import { cn } from "@/lib/utils"
 import type { FolderData } from "@/components/folder"
+import type { ClipData } from "@/types/library"
 
-export function CreatePlaylistModal() {
+interface CreatePlaylistModalProps {
+  /** Pre-populate the new playlist with these clips (e.g. from "Save Selection as Playlist"). */
+  initialClips?: ClipData[]
+}
+
+export function CreatePlaylistModal({ initialClips }: CreatePlaylistModalProps = {}) {
   const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders } = useLibraryContext()
   const [playlistName, setPlaylistName] = useState("")
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
@@ -77,7 +83,7 @@ export function CreatePlaylistModal() {
 
   const handleCreate = () => {
     if (playlistName.trim()) {
-      createPlaylist(currentFolderId, playlistName.trim())
+      createPlaylist(currentFolderId, playlistName.trim(), initialClips)
       setPlaylistName("")
       setCurrentFolderId(null)
     }

@@ -121,7 +121,7 @@ function SidebarProvider({
               ...style,
             } as React.CSSProperties
           }
-          className={cn("px-2 py-1 flex flex-wrap gap-1.5", className)}
+          className={cn("flex min-h-svh w-full", className)}
           {...props}
         >
           {children}

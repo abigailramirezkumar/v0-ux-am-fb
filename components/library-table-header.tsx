@@ -73,7 +73,7 @@ export function LibraryTableHeader() {
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <div className="sticky top-0 z-10 flex items-center py-2 bg-background border-b border-border pt-1 min-w-fit">
+        <div className="sticky top-0 z-20 flex items-center py-2 bg-background border-b border-border pt-1 min-w-fit">
           <div className="flex items-center flex-shrink-0 pl-4">
             {columns.map((column, index) =>
               column.visible ? (

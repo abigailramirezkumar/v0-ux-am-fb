@@ -181,17 +181,21 @@ export function LibraryItem({
 
             {/* Icon/Thumbnail - fixed width */}
             <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
-              {isHovered && item.type === "video" ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onOpen?.(item.id)
-                  }}
-                  className="w-full h-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                  aria-label={`Play ${item.name}`}
-                >
-                  <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
-                </button>
+            {item.type === "playlist" ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <Icon name="list" size={14} className={cn(isSelected ? "text-white" : "text-foreground")} />
+              </div>
+            ) : isHovered && item.type === "video" ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpen?.(item.id)
+                }}
+                className="w-full h-full flex items-center justify-center hover:bg-black/10 transition-colors"
+                aria-label={`Play ${item.name}`}
+              >
+                <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
+              </button>
               ) : item.thumbnailUrl ? (
                 <img
                   src={item.thumbnailUrl || "/placeholder.svg"}
@@ -215,6 +219,11 @@ export function LibraryItem({
                 <TooltipContent>{item.name}</TooltipContent>
               </Tooltip>
               {isImported && <span className="text-xs text-green-600 font-medium">Imported</span>}
+              {item.type === "playlist" && typeof item.itemCount === "number" && (
+                <span className={cn("text-xs tabular-nums", isSelected ? "text-white/60" : "text-muted-foreground")}>
+                  {item.itemCount} {item.itemCount === 1 ? "clip" : "clips"}
+                </span>
+              )}
             </div>
           </div>
         )
@@ -386,9 +395,7 @@ export function LibraryItem({
                   ? "bg-[#0273e3]"
                   : isHovered
                     ? "bg-muted"
-                    : isAlternate
-                      ? "bg-muted/20"
-                      : "bg-background",
+                    : "bg-transparent",
               )}
             >
               {isImported ? (

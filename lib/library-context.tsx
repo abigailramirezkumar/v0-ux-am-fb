@@ -4,6 +4,9 @@ import type React from "react"
 import { createContext, useContext, useState, useEffect, useMemo } from "react"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
+import { useMediaItems } from "@/hooks/use-media-items"
+import type { ClipData, MediaItemData } from "@/types/library"
+import { copyClipsWithNewIds } from "@/types/library"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -755,8 +758,17 @@ interface LibraryContextType {
   setLayoutMode: (mode: "list" | "grid") => void
   openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string) => void
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => void
   clearPendingPlaylistItems: () => void
+
+  // --- Segregated Data/Structure model ---
+  mediaItems: MediaItemData[]
+  getMediaItemsByFolderId: (folderId: string | null) => MediaItemData[]
+  getMediaItem: (id: string) => MediaItemData | undefined
+  addClipsToPlaylist: (playlistId: string, clips: ClipData[]) => void
+  removeClipsFromPlaylist: (playlistId: string, clipIds: string[]) => void
+  deleteMediaItem: (itemId: string) => void
+  moveMediaItem: (itemId: string, newParentId: string | null) => void
 }
 
 export interface MoveItem {
@@ -795,6 +807,18 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
+
+  // --- Segregated Data/Structure hooks ---
+  const {
+    mediaItems,
+    createMediaItem,
+    addClipsToMediaItem,
+    removeClipsFromMediaItem,
+    moveMediaItem: moveMediaItemHook,
+    deleteMediaItem: deleteMediaItemHook,
+    getMediaItemsByFolderId,
+    getMediaItem,
+  } = useMediaItems()
 
   const [folders, setFolders] = useState<FolderData[]>(generateRamsLibrary())
   const [rootItems, setRootItems] = useState<LibraryItemData[]>([])
@@ -1371,24 +1395,40 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   }
   const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
 
-  const createPlaylist = (targetFolderId: string | null, name: string) => {
+  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
+    // Determine which clips to seed: explicit initialClips > pendingPlaylistItems (converted) > empty
+    const seedClips: ClipData[] = initialClips
+      ? initialClips
+      : pendingPlaylistItems.length > 0
+        ? pendingPlaylistItems.map((item, idx) => ({
+            id: `clip-${Date.now()}-${idx}`,
+            game: item.name,
+            duration: item.duration ? parseFloat(item.duration) : undefined,
+          } as ClipData))
+        : []
+
+    // Create via the flat media-items list (copy-on-add happens inside the hook)
+    const created = createMediaItem(name, targetFolderId, seedClips)
+
+    // Also insert a matching LibraryItemData into the folder/root tree so the
+    // existing folder UI continues to render it alongside static data.
     const newPlaylist: LibraryItemData = {
-      id: `playlist-${Date.now()}`,
+      id: created.id,
       name: name,
       type: "playlist",
-      createdDate: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      dateModified: new Date().toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }),
-      itemCount: pendingPlaylistItems.length,
+      createdDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      dateModified: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      itemCount: seedClips.length,
       thumbnailUrl: "/placeholder-logo.png",
       items: pendingPlaylistItems,
     }
 
     if (targetFolderId === null) {
-      setRootItems(prev => [...prev, newPlaylist])
+      setRootItems((prev) => [...prev, newPlaylist])
     } else {
-      setFolders(prev => {
+      setFolders((prev) => {
         const updateRecursive = (nodes: FolderData[]): FolderData[] => {
-          return nodes.map(node => {
+          return nodes.map((node) => {
             if (node.id === targetFolderId) {
               return { ...node, items: [...(node.items || []), newPlaylist] }
             }
@@ -1445,10 +1485,56 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         return [{ id: playlistId, name: playlistName, folderId: playlistFolderId }, ...filtered].slice(0, 5)
       })
     }
+  }
 
-    // Here you would actually add clips to the playlist
-    // For now, we just update the recent playlists tracking
-    console.log(`Added ${clipIds.length} clips to playlist ${playlistId}`)
+  // --- Clip-level helpers (delegate to useMediaItems) ---
+
+  /** Add clips to a playlist using Copy on Add (new unique IDs). */
+  const addClipsToPlaylist = (playlistId: string, clips: ClipData[]) => {
+    addClipsToMediaItem(playlistId, clips)
+
+    // Also update the itemCount on the legacy folder-tree representation
+    const updateCount = (items: LibraryItemData[]): LibraryItemData[] =>
+      items.map((item) =>
+        item.id === playlistId ? { ...item, itemCount: (item.itemCount ?? 0) + clips.length } : item,
+      )
+
+    setRootItems((prev) => updateCount(prev))
+    setFolders((prev) => {
+      const walk = (nodes: FolderData[]): FolderData[] =>
+        nodes.map((node) => ({
+          ...node,
+          items: node.items ? updateCount(node.items) : node.items,
+          children: node.children ? walk(node.children) : node.children,
+        }))
+      return walk(prev)
+    })
+  }
+
+  /** Remove clips from a playlist by id. */
+  const removeClipsFromPlaylist = (playlistId: string, clipIds: string[]) => {
+    removeClipsFromMediaItem(playlistId, clipIds)
+  }
+
+  /** Move a media item to a different folder. */
+  const moveMediaItem = (itemId: string, newParentId: string | null) => {
+    moveMediaItemHook(itemId, newParentId)
+  }
+
+  /** Delete a media item entirely. */
+  const deleteMediaItem = (itemId: string) => {
+    deleteMediaItemHook(itemId)
+    // Also remove from legacy folder tree / rootItems
+    setRootItems((prev) => prev.filter((item) => item.id !== itemId))
+    setFolders((prev) => {
+      const walk = (nodes: FolderData[]): FolderData[] =>
+        nodes.map((node) => ({
+          ...node,
+          items: node.items ? node.items.filter((item) => item.id !== itemId) : node.items,
+          children: node.children ? walk(node.children) : node.children,
+        }))
+      return walk(prev)
+    })
   }
 
   const handleSetViewMode = (mode: "folder" | "schedule") => {
@@ -1524,9 +1610,18 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setLayoutMode,
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
-        createPlaylist,
-        clearPendingPlaylistItems,
-      }}
+  createPlaylist,
+  clearPendingPlaylistItems,
+
+  // Segregated Data/Structure model
+  mediaItems,
+  getMediaItemsByFolderId,
+  getMediaItem,
+  addClipsToPlaylist,
+  removeClipsFromPlaylist,
+  deleteMediaItem,
+  moveMediaItem,
+  }}
     >
       {children}
     </LibraryContext.Provider>

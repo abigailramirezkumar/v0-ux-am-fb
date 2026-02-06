@@ -758,7 +758,7 @@ interface LibraryContextType {
   setLayoutMode: (mode: "list" | "grid") => void
   openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => void
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
   clearPendingPlaylistItems: () => void
 
   // --- Segregated Data/Structure model ---
@@ -1442,6 +1442,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       })
     }
     closeCreatePlaylistModal()
+    return created.id
   }
 
   const addToPlaylist = (playlistId: string, clipIds: string[]) => {

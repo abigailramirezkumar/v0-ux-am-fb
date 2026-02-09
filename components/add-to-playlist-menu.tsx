@@ -205,9 +205,44 @@ export function AddToPlaylistMenu() {
         <div className="p-2 border-t border-border">
           <button
             onClick={() => {
+              // Collect selected clips from the active dataset before closing
+              let clipsToPass: ClipData[] = []
+              if (activeDataset) {
+                const clipIds = Array.from(selectedPlayIds)
+                const selectedPlays = activeDataset.plays.filter((p) => clipIds.includes(p.id))
+                clipsToPass = selectedPlays.map((play) => ({
+                  id: play.id,
+                  playNumber: play.playNumber,
+                  odk: play.odk,
+                  quarter: play.quarter,
+                  down: play.down,
+                  distance: play.distance,
+                  yardLine: play.yardLine,
+                  hash: play.hash,
+                  yards: play.yards,
+                  result: play.result,
+                  gainLoss: play.gainLoss,
+                  defFront: play.defFront,
+                  defStr: play.defStr,
+                  coverage: play.coverage,
+                  blitz: play.blitz,
+                  game: play.game,
+                  playType: play.playType,
+                  passResult: play.passResult,
+                  runDirection: play.runDirection,
+                  personnelO: play.personnelO,
+                  personnelD: play.personnelD,
+                  isTouchdown: play.isTouchdown,
+                  isFirstDown: play.isFirstDown,
+                  isPenalty: play.isPenalty,
+                  penaltyType: play.penaltyType,
+                }))
+              }
+
+              clearPlaySelection()
               setOpen(false)
               setSearchQuery("")
-              openCreatePlaylistModal()
+              openCreatePlaylistModal(undefined, clipsToPass.length > 0 ? clipsToPass : undefined)
             }}
             className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left text-primary"
           >

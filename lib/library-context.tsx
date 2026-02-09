@@ -760,7 +760,8 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
-  openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[]) => void
+  onPlaylistCreatedCallback: ((createdId: string) => void) | null
+  openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => void
   closeCreatePlaylistModal: () => void
   createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
   clearPendingPlaylistItems: () => void
@@ -811,6 +812,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
   const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
+  const [onPlaylistCreatedCallback, setOnPlaylistCreatedCallback] = useState<((createdId: string) => void) | null>(null)
   const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
@@ -1422,19 +1424,22 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
-  const openCreatePlaylistModal = (initialItems?: LibraryItemData[], initialClips?: ClipData[]) => {
+  const openCreatePlaylistModal = (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => {
     setPendingPlaylistItems(initialItems || [])
     setPendingPlaylistClips(initialClips || [])
+    setOnPlaylistCreatedCallback(() => onCreated || null)
     setIsCreatePlaylistModalOpen(true)
   }
   const closeCreatePlaylistModal = () => {
     setIsCreatePlaylistModalOpen(false)
     setPendingPlaylistItems([])
     setPendingPlaylistClips([])
+    setOnPlaylistCreatedCallback(null)
   }
   const clearPendingPlaylistItems = () => {
     setPendingPlaylistItems([])
     setPendingPlaylistClips([])
+    setOnPlaylistCreatedCallback(null)
   }
 
   const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
@@ -1657,6 +1662,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openPermissionsModal,
         closePermissionsModal,
         setLayoutMode,
+        onPlaylistCreatedCallback,
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
   createPlaylist,

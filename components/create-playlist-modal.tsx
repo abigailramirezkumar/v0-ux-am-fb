@@ -15,7 +15,7 @@ import { ToastAction } from "@/components/ui/toast"
 import { useRouter } from "next/navigation"
 
 export function CreatePlaylistModal() {
-  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, setWatchItem, pendingPlaylistClips } = useLibraryContext()
+  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, setWatchItem, pendingPlaylistClips, onPlaylistCreatedCallback } = useLibraryContext()
   const { toast } = useToast()
   const router = useRouter()
   const [playlistName, setPlaylistName] = useState("")
@@ -84,24 +84,33 @@ export function CreatePlaylistModal() {
   const handleCreate = () => {
     if (playlistName.trim()) {
       const clipsToSave = pendingPlaylistClips.length > 0 ? pendingPlaylistClips : undefined
+      const callback = onPlaylistCreatedCallback
       const createdId = createPlaylist(currentFolderId, playlistName.trim(), clipsToSave)
       setPlaylistName("")
       setCurrentFolderId(null)
-      toast({
-        description: "New playlist created.",
-        action: (
-          <ToastAction
-            altText="Open Playlist"
-            onClick={() => {
-              setWatchItem(createdId)
-              router.push("/watch")
-            }}
-            className="h-7 px-2 text-xs"
-          >
-            Open Playlist
-          </ToastAction>
-        ),
-      })
+
+      if (callback) {
+        // Unsaved-preview scenario: replace the unsaved tab with the saved playlist
+        callback(createdId)
+        toast({ description: "New playlist created." })
+      } else {
+        // Normal scenario: show toast with "Open Playlist" action
+        toast({
+          description: "New playlist created.",
+          action: (
+            <ToastAction
+              altText="Open Playlist"
+              onClick={() => {
+                setWatchItem(createdId)
+                router.push("/watch")
+              }}
+              className="h-7 px-2 text-xs"
+            >
+              Open Playlist
+            </ToastAction>
+          ),
+        })
+      }
     }
   }
 

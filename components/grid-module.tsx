@@ -33,7 +33,8 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
     selectedPlayIds,
     togglePlaySelection,
     selectAllPlays,
-    clearPlaySelection
+    clearPlaySelection,
+    replaceUnsavedTab
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
 
@@ -109,7 +110,15 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
       penaltyType: play.penaltyType,
     }))
 
-    openCreatePlaylistModal(undefined, clips)
+    if (activeDataset.isUnsaved) {
+      // When saving from an unsaved preview, pass a callback that replaces
+      // the unsaved tab with the newly created saved playlist.
+      openCreatePlaylistModal(undefined, clips, (createdId: string) => {
+        replaceUnsavedTab(createdId)
+      })
+    } else {
+      openCreatePlaylistModal(undefined, clips)
+    }
   }
 
   if (!activeDataset) {

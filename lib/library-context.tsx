@@ -748,6 +748,7 @@ interface LibraryContextType {
   setExpandedFolders: (ids: Set<string>) => void
   setCurrentFolderId: (id: string | null) => void
   setBreadcrumbs: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>
+  navigateToFolder: (folderId: string | null) => void
   copyFolder: (id: string, mode: "full" | "structure") => void
   pasteFolder: (targetId: string) => void
   setFolderColor: (folderId: string, color: string | null) => void
@@ -833,6 +834,41 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
+
+  // Build the breadcrumb trail for a given folder by walking the folder tree
+  const buildBreadcrumbsFromFolders = (folderId: string, folderTree: FolderData[]): Array<{ id: string; name: string }> => {
+    const path: Array<{ id: string; name: string }> = []
+    const findPath = (
+      items: FolderData[],
+      targetId: string,
+      currentPath: Array<{ id: string; name: string }>,
+    ): boolean => {
+      for (const folder of items) {
+        const newPath = [...currentPath, { id: folder.id, name: folder.name }]
+        if (folder.id === targetId) {
+          path.push(...newPath)
+          return true
+        }
+        if (folder.children && findPath(folder.children, targetId, newPath)) {
+          return true
+        }
+      }
+      return false
+    }
+    findPath(folderTree, folderId, [])
+    return path
+  }
+
+  const navigateToFolder = (folderId: string | null) => {
+    if (folderId === null) {
+      setCurrentFolderId(null)
+      setBreadcrumbs([])
+    } else {
+      setCurrentFolderId(folderId)
+      setBreadcrumbs(buildBreadcrumbsFromFolders(folderId, folders))
+    }
+  }
+
   const [viewMode, setViewModeState] = useState<"folder" | "schedule">("folder")
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
@@ -1609,6 +1645,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setExpandedFolders,
         setCurrentFolderId,
         setBreadcrumbs,
+        navigateToFolder,
         copyFolder,
         pasteFolder,
         setFolderColor,

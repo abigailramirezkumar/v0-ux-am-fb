@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 export function GlobalSearch() {
   const router = useRouter()
   const { query, setQuery, results } = useGlobalSearch()
-  const { setCurrentFolderId, setWatchItem } = useLibraryContext()
+  const { navigateToFolder, setWatchItem } = useLibraryContext()
   const [open, setOpen] = useState(false)
 
   const hasResults = results.folders.length > 0 || results.items.length > 0 || results.clips.length > 0
@@ -74,7 +74,7 @@ export function GlobalSearch() {
                     key={folder.id}
                     value={folder.name}
                     onSelect={() => {
-                      setCurrentFolderId(folder.id)
+                      navigateToFolder(folder.id)
                       router.push('/library')
                       setOpen(false)
                       setQuery("")

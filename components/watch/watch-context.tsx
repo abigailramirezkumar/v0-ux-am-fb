@@ -78,7 +78,7 @@ export function WatchProvider({
   initialTabs?: Dataset[] 
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem, mediaItems } = useLibraryContext()
 
   // Stable refs so useEffects don't re-fire when these change
   const foldersRef = useRef(folders)
@@ -266,6 +266,54 @@ export function WatchProvider({
       }
     }
   }, [activeWatchItems])
+
+  // Keep open playlist tabs in sync with the mediaItems store so that
+  // clips added via "Add to Playlist" are reflected in the Grid Module.
+  useEffect(() => {
+    setTabs((prev) => {
+      let changed = false
+      const next = prev.map((tab) => {
+        const mi = mediaItems.find((m) => m.id === tab.id)
+        if (!mi) return tab // not a media-item-backed playlist
+
+        const newPlays: PlayData[] = mi.clips.map((clip, idx) => ({
+          id: clip.id,
+          playNumber: clip.playNumber ?? idx + 1,
+          odk: clip.odk ?? "O",
+          quarter: clip.quarter ?? 1,
+          down: clip.down ?? 1,
+          distance: clip.distance ?? 10,
+          yardLine: clip.yardLine ?? "",
+          hash: clip.hash ?? "M",
+          yards: clip.yards ?? 0,
+          result: clip.result ?? "",
+          gainLoss: clip.gainLoss ?? "Gn",
+          defFront: clip.defFront ?? "",
+          defStr: clip.defStr ?? "",
+          coverage: clip.coverage ?? "",
+          blitz: clip.blitz ?? "",
+          game: clip.game ?? "",
+          playType: clip.playType ?? "Pass",
+          passResult: clip.passResult,
+          runDirection: clip.runDirection,
+          personnelO: clip.personnelO ?? "11",
+          personnelD: clip.personnelD ?? "Base",
+          isTouchdown: clip.isTouchdown ?? false,
+          isFirstDown: clip.isFirstDown ?? false,
+          isPenalty: clip.isPenalty ?? false,
+          penaltyType: clip.penaltyType,
+        }))
+
+        // Only update if clip count actually changed
+        if (newPlays.length !== tab.plays.length) {
+          changed = true
+          return { ...tab, plays: newPlays, name: mi.name }
+        }
+        return tab
+      })
+      return changed ? next : prev
+    })
+  }, [mediaItems])
 
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)

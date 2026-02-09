@@ -15,12 +15,17 @@ import { cn } from "@/lib/utils"
 import type { FolderData } from "@/components/folder"
 import type { LibraryItemData } from "@/components/library-item"
 import type { ClipData } from "@/types/library"
+import { useToast } from "@/hooks/use-toast"
+import { ToastAction } from "@/components/ui/toast"
+import { useRouter } from "next/navigation"
 
 export function AddToPlaylistMenu() {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist, openCreatePlaylistModal } = useLibraryContext()
+  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist, openCreatePlaylistModal, setWatchItem } = useLibraryContext()
   const { selectedPlayIds, clearPlaySelection, activeDataset } = useWatchContext()
+  const { toast } = useToast()
+  const router = useRouter()
 
   // Gather all playlists from folders and root items
   const allPlaylists = useMemo(() => {
@@ -107,6 +112,24 @@ export function AddToPlaylistMenu() {
 
     // Also track in recent playlists via legacy function
     addToPlaylist(playlistId, clipIds)
+
+    const clipCount = clipIds.length
+    toast({
+      description: `${clipCount} clip${clipCount !== 1 ? "s" : ""} added to playlist.`,
+      action: (
+        <ToastAction
+          altText="View Playlist"
+          onClick={() => {
+            setWatchItem(playlistId)
+            router.push("/watch")
+          }}
+          className="h-7 px-2 text-xs"
+        >
+          View Playlist
+        </ToastAction>
+      ),
+    })
+
     clearPlaySelection()
     setOpen(false)
     setSearchQuery("")

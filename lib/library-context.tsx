@@ -727,6 +727,9 @@ interface LibraryContextType {
   layoutMode: "list" | "grid"
   isCreatePlaylistModalOpen: boolean
   pendingPlaylistItems: LibraryItemData[]
+  pendingPlaylistClips: ClipData[]
+  pendingPreviewClips: ClipData[]
+  setPendingPreviewClips: (clips: ClipData[]) => void
   recentPlaylists: RecentPlaylist[]
   addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
@@ -745,6 +748,7 @@ interface LibraryContextType {
   setExpandedFolders: (ids: Set<string>) => void
   setCurrentFolderId: (id: string | null) => void
   setBreadcrumbs: React.Dispatch<React.SetStateAction<Array<{ id: string; name: string }>>>
+  navigateToFolder: (folderId: string | null) => void
   copyFolder: (id: string, mode: "full" | "structure") => void
   pasteFolder: (targetId: string) => void
   setFolderColor: (folderId: string, color: string | null) => void
@@ -756,9 +760,10 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
-  openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
+  onPlaylistCreatedCallback: ((createdId: string) => void) | null
+  openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => void
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
   clearPendingPlaylistItems: () => void
 
   // --- Segregated Data/Structure model ---
@@ -806,6 +811,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
+  const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
+  const [onPlaylistCreatedCallback, setOnPlaylistCreatedCallback] = useState<((createdId: string) => void) | null>(null)
+  const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   // --- Segregated Data/Structure hooks ---
@@ -828,6 +836,41 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([])
+
+  // Build the breadcrumb trail for a given folder by walking the folder tree
+  const buildBreadcrumbsFromFolders = (folderId: string, folderTree: FolderData[]): Array<{ id: string; name: string }> => {
+    const path: Array<{ id: string; name: string }> = []
+    const findPath = (
+      items: FolderData[],
+      targetId: string,
+      currentPath: Array<{ id: string; name: string }>,
+    ): boolean => {
+      for (const folder of items) {
+        const newPath = [...currentPath, { id: folder.id, name: folder.name }]
+        if (folder.id === targetId) {
+          path.push(...newPath)
+          return true
+        }
+        if (folder.children && findPath(folder.children, targetId, newPath)) {
+          return true
+        }
+      }
+      return false
+    }
+    findPath(folderTree, folderId, [])
+    return path
+  }
+
+  const navigateToFolder = (folderId: string | null) => {
+    if (folderId === null) {
+      setCurrentFolderId(null)
+      setBreadcrumbs([])
+    } else {
+      setCurrentFolderId(folderId)
+      setBreadcrumbs(buildBreadcrumbsFromFolders(folderId, folders))
+    }
+  }
+
   const [viewMode, setViewModeState] = useState<"folder" | "schedule">("folder")
 
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false)
@@ -1381,31 +1424,37 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
-  const openCreatePlaylistModal = (initialItems?: LibraryItemData[]) => {
-    if (initialItems) {
-      setPendingPlaylistItems(initialItems)
-    } else {
-      setPendingPlaylistItems([])
-    }
+  const openCreatePlaylistModal = (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => {
+    setPendingPlaylistItems(initialItems || [])
+    setPendingPlaylistClips(initialClips || [])
+    setOnPlaylistCreatedCallback(() => onCreated || null)
     setIsCreatePlaylistModalOpen(true)
   }
   const closeCreatePlaylistModal = () => {
     setIsCreatePlaylistModalOpen(false)
     setPendingPlaylistItems([])
+    setPendingPlaylistClips([])
+    setOnPlaylistCreatedCallback(null)
   }
-  const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
+  const clearPendingPlaylistItems = () => {
+    setPendingPlaylistItems([])
+    setPendingPlaylistClips([])
+    setOnPlaylistCreatedCallback(null)
+  }
 
   const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
-    // Determine which clips to seed: explicit initialClips > pendingPlaylistItems (converted) > empty
+    // Determine which clips to seed: explicit initialClips > pendingPlaylistClips > pendingPlaylistItems (converted) > empty
     const seedClips: ClipData[] = initialClips
       ? initialClips
-      : pendingPlaylistItems.length > 0
-        ? pendingPlaylistItems.map((item, idx) => ({
-            id: `clip-${Date.now()}-${idx}`,
-            game: item.name,
-            duration: item.duration ? parseFloat(item.duration) : undefined,
-          } as ClipData))
-        : []
+      : pendingPlaylistClips.length > 0
+        ? pendingPlaylistClips
+        : pendingPlaylistItems.length > 0
+          ? pendingPlaylistItems.map((item, idx) => ({
+              id: `clip-${Date.now()}-${idx}`,
+              game: item.name,
+              duration: item.duration ? parseFloat(item.duration) : undefined,
+            } as ClipData))
+          : []
 
     // Create via the flat media-items list (copy-on-add happens inside the hook)
     const created = createMediaItem(name, targetFolderId, seedClips)
@@ -1442,6 +1491,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       })
     }
     closeCreatePlaylistModal()
+    return created.id
   }
 
   const addToPlaylist = (playlistId: string, clipIds: string[]) => {
@@ -1579,6 +1629,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         layoutMode,
         isCreatePlaylistModalOpen,
         pendingPlaylistItems,
+        pendingPlaylistClips,
+        pendingPreviewClips,
+        setPendingPreviewClips,
         recentPlaylists,
         addToPlaylist,
         setSort,
@@ -1597,6 +1650,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         setExpandedFolders,
         setCurrentFolderId,
         setBreadcrumbs,
+        navigateToFolder,
         copyFolder,
         pasteFolder,
         setFolderColor,
@@ -1608,6 +1662,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         openPermissionsModal,
         closePermissionsModal,
         setLayoutMode,
+        onPlaylistCreatedCallback,
         openCreatePlaylistModal,
         closeCreatePlaylistModal,
   createPlaylist,

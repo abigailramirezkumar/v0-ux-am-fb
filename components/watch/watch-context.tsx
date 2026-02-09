@@ -43,6 +43,10 @@ interface WatchContextType {
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
 
+  // Unsaved preview
+  previewClips: (clips: PlayData[]) => void
+  replaceUnsavedTab: (savedId: string) => void
+
   // Module Visibility
   visibleModules: {
     library: boolean
@@ -78,7 +82,7 @@ export function WatchProvider({
   initialTabs?: Dataset[] 
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem, mediaItems, pendingPreviewClips, setPendingPreviewClips } = useLibraryContext()
 
   // Stable refs so useEffects don't re-fire when these change
   const foldersRef = useRef(folders)
@@ -267,6 +271,140 @@ export function WatchProvider({
     }
   }, [activeWatchItems])
 
+  // On mount, if there are pending preview clips from the Explore page,
+  // create an unsaved tab with those clips and collapse the library.
+  const pendingPreviewClipsRef = useRef(pendingPreviewClips)
+  pendingPreviewClipsRef.current = pendingPreviewClips
+  const hasMountedPreview = useRef(false)
+
+  useEffect(() => {
+    if (hasMountedPreview.current) return
+    const clips = pendingPreviewClipsRef.current
+    if (clips.length === 0) return
+    hasMountedPreview.current = true
+
+    const plays: PlayData[] = clips.map((clip, idx) => ({
+      id: clip.id,
+      playNumber: clip.playNumber ?? idx + 1,
+      odk: clip.odk ?? "O",
+      quarter: clip.quarter ?? 1,
+      down: clip.down ?? 1,
+      distance: clip.distance ?? 10,
+      yardLine: clip.yardLine ?? "",
+      hash: clip.hash ?? "M",
+      yards: clip.yards ?? 0,
+      result: clip.result ?? "",
+      gainLoss: clip.gainLoss ?? "Gn",
+      defFront: clip.defFront ?? "",
+      defStr: clip.defStr ?? "",
+      coverage: clip.coverage ?? "",
+      blitz: clip.blitz ?? "",
+      game: clip.game ?? "",
+      playType: clip.playType ?? "Pass",
+      passResult: clip.passResult,
+      runDirection: clip.runDirection,
+      personnelO: clip.personnelO ?? "11",
+      personnelD: clip.personnelD ?? "Base",
+      isTouchdown: clip.isTouchdown ?? false,
+      isFirstDown: clip.isFirstDown ?? false,
+      isPenalty: clip.isPenalty ?? false,
+      penaltyType: clip.penaltyType,
+    }))
+
+    const unsavedTab: Dataset = {
+      id: `unsaved-${Date.now()}`,
+      name: "Unsaved Playlist",
+      plays,
+      isUnsaved: true,
+    }
+    setTabs((prev) => [unsavedTab, ...prev])
+    setActiveTabId(unsavedTab.id)
+    setPlayingTabId(unsavedTab.id)
+    if (plays.length > 0) {
+      setVideoUrl((prev) => getRandomVideoUrl(prev))
+      setCurrentPlay(plays[0])
+    }
+    setVisibleModules((prev) => ({ ...prev, library: false }))
+    // Clear pending so it doesn't re-trigger
+    setPendingPreviewClips([])
+  }, [setPendingPreviewClips])
+
+  // Keep open playlist tabs in sync with the mediaItems store so that
+  // clips added via "Add to Playlist" are reflected in the Grid Module.
+  useEffect(() => {
+    setTabs((prev) => {
+      let changed = false
+      const next = prev.map((tab) => {
+        const mi = mediaItems.find((m) => m.id === tab.id)
+        if (!mi) return tab // not a media-item-backed playlist
+
+        const newPlays: PlayData[] = mi.clips.map((clip, idx) => ({
+          id: clip.id,
+          playNumber: clip.playNumber ?? idx + 1,
+          odk: clip.odk ?? "O",
+          quarter: clip.quarter ?? 1,
+          down: clip.down ?? 1,
+          distance: clip.distance ?? 10,
+          yardLine: clip.yardLine ?? "",
+          hash: clip.hash ?? "M",
+          yards: clip.yards ?? 0,
+          result: clip.result ?? "",
+          gainLoss: clip.gainLoss ?? "Gn",
+          defFront: clip.defFront ?? "",
+          defStr: clip.defStr ?? "",
+          coverage: clip.coverage ?? "",
+          blitz: clip.blitz ?? "",
+          game: clip.game ?? "",
+          playType: clip.playType ?? "Pass",
+          passResult: clip.passResult,
+          runDirection: clip.runDirection,
+          personnelO: clip.personnelO ?? "11",
+          personnelD: clip.personnelD ?? "Base",
+          isTouchdown: clip.isTouchdown ?? false,
+          isFirstDown: clip.isFirstDown ?? false,
+          isPenalty: clip.isPenalty ?? false,
+          penaltyType: clip.penaltyType,
+        }))
+
+        // Only update if clip count actually changed
+        if (newPlays.length !== tab.plays.length) {
+          changed = true
+          return { ...tab, plays: newPlays, name: mi.name }
+        }
+        return tab
+      })
+      return changed ? next : prev
+    })
+  }, [mediaItems])
+
+  const previewClips = (clips: PlayData[]) => {
+    const unsavedTab: Dataset = {
+      id: `unsaved-${Date.now()}`,
+      name: "Unsaved Playlist",
+      plays: clips,
+      isUnsaved: true,
+    }
+    setTabs((prev) => [unsavedTab, ...prev])
+    setActiveTabId(unsavedTab.id)
+    setPlayingTabId(unsavedTab.id)
+    if (clips.length > 0) {
+      setVideoUrl((prev) => getRandomVideoUrl(prev))
+      setCurrentPlay(clips[0])
+    }
+    // Collapse library module for preview
+    setVisibleModules((prev) => ({ ...prev, library: false }))
+  }
+
+  const replaceUnsavedTab = (savedId: string) => {
+    setTabs((prev) => {
+      const unsavedIdx = prev.findIndex((t) => t.isUnsaved)
+      if (unsavedIdx === -1) return prev
+      return prev.filter((t) => !t.isUnsaved)
+    })
+    // Open the saved playlist as a normal tab via the library context
+    setWatchItem(savedId)
+  }
+
   const activateTab = (tabId: string) => {
     setActiveTabId(tabId)
   }
@@ -376,6 +514,8 @@ export function WatchProvider({
         playTab,
         seekToPlay,
         setVideoUrl,
+        previewClips,
+        replaceUnsavedTab,
         visibleModules,
         toggleModule,
       }}

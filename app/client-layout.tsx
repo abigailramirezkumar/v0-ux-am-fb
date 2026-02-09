@@ -13,6 +13,8 @@ import { DensityProvider } from "@/lib/density-context"
 import { LibraryProvider } from "@/lib/library-context"
 
 import { WatchProvider } from "@/components/watch/watch-context"
+import { CreatePlaylistModal } from "@/components/create-playlist-modal"
+import { Toaster } from "@/components/ui/toaster"
 
 function ClientLayoutInner({ 
   isWatchPage, 
@@ -73,6 +75,8 @@ export default function ClientLayout({
                 <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
                   {children}
                 </ClientLayoutInner>
+                <CreatePlaylistModal />
+                <Toaster />
                 <Analytics />
               </SidebarProvider>
             </WatchProvider>

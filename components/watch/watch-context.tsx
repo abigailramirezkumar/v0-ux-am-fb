@@ -144,7 +144,9 @@ export function WatchProvider({
     const folderItem = findItemById(foldersRef.current, activeWatchItemId)
     const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === activeWatchItemId) : null
     const item = folderItem || rootItem || null
-    const mediaItem = !item ? getMediaItemRef.current(activeWatchItemId) : null
+    // Always look up the mediaItem -- the folder-tree item has the name but
+    // only the mediaItem stores actual clips.
+    const mediaItem = getMediaItemRef.current(activeWatchItemId)
 
     const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
     let datasetWithId: Dataset
@@ -225,18 +227,49 @@ export function WatchProvider({
       const folderItem = findItemById(foldersRef.current, itemId)
       const rootItem = !folderItem ? rootItemsRef.current.find((i) => i.id === itemId) : null
       const item = folderItem || rootItem || null
-      const mediaItem = !item ? getMediaItemRef.current(itemId) : null
+      // Always look up mediaItem -- it stores the actual clips
+      const mediaItem = getMediaItemRef.current(itemId)
       const isPlaylist = (item && item.type === "playlist") || (mediaItem && mediaItem.type === "playlist")
 
       let datasetWithId: Dataset
 
       if (isPlaylist) {
+        const existingClips: PlayData[] = mediaItem
+          ? mediaItem.clips.map((clip, idx) => ({
+              id: clip.id,
+              playNumber: clip.playNumber ?? idx + 1,
+              odk: clip.odk ?? "O",
+              quarter: clip.quarter ?? 1,
+              down: clip.down ?? 1,
+              distance: clip.distance ?? 10,
+              yardLine: clip.yardLine ?? "",
+              hash: clip.hash ?? "M",
+              yards: clip.yards ?? 0,
+              result: clip.result ?? "",
+              gainLoss: clip.gainLoss ?? "Gn",
+              defFront: clip.defFront ?? "",
+              defStr: clip.defStr ?? "",
+              coverage: clip.coverage ?? "",
+              blitz: clip.blitz ?? "",
+              game: clip.game ?? "",
+              playType: clip.playType ?? "Pass",
+              passResult: clip.passResult,
+              runDirection: clip.runDirection,
+              personnelO: clip.personnelO ?? "11",
+              personnelD: clip.personnelD ?? "Base",
+              isTouchdown: clip.isTouchdown ?? false,
+              isFirstDown: clip.isFirstDown ?? false,
+              isPenalty: clip.isPenalty ?? false,
+              penaltyType: clip.penaltyType,
+            }))
+          : []
+
         datasetWithId = {
           id: itemId,
           name: mediaItem?.name || item?.name || "Untitled Playlist",
-          plays: [],
+          plays: existingClips,
         }
-        if (!firstNewId) firstNewIsPlaylist = true
+        if (!firstNewId) firstNewIsPlaylist = existingClips.length === 0
       } else {
         const newDataset = getDatasetForItem(itemId)
         datasetWithId = {
@@ -258,12 +291,12 @@ export function WatchProvider({
       setActiveTabId(firstNewId)
       setPlayingTabId(firstNewId)
 
-      if (firstNewIsPlaylist) {
+      const firstDataset = newDatasets.find((t) => t.id === firstNewId)
+      if (firstNewIsPlaylist && (!firstDataset || firstDataset.plays.length === 0)) {
         setVideoUrl(null)
         setCurrentPlay(null)
       } else {
         setVideoUrl((prev) => getRandomVideoUrl(prev))
-        const firstDataset = newDatasets.find((t) => t.id === firstNewId)
         if (firstDataset && firstDataset.plays.length > 0) {
           setCurrentPlay(firstDataset.plays[0])
         }
@@ -366,8 +399,12 @@ export function WatchProvider({
           penaltyType: clip.penaltyType,
         }))
 
-        // Only update if clip count actually changed
-        if (newPlays.length !== tab.plays.length) {
+        // Update if clip count changed OR the clip IDs differ (e.g. new clips added)
+        const idsChanged =
+          newPlays.length !== tab.plays.length ||
+          newPlays.some((p, i) => p.id !== tab.plays[i]?.id)
+
+        if (idsChanged || mi.name !== tab.name) {
           changed = true
           return { ...tab, plays: newPlays, name: mi.name }
         }

@@ -14,13 +14,8 @@ import { useToast } from "@/hooks/use-toast"
 import { ToastAction } from "@/components/ui/toast"
 import { useRouter } from "next/navigation"
 
-interface CreatePlaylistModalProps {
-  /** Pre-populate the new playlist with these clips (e.g. from "Save Selection as Playlist"). */
-  initialClips?: ClipData[]
-}
-
-export function CreatePlaylistModal({ initialClips }: CreatePlaylistModalProps = {}) {
-  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, setWatchItem } = useLibraryContext()
+export function CreatePlaylistModal() {
+  const { isCreatePlaylistModalOpen, closeCreatePlaylistModal, createPlaylist, folders, setWatchItem, pendingPlaylistClips } = useLibraryContext()
   const { toast } = useToast()
   const router = useRouter()
   const [playlistName, setPlaylistName] = useState("")
@@ -88,7 +83,8 @@ export function CreatePlaylistModal({ initialClips }: CreatePlaylistModalProps =
 
   const handleCreate = () => {
     if (playlistName.trim()) {
-      const createdId = createPlaylist(currentFolderId, playlistName.trim(), initialClips)
+      const clipsToSave = pendingPlaylistClips.length > 0 ? pendingPlaylistClips : undefined
+      const createdId = createPlaylist(currentFolderId, playlistName.trim(), clipsToSave)
       setPlaylistName("")
       setCurrentFolderId(null)
       toast({

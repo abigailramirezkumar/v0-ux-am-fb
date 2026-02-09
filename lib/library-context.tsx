@@ -727,6 +727,9 @@ interface LibraryContextType {
   layoutMode: "list" | "grid"
   isCreatePlaylistModalOpen: boolean
   pendingPlaylistItems: LibraryItemData[]
+  pendingPlaylistClips: ClipData[]
+  pendingPreviewClips: ClipData[]
+  setPendingPreviewClips: (clips: ClipData[]) => void
   recentPlaylists: RecentPlaylist[]
   addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
@@ -756,7 +759,7 @@ interface LibraryContextType {
   openPermissionsModal: (id: string) => void
   closePermissionsModal: () => void
   setLayoutMode: (mode: "list" | "grid") => void
-  openCreatePlaylistModal: (initialItems?: LibraryItemData[]) => void
+  openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[]) => void
   closeCreatePlaylistModal: () => void
   createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
   clearPendingPlaylistItems: () => void
@@ -806,6 +809,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [folderColors, setFolderColors] = useState<Record<string, string | null>>({})
   const [layoutMode, setLayoutMode] = useState<"list" | "grid">("list")
   const [pendingPlaylistItems, setPendingPlaylistItems] = useState<LibraryItemData[]>([])
+  const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
+  const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   // --- Segregated Data/Structure hooks ---
@@ -1381,31 +1386,34 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setItemForPermissions(null)
   }
 
-  const openCreatePlaylistModal = (initialItems?: LibraryItemData[]) => {
-    if (initialItems) {
-      setPendingPlaylistItems(initialItems)
-    } else {
-      setPendingPlaylistItems([])
-    }
+  const openCreatePlaylistModal = (initialItems?: LibraryItemData[], initialClips?: ClipData[]) => {
+    setPendingPlaylistItems(initialItems || [])
+    setPendingPlaylistClips(initialClips || [])
     setIsCreatePlaylistModalOpen(true)
   }
   const closeCreatePlaylistModal = () => {
     setIsCreatePlaylistModalOpen(false)
     setPendingPlaylistItems([])
+    setPendingPlaylistClips([])
   }
-  const clearPendingPlaylistItems = () => setPendingPlaylistItems([])
+  const clearPendingPlaylistItems = () => {
+    setPendingPlaylistItems([])
+    setPendingPlaylistClips([])
+  }
 
   const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
-    // Determine which clips to seed: explicit initialClips > pendingPlaylistItems (converted) > empty
+    // Determine which clips to seed: explicit initialClips > pendingPlaylistClips > pendingPlaylistItems (converted) > empty
     const seedClips: ClipData[] = initialClips
       ? initialClips
-      : pendingPlaylistItems.length > 0
-        ? pendingPlaylistItems.map((item, idx) => ({
-            id: `clip-${Date.now()}-${idx}`,
-            game: item.name,
-            duration: item.duration ? parseFloat(item.duration) : undefined,
-          } as ClipData))
-        : []
+      : pendingPlaylistClips.length > 0
+        ? pendingPlaylistClips
+        : pendingPlaylistItems.length > 0
+          ? pendingPlaylistItems.map((item, idx) => ({
+              id: `clip-${Date.now()}-${idx}`,
+              game: item.name,
+              duration: item.duration ? parseFloat(item.duration) : undefined,
+            } as ClipData))
+          : []
 
     // Create via the flat media-items list (copy-on-add happens inside the hook)
     const created = createMediaItem(name, targetFolderId, seedClips)
@@ -1580,6 +1588,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         layoutMode,
         isCreatePlaylistModalOpen,
         pendingPlaylistItems,
+        pendingPlaylistClips,
+        pendingPreviewClips,
+        setPendingPreviewClips,
         recentPlaylists,
         addToPlaylist,
         setSort,

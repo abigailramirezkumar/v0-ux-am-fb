@@ -1,12 +1,68 @@
 "use client"
 
-import { WatchProvider } from "@/components/watch/watch-context"
+import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import { useExploreFilters } from "@/hooks/use-explore-filters"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import { useLibraryContext } from "@/lib/library-context"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Icon } from "@/components/icon"
+import type { ClipData } from "@/types/library"
+
+function PreviewClipsButton() {
+  const { selectedPlayIds, activeDataset, clearPlaySelection } = useWatchContext()
+  const { setPendingPreviewClips } = useLibraryContext()
+  const router = useRouter()
+
+  if (selectedPlayIds.size === 0 || !activeDataset) return null
+
+  const handlePreview = () => {
+    // Collect the selected plays as ClipData
+    const selectedPlays = activeDataset.plays.filter((p) => selectedPlayIds.has(p.id))
+    const clips: ClipData[] = selectedPlays.map((play) => ({
+      id: play.id,
+      playNumber: play.playNumber,
+      odk: play.odk,
+      quarter: play.quarter,
+      down: play.down,
+      distance: play.distance,
+      yardLine: play.yardLine,
+      hash: play.hash,
+      yards: play.yards,
+      result: play.result,
+      gainLoss: play.gainLoss,
+      defFront: play.defFront,
+      defStr: play.defStr,
+      coverage: play.coverage,
+      blitz: play.blitz,
+      game: play.game,
+      playType: play.playType,
+      passResult: play.passResult,
+      runDirection: play.runDirection,
+      personnelO: play.personnelO,
+      personnelD: play.personnelD,
+      isTouchdown: play.isTouchdown,
+      isFirstDown: play.isFirstDown,
+      isPenalty: play.isPenalty,
+      penaltyType: play.penaltyType,
+    }))
+
+    setPendingPreviewClips(clips)
+    clearPlaySelection()
+    router.push("/watch")
+  }
+
+  return (
+    <Button variant="ghost" size="sm" onClick={handlePreview} className="flex items-center gap-1.5 text-sm">
+      <Icon name="play" className="w-3.5 h-3.5" />
+      Preview Clips
+    </Button>
+  )
+}
 
 export default function ExplorePage() {
   // Get all unique clips combined into one dataset
@@ -47,7 +103,12 @@ export default function ExplorePage() {
               <div className="h-full bg-background rounded-lg overflow-hidden">
                 <GridModule 
                   showTabs={false} 
-                  selectionActions={<AddToPlaylistMenu />} 
+                  selectionActions={
+                    <div className="flex items-center gap-1">
+                      <AddToPlaylistMenu />
+                      <PreviewClipsButton />
+                    </div>
+                  } 
                   dataset={filteredDataset}
                   onClearFilters={clearFilters}
                 />

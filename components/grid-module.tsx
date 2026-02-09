@@ -80,17 +80,36 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
 
-    // Convert PlayData back to LibraryItemData structure
-    const itemsToSave: LibraryItemData[] = activeDataset.plays.map((play) => ({
+    // Convert PlayData to ClipData for the create modal
+    const clips: ClipData[] = activeDataset.plays.map((play) => ({
       id: play.id,
-      name: play.description || "Untitled Clip",
-      type: "video",
-      thumbnailUrl: play.thumbnailUrl,
-      duration: "0:10",
-      createdDate: new Date().toLocaleDateString(),
+      playNumber: play.playNumber,
+      odk: play.odk,
+      quarter: play.quarter,
+      down: play.down,
+      distance: play.distance,
+      yardLine: play.yardLine,
+      hash: play.hash,
+      yards: play.yards,
+      result: play.result,
+      gainLoss: play.gainLoss,
+      defFront: play.defFront,
+      defStr: play.defStr,
+      coverage: play.coverage,
+      blitz: play.blitz,
+      game: play.game,
+      playType: play.playType,
+      passResult: play.passResult,
+      runDirection: play.runDirection,
+      personnelO: play.personnelO,
+      personnelD: play.personnelD,
+      isTouchdown: play.isTouchdown,
+      isFirstDown: play.isFirstDown,
+      isPenalty: play.isPenalty,
+      penaltyType: play.penaltyType,
     }))
 
-    openCreatePlaylistModal(itemsToSave)
+    openCreatePlaylistModal(undefined, clips)
   }
 
   if (!activeDataset) {
@@ -175,14 +194,14 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
             {selectionActions}
           </div>
         ) : (
-          <>
+          <div className="flex items-center justify-between w-full">
             <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
             {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-              <Button size="sm" variant="outline" onClick={handleSaveAsPlaylist}>
-                Save as Playlist
+              <Button size="sm" onClick={handleSaveAsPlaylist} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                Save Playlist
               </Button>
             )}
-          </>
+          </div>
         )}
       </div>
 

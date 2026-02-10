@@ -150,15 +150,21 @@ function EditableCell({ play, columnKey, value, onCommit, isPlaying, className }
           className,
         )}
         onClick={(e) => {
-          e.stopPropagation()
-          setEditing(true)
+          if (isPlaying) {
+            // Row is already the active clip -- enter edit mode immediately
+            e.stopPropagation()
+            setEditing(true)
+          }
+          // Otherwise let the click bubble to the row to activate the clip
         }}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault()
-            setEditing(true)
+            if (isPlaying) {
+              setEditing(true)
+            }
           }
         }}
       >

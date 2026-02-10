@@ -9,6 +9,16 @@ import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { SortDefaultIcon, SortAscendingIcon, SortDescendingIcon, SortHighFreqIcon, SortLowFreqIcon } from "@/components/sort-icons"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+import { MoreVertical } from "lucide-react"
 import type { LibraryItemData } from "@/components/library-item"
 import type { PlayData, Dataset } from "@/lib/mock-datasets"
 import type { ClipData } from "@/types/library"
@@ -290,6 +300,7 @@ interface SortableHeaderProps {
 function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, className }: SortableHeaderProps) {
   const isActive = activeColumn === columnKey
   const currentMode = isActive ? activeMode : null
+  const [menuOpen, setMenuOpen] = useState(false)
 
   function getSortIcon() {
     switch (currentMode) {
@@ -301,15 +312,31 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
     }
   }
 
+  function handleMenuSort(mode: SortMode) {
+    if (isActive && currentMode === mode) {
+      // Toggle off if already active
+      onSort(columnKey, null)
+    } else {
+      onSort(columnKey, mode)
+    }
+    setMenuOpen(false)
+  }
+
   return (
     <TableHead
       className={cn(
-        "text-xs uppercase tracking-wider font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors group/sort",
+        "text-xs uppercase tracking-wider font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors group/sort relative",
         className,
       )}
       onClick={() => {
-        const next = isActive ? nextSortMode(activeMode) : "alpha-asc"
-        onSort(columnKey, next)
+        if (!menuOpen) {
+          const next = isActive ? nextSortMode(activeMode) : "alpha-asc"
+          onSort(columnKey, next)
+        }
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenuOpen(true)
       }}
     >
       <div className="flex items-center gap-1">
@@ -324,6 +351,53 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
           </span>
         )}
       </div>
+
+      {/* 3-dot menu trigger */}
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <button
+            className={cn(
+              "absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted/80 transition-opacity focus:outline-none",
+              menuOpen ? "opacity-100" : "opacity-0 group-hover/sort:opacity-100",
+            )}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+            aria-label={`Column options for ${label}`}
+          >
+            <MoreVertical className="w-3.5 h-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" sideOffset={4}>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <span>Sort</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={() => handleMenuSort("alpha-asc")}>
+                <SortAscendingIcon size={14} />
+                <span>Ascending (A-Z)</span>
+                {currentMode === "alpha-asc" && <span className="ml-auto text-foreground">&#10003;</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleMenuSort("alpha-desc")}>
+                <SortDescendingIcon size={14} />
+                <span>Descending (Z-A)</span>
+                {currentMode === "alpha-desc" && <span className="ml-auto text-foreground">&#10003;</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleMenuSort("freq-high")}>
+                <SortHighFreqIcon size={14} />
+                <span>Frequency High</span>
+                {currentMode === "freq-high" && <span className="ml-auto text-foreground">&#10003;</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleMenuSort("freq-low")}>
+                <SortLowFreqIcon size={14} />
+                <span>Frequency Low</span>
+                {currentMode === "freq-low" && <span className="ml-auto text-foreground">&#10003;</span>}
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </TableHead>
   )
 }

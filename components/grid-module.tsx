@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
+import { SortDefaultIcon, SortAscendingIcon, SortDescendingIcon, SortHighFreqIcon, SortLowFreqIcon } from "@/components/sort-icons"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
 import type { PlayData, Dataset } from "@/lib/mock-datasets"
@@ -230,16 +231,6 @@ function nextSortMode(current: SortMode | null): SortMode | null {
   return SORT_CYCLE[(idx + 1) % SORT_CYCLE.length]
 }
 
-function getSortLabel(mode: SortMode | null): string {
-  switch (mode) {
-    case "alpha-asc": return "A-Z"
-    case "alpha-desc": return "Z-A"
-    case "freq-high": return "Freq Hi"
-    case "freq-low": return "Freq Lo"
-    default: return ""
-  }
-}
-
 function sortPlays(plays: PlayData[], column: keyof PlayData | null, mode: SortMode | null): PlayData[] {
   if (!column || !mode) return plays
 
@@ -294,6 +285,16 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
   const isActive = activeColumn === columnKey
   const currentMode = isActive ? activeMode : null
 
+  function getSortIcon() {
+    switch (currentMode) {
+      case "alpha-asc": return <SortAscendingIcon size={12} />
+      case "alpha-desc": return <SortDescendingIcon size={12} />
+      case "freq-high": return <SortHighFreqIcon size={12} />
+      case "freq-low": return <SortLowFreqIcon size={12} />
+      default: return null
+    }
+  }
+
   return (
     <TableHead
       className={cn(
@@ -307,25 +308,16 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
     >
       <div className="flex items-center gap-1">
         <span>{label}</span>
-        {isActive && currentMode && (
-          <span className="text-[10px] font-medium text-primary whitespace-nowrap">
-            {currentMode === "alpha-asc" && <Icon name="chevronUp" size={10} className="inline-block" />}
-            {currentMode === "alpha-desc" && <Icon name="chevronDown" size={10} className="inline-block" />}
-            {currentMode === "freq-high" && <Icon name="chevronUp" size={10} className="inline-block" />}
-            {currentMode === "freq-low" && <Icon name="chevronDown" size={10} className="inline-block" />}
+        {isActive && currentMode ? (
+          <span className="text-primary shrink-0">
+            {getSortIcon()}
           </span>
-        )}
-        {!isActive && (
-          <span className="opacity-0 group-hover/sort:opacity-40 transition-opacity">
-            <Icon name="chevronUp" size={10} className="inline-block" />
+        ) : (
+          <span className="opacity-0 group-hover/sort:opacity-60 transition-opacity shrink-0">
+            <SortDefaultIcon size={12} />
           </span>
         )}
       </div>
-      {isActive && currentMode && (
-        <div className="text-[9px] font-normal text-primary/70 leading-none mt-0.5">
-          {getSortLabel(currentMode)}
-        </div>
-      )}
     </TableHead>
   )
 }

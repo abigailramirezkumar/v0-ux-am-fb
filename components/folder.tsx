@@ -9,7 +9,8 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect } from "react"
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
@@ -137,40 +138,7 @@ export function Folder({
 
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const prevExpanded = useRef(isExpanded)
 
-  useEffect(() => {
-    const el = contentRef.current
-    if (!el) return
-
-    if (isExpanded && !prevExpanded.current) {
-      // Expanding: animate from 0 to scrollHeight
-      el.style.maxHeight = "0px"
-      el.style.opacity = "0"
-      // Force reflow so browser registers the starting state
-      void el.offsetHeight
-      el.style.transition = "max-height 200ms ease-out, opacity 150ms ease-out"
-      el.style.maxHeight = `${el.scrollHeight}px`
-      el.style.opacity = "1"
-      const onEnd = () => {
-        el.style.maxHeight = "none"
-        el.style.transition = ""
-        el.removeEventListener("transitionend", onEnd)
-      }
-      el.addEventListener("transitionend", onEnd)
-    } else if (!isExpanded && prevExpanded.current) {
-      // Collapsing: animate from current height to 0
-      el.style.maxHeight = `${el.scrollHeight}px`
-      el.style.opacity = "1"
-      void el.offsetHeight
-      el.style.transition = "max-height 200ms ease-in, opacity 150ms ease-in"
-      el.style.maxHeight = "0px"
-      el.style.opacity = "0"
-    }
-
-    prevExpanded.current = isExpanded
-  }, [isExpanded])
   const hasChildren =
     (folder.children && folder.children.length > 0) ||
     (folder.items && folder.items.length > 0) ||
@@ -824,15 +792,9 @@ export function Folder({
       </ContextMenu>
 
       {!isFlattened && hasChildren && (
-        <div
-          ref={contentRef}
-          className="overflow-hidden"
-          style={{
-            maxHeight: isExpanded ? "none" : "0px",
-            opacity: isExpanded ? 1 : 0,
-          }}
-        >
-          <div>
+        <Collapsible open={isExpanded}>
+          <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden">
+            <div>
             {folder.children?.map((child, i) => (
               <Folder
                 key={child.id}
@@ -909,8 +871,9 @@ export function Folder({
                 onOpen={onOpen}
               />
             ))}
-          </div>
-        </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   )

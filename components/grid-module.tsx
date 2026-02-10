@@ -287,10 +287,10 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
 
   function getSortIcon() {
     switch (currentMode) {
-      case "alpha-asc": return <SortAscendingIcon size={12} />
-      case "alpha-desc": return <SortDescendingIcon size={12} />
-      case "freq-high": return <SortHighFreqIcon size={12} />
-      case "freq-low": return <SortLowFreqIcon size={12} />
+      case "alpha-asc": return <SortAscendingIcon size={16} />
+      case "alpha-desc": return <SortDescendingIcon size={16} />
+      case "freq-high": return <SortHighFreqIcon size={16} />
+      case "freq-low": return <SortLowFreqIcon size={16} />
       default: return null
     }
   }
@@ -309,12 +309,12 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
       <div className="flex items-center gap-1">
         <span>{label}</span>
         {isActive && currentMode ? (
-          <span className="text-primary shrink-0">
+          <span className="text-foreground shrink-0">
             {getSortIcon()}
           </span>
         ) : (
-          <span className="opacity-0 group-hover/sort:opacity-60 transition-opacity shrink-0">
-            <SortDefaultIcon size={12} />
+          <span className="opacity-0 group-hover/sort:opacity-80 transition-opacity shrink-0">
+            <SortDefaultIcon size={16} />
           </span>
         )}
       </div>

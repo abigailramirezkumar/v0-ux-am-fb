@@ -43,6 +43,9 @@ interface WatchContextType {
   seekToPlay: (play: PlayData) => void
   setVideoUrl: (url: string) => void
 
+  // Editing
+  updatePlay: (playId: string, updates: Partial<PlayData>) => void
+
   // Unsaved preview
   previewClips: (clips: PlayData[]) => void
   replaceUnsavedTab: (savedId: string) => void
@@ -414,6 +417,26 @@ export function WatchProvider({
     })
   }, [mediaItems])
 
+  const updatePlay = (playId: string, updates: Partial<PlayData>) => {
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.id !== activeTabId) return tab
+        const updatedPlays = tab.plays.map((play) => {
+          if (play.id !== playId) return play
+          return { ...play, ...updates }
+        })
+        return { ...tab, plays: updatedPlays }
+      })
+    )
+    // Also update currentPlay if it's the one being edited
+    setCurrentPlay((prev) => {
+      if (prev && prev.id === playId) {
+        return { ...prev, ...updates }
+      }
+      return prev
+    })
+  }
+
   const previewClips = (clips: PlayData[]) => {
     const unsavedTab: Dataset = {
       id: `unsaved-${Date.now()}`,
@@ -551,6 +574,7 @@ export function WatchProvider({
         playTab,
         seekToPlay,
         setVideoUrl,
+        updatePlay,
         previewClips,
         replaceUnsavedTab,
         visibleModules,

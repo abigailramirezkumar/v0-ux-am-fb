@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useRef, useEffect, useCallback } from "react"
 import { useWatchContext } from "@/components/watch/watch-context"
 import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -8,8 +9,217 @@ import { cn } from "@/lib/utils"
 import { Icon } from "@/components/icon"
 import { Button } from "@/components/ui/button"
 import type { LibraryItemData } from "@/components/library-item"
-import type { Dataset } from "@/lib/mock-datasets"
+import type { PlayData, Dataset } from "@/lib/mock-datasets"
 import type { ClipData } from "@/types/library"
+
+// --- Gain/Loss auto-derivation ---
+function deriveGainLoss(yards: number, result?: string): "Gn" | "Ls" {
+  if (yards > 0) return "Gn"
+  if (yards < 0) return "Ls"
+  // yards === 0: lean on result
+  const lower = (result ?? "").toLowerCase()
+  if (lower.includes("incomplete") || lower.includes("sack") || lower.includes("interception")) return "Ls"
+  return "Gn"
+}
+
+// --- Column edit config ---
+type EditMode = "dropdown" | "number" | "text" | "none" | "auto"
+
+interface ColumnConfig {
+  key: keyof PlayData
+  editMode: EditMode
+  options?: string[]
+  min?: number
+  max?: number
+}
+
+const COLUMN_CONFIGS: ColumnConfig[] = [
+  { key: "playNumber", editMode: "none" },
+  { key: "odk", editMode: "dropdown", options: ["O", "D", "K"] },
+  { key: "quarter", editMode: "dropdown", options: ["1", "2", "3", "4", "OT"] },
+  { key: "down", editMode: "dropdown", options: ["1", "2", "3", "4"] },
+  { key: "distance", editMode: "text" },
+  { key: "yardLine", editMode: "number", min: -49, max: 49 },
+  { key: "hash", editMode: "dropdown", options: ["L", "M", "R"] },
+  { key: "yards", editMode: "number", min: -200, max: 200 },
+  { key: "result", editMode: "text" },
+  { key: "gainLoss", editMode: "auto" },
+  { key: "defFront", editMode: "text" },
+  { key: "defStr", editMode: "text" },
+  { key: "coverage", editMode: "text" },
+  { key: "blitz", editMode: "text" },
+  { key: "game", editMode: "none" },
+]
+
+function getColumnConfig(key: keyof PlayData): ColumnConfig | undefined {
+  return COLUMN_CONFIGS.find((c) => c.key === key)
+}
+
+// --- Inline editing cell component ---
+interface EditableCellProps {
+  play: PlayData
+  columnKey: keyof PlayData
+  value: string | number
+  onCommit: (playId: string, updates: Partial<PlayData>) => void
+  isPlaying: boolean
+  className?: string
+}
+
+function EditableCell({ play, columnKey, value, onCommit, isPlaying, className }: EditableCellProps) {
+  const config = getColumnConfig(columnKey)
+  const [editing, setEditing] = useState(false)
+  const [localValue, setLocalValue] = useState(String(value))
+  const inputRef = useRef<HTMLInputElement | HTMLSelectElement>(null)
+
+  // Sync local value when the play data changes externally
+  useEffect(() => {
+    if (!editing) setLocalValue(String(value))
+  }, [value, editing])
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      if (inputRef.current instanceof HTMLInputElement) {
+        inputRef.current.select()
+      }
+    }
+  }, [editing])
+
+  const commitEdit = useCallback(() => {
+    setEditing(false)
+    const trimmed = localValue.trim()
+
+    if (config?.editMode === "number") {
+      const num = Number(trimmed)
+      if (isNaN(num)) return // discard invalid
+      const clamped = Math.max(config.min ?? -Infinity, Math.min(config.max ?? Infinity, num))
+      const updates: Partial<PlayData> = { [columnKey]: clamped } as Partial<PlayData>
+      // Auto-derive gainLoss when yards changes
+      if (columnKey === "yards") {
+        updates.gainLoss = deriveGainLoss(clamped, play.result)
+      }
+      onCommit(play.id, updates)
+    } else if (config?.editMode === "dropdown") {
+      // For dropdown columns, parse the value to the correct type
+      if (columnKey === "down" || columnKey === "quarter") {
+        const parsed = trimmed === "OT" ? trimmed : Number(trimmed)
+        onCommit(play.id, { [columnKey]: parsed } as Partial<PlayData>)
+      } else {
+        onCommit(play.id, { [columnKey]: trimmed } as Partial<PlayData>)
+      }
+    } else {
+      // text
+      const updates: Partial<PlayData> = { [columnKey]: trimmed } as Partial<PlayData>
+      // Auto-derive gainLoss when result changes
+      if (columnKey === "result") {
+        updates.gainLoss = deriveGainLoss(play.yards, trimmed)
+      }
+      onCommit(play.id, updates)
+    }
+  }, [localValue, config, columnKey, play, onCommit])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault()
+      commitEdit()
+    }
+    if (e.key === "Escape") {
+      setEditing(false)
+      setLocalValue(String(value))
+    }
+  }
+
+  // Non-editable or auto-derived cells
+  if (!config || config.editMode === "none" || config.editMode === "auto") {
+    return (
+      <span className={className}>
+        {value}
+      </span>
+    )
+  }
+
+  // Read mode
+  if (!editing) {
+    return (
+      <span
+        className={cn(
+          "cursor-pointer rounded px-1 -mx-1 hover:bg-muted/60 transition-colors inline-block min-w-[1.5rem]",
+          isPlaying && "hover:bg-white/10",
+          className,
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          setEditing(true)
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            setEditing(true)
+          }
+        }}
+      >
+        {value || "\u00A0"}
+      </span>
+    )
+  }
+
+  // Edit mode -- dropdown
+  if (config.editMode === "dropdown") {
+    return (
+      <select
+        ref={inputRef as React.RefObject<HTMLSelectElement>}
+        value={localValue}
+        onChange={(e) => {
+          setLocalValue(e.target.value)
+          // Commit immediately on selection
+          setEditing(false)
+          const val = e.target.value
+          if (columnKey === "down" || columnKey === "quarter") {
+            const parsed = val === "OT" ? val : Number(val)
+            onCommit(play.id, { [columnKey]: parsed } as Partial<PlayData>)
+          } else {
+            onCommit(play.id, { [columnKey]: val } as Partial<PlayData>)
+          }
+        }}
+        onBlur={commitEdit}
+        onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          "bg-background border border-border rounded text-xs px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring w-full",
+          isPlaying && "bg-[#0260bd] text-white border-white/30",
+        )}
+      >
+        {config.options?.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    )
+  }
+
+  // Edit mode -- number or text input
+  return (
+    <input
+      ref={inputRef as React.RefObject<HTMLInputElement>}
+      type={config.editMode === "number" ? "number" : "text"}
+      value={localValue}
+      min={config.min}
+      max={config.max}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={commitEdit}
+      onKeyDown={handleKeyDown}
+      onClick={(e) => e.stopPropagation()}
+      className={cn(
+        "bg-background border border-border rounded text-xs px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring w-full",
+        isPlaying && "bg-[#0260bd] text-white border-white/30",
+      )}
+    />
+  )
+}
 
 interface GridModuleProps {
   showTabs?: boolean
@@ -18,9 +228,11 @@ interface GridModuleProps {
   /** Optional clip data passed directly, decoupled from WatchContext. */
   clips?: ClipData[] | null
   onClearFilters?: () => void
+  /** Enable inline cell editing (Watch page only) */
+  editable?: boolean
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -34,7 +246,8 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
     togglePlaySelection,
     selectAllPlays,
     clearPlaySelection,
-    replaceUnsavedTab
+    replaceUnsavedTab,
+    updatePlay,
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
 
@@ -320,14 +533,30 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                     />
                   </TableCell>
                   <TableCell className="text-center font-medium py-1.5">{play.playNumber}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.odk}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.quarter}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.down}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.distance}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.yardLine}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.hash}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.yards}</TableCell>
-                  <TableCell className="py-1.5">{play.result}</TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="odk" value={play.odk} onCommit={updatePlay} isPlaying={isPlaying} /> : play.odk}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="quarter" value={play.quarter} onCommit={updatePlay} isPlaying={isPlaying} /> : play.quarter}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="down" value={play.down} onCommit={updatePlay} isPlaying={isPlaying} /> : play.down}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="distance" value={play.distance} onCommit={updatePlay} isPlaying={isPlaying} /> : play.distance}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="yardLine" value={play.yardLine} onCommit={updatePlay} isPlaying={isPlaying} /> : play.yardLine}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="hash" value={play.hash} onCommit={updatePlay} isPlaying={isPlaying} /> : play.hash}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="yards" value={play.yards} onCommit={updatePlay} isPlaying={isPlaying} /> : play.yards}
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="result" value={play.result} onCommit={updatePlay} isPlaying={isPlaying} /> : play.result}
+                  </TableCell>
                   <TableCell
                     className={cn(
                       "text-center py-1.5",
@@ -337,10 +566,18 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   >
                     {play.gainLoss}
                   </TableCell>
-                  <TableCell className="py-1.5">{play.defFront}</TableCell>
-                  <TableCell className="py-1.5">{play.defStr}</TableCell>
-                  <TableCell className="py-1.5">{play.coverage}</TableCell>
-                  <TableCell className="text-center py-1.5">{play.blitz}</TableCell>
+                  <TableCell className="py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="defFront" value={play.defFront} onCommit={updatePlay} isPlaying={isPlaying} /> : play.defFront}
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="defStr" value={play.defStr} onCommit={updatePlay} isPlaying={isPlaying} /> : play.defStr}
+                  </TableCell>
+                  <TableCell className="py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="coverage" value={play.coverage} onCommit={updatePlay} isPlaying={isPlaying} /> : play.coverage}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5">
+                    {editable ? <EditableCell play={play} columnKey="blitz" value={play.blitz} onCommit={updatePlay} isPlaying={isPlaying} /> : play.blitz}
+                  </TableCell>
                   <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>
                 </TableRow>
               )

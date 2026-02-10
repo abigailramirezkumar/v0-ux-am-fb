@@ -789,84 +789,89 @@ export function Folder({
         {contextMenuContent}
       </ContextMenu>
 
-      {!isFlattened && isExpanded && hasChildren && (
-        <div>
-          {folder.children?.map((child, i) => (
-            <Folder
-              key={child.id}
-              folder={child}
-              level={level + 1}
-              index={i}
-              onSelect={onSelect}
-              onSelectItem={onSelectItem}
-              onDoubleClick={onDoubleClick}
-              selectedFolders={selectedFolders}
-              selectedItems={selectedItems}
-              expandedFolders={expandedFolders}
-              onToggleExpand={onToggleExpand}
-              importedFolders={importedFolders}
-              importedItems={importedItems}
-              onUpdateImported={onUpdateImported}
-              onRename={onRename}
-              onDelete={onDelete}
-              onReorderChildren={onReorderChildren}
-              onSortFolder={onSortFolder}
-              folderSortOptions={folderSortOptions}
-              onMove={onMove}
-              onOpen={onOpen}
-              onCreateSubfolder={onCreateSubfolder}
-            />
-          ))}
+      {!isFlattened && hasChildren && (
+        <div
+          className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+          style={{ gridTemplateRows: isExpanded ? "1fr" : "0fr" }}
+        >
+          <div className="overflow-hidden min-h-0">
+            {folder.children?.map((child, i) => (
+              <Folder
+                key={child.id}
+                folder={child}
+                level={level + 1}
+                index={i}
+                onSelect={onSelect}
+                onSelectItem={onSelectItem}
+                onDoubleClick={onDoubleClick}
+                selectedFolders={selectedFolders}
+                selectedItems={selectedItems}
+                expandedFolders={expandedFolders}
+                onToggleExpand={onToggleExpand}
+                importedFolders={importedFolders}
+                importedItems={importedItems}
+                onUpdateImported={onUpdateImported}
+                onRename={onRename}
+                onDelete={onDelete}
+                onReorderChildren={onReorderChildren}
+                onSortFolder={onSortFolder}
+                folderSortOptions={folderSortOptions}
+                onMove={onMove}
+                onOpen={onOpen}
+                onCreateSubfolder={onCreateSubfolder}
+              />
+            ))}
 
-          {folder.items?.map((item, i) => (
-            <LibraryItem
-              key={item.id}
-              item={{
-                ...item,
-                thumbnailUrl: item.thumbnailUrl || "/football-field.png",
-              }}
-              level={level + 1}
-              index={i + (folder.children?.length || 0)}
-              onSelect={onSelectItem}
-              selectedItems={selectedItems}
-              importedItems={importedItems}
-              onUpdateImported={onUpdateImported}
-              onMove={onMove}
-              onOpen={onOpen}
-            />
-          ))}
+            {folder.items?.map((item, i) => (
+              <LibraryItem
+                key={item.id}
+                item={{
+                  ...item,
+                  thumbnailUrl: item.thumbnailUrl || "/football-field.png",
+                }}
+                level={level + 1}
+                index={i + (folder.children?.length || 0)}
+                onSelect={onSelectItem}
+                selectedItems={selectedItems}
+                importedItems={importedItems}
+                onUpdateImported={onUpdateImported}
+                onMove={onMove}
+                onOpen={onOpen}
+              />
+            ))}
 
-          {/* Dynamic media items from the flat list (segregated model) */}
-          {dynamicMediaItems.map((mediaItem, i) => (
-            <LibraryItem
-              key={mediaItem.id}
-              item={{
-                id: mediaItem.id,
-                name: mediaItem.name,
-                type: mediaItem.type,
-                itemCount: mediaItem.clips.length,
-                thumbnailUrl: "/placeholder-logo.png",
-                dateModified: new Date(mediaItem.modifiedAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }),
-                createdDate: new Date(mediaItem.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }),
-              }}
-              level={level + 1}
-              index={i + (folder.children?.length || 0) + (folder.items?.length || 0)}
-              onSelect={onSelectItem}
-              selectedItems={selectedItems}
-              importedItems={importedItems}
-              onUpdateImported={onUpdateImported}
-              onMove={onMove}
-              onOpen={onOpen}
-            />
-          ))}
+            {/* Dynamic media items from the flat list (segregated model) */}
+            {dynamicMediaItems.map((mediaItem, i) => (
+              <LibraryItem
+                key={mediaItem.id}
+                item={{
+                  id: mediaItem.id,
+                  name: mediaItem.name,
+                  type: mediaItem.type,
+                  itemCount: mediaItem.clips.length,
+                  thumbnailUrl: "/placeholder-logo.png",
+                  dateModified: new Date(mediaItem.modifiedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }),
+                  createdDate: new Date(mediaItem.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }),
+                }}
+                level={level + 1}
+                index={i + (folder.children?.length || 0) + (folder.items?.length || 0)}
+                onSelect={onSelectItem}
+                selectedItems={selectedItems}
+                importedItems={importedItems}
+                onUpdateImported={onUpdateImported}
+                onMove={onMove}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

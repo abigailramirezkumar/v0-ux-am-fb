@@ -221,6 +221,115 @@ function EditableCell({ play, columnKey, value, onCommit, isPlaying, className }
   )
 }
 
+// --- Sort logic ---
+type SortMode = "alpha-asc" | "alpha-desc" | "freq-high" | "freq-low"
+const SORT_CYCLE: (SortMode | null)[] = ["alpha-asc", "alpha-desc", "freq-high", "freq-low", null]
+
+function nextSortMode(current: SortMode | null): SortMode | null {
+  const idx = SORT_CYCLE.indexOf(current)
+  return SORT_CYCLE[(idx + 1) % SORT_CYCLE.length]
+}
+
+function getSortLabel(mode: SortMode | null): string {
+  switch (mode) {
+    case "alpha-asc": return "A-Z"
+    case "alpha-desc": return "Z-A"
+    case "freq-high": return "Freq Hi"
+    case "freq-low": return "Freq Lo"
+    default: return ""
+  }
+}
+
+function sortPlays(plays: PlayData[], column: keyof PlayData | null, mode: SortMode | null): PlayData[] {
+  if (!column || !mode) return plays
+
+  const sorted = [...plays]
+
+  if (mode === "alpha-asc" || mode === "alpha-desc") {
+    sorted.sort((a, b) => {
+      const aVal = a[column]
+      const bVal = b[column]
+      // numeric comparison
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return mode === "alpha-asc" ? aVal - bVal : bVal - aVal
+      }
+      // string comparison
+      const aStr = String(aVal ?? "").toLowerCase()
+      const bStr = String(bVal ?? "").toLowerCase()
+      const cmp = aStr.localeCompare(bStr, undefined, { numeric: true })
+      return mode === "alpha-asc" ? cmp : -cmp
+    })
+  } else {
+    // frequency sort -- count occurrences of each value, then sort by count
+    const freq = new Map<string, number>()
+    for (const play of plays) {
+      const key = String(play[column] ?? "")
+      freq.set(key, (freq.get(key) ?? 0) + 1)
+    }
+    sorted.sort((a, b) => {
+      const aFreq = freq.get(String(a[column] ?? "")) ?? 0
+      const bFreq = freq.get(String(b[column] ?? "")) ?? 0
+      if (aFreq !== bFreq) {
+        return mode === "freq-high" ? bFreq - aFreq : aFreq - bFreq
+      }
+      // tie-break alphabetically
+      return String(a[column] ?? "").localeCompare(String(b[column] ?? ""), undefined, { numeric: true })
+    })
+  }
+
+  return sorted
+}
+
+// --- Sortable header component ---
+interface SortableHeaderProps {
+  label: string
+  columnKey: keyof PlayData
+  activeColumn: keyof PlayData | null
+  activeMode: SortMode | null
+  onSort: (column: keyof PlayData, mode: SortMode | null) => void
+  className?: string
+}
+
+function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, className }: SortableHeaderProps) {
+  const isActive = activeColumn === columnKey
+  const currentMode = isActive ? activeMode : null
+
+  return (
+    <TableHead
+      className={cn(
+        "text-xs uppercase tracking-wider font-semibold text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors group/sort",
+        className,
+      )}
+      onClick={() => {
+        const next = isActive ? nextSortMode(activeMode) : "alpha-asc"
+        onSort(columnKey, next)
+      }}
+    >
+      <div className="flex items-center gap-1">
+        <span>{label}</span>
+        {isActive && currentMode && (
+          <span className="text-[10px] font-medium text-primary whitespace-nowrap">
+            {currentMode === "alpha-asc" && <Icon name="chevronUp" size={10} className="inline-block" />}
+            {currentMode === "alpha-desc" && <Icon name="chevronDown" size={10} className="inline-block" />}
+            {currentMode === "freq-high" && <Icon name="chevronUp" size={10} className="inline-block" />}
+            {currentMode === "freq-low" && <Icon name="chevronDown" size={10} className="inline-block" />}
+          </span>
+        )}
+        {!isActive && (
+          <span className="opacity-0 group-hover/sort:opacity-40 transition-opacity">
+            <Icon name="chevronUp" size={10} className="inline-block" />
+          </span>
+        )}
+      </div>
+      {isActive && currentMode && (
+        <div className="text-[9px] font-normal text-primary/70 leading-none mt-0.5">
+          {getSortLabel(currentMode)}
+        </div>
+      )}
+    </TableHead>
+  )
+}
+
 interface GridModuleProps {
   showTabs?: boolean
   selectionActions?: React.ReactNode | null
@@ -290,6 +399,20 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
 
   // Use prop if provided, otherwise context
   const activeDataset = clipsAsDataset || datasetProp || contextDataset
+
+  // Sort state
+  const [sortColumn, setSortColumn] = useState<keyof PlayData | null>(null)
+  const [sortMode, setSortMode] = useState<SortMode | null>(null)
+
+  const handleSort = useCallback((column: keyof PlayData, mode: SortMode | null) => {
+    if (mode === null) {
+      setSortColumn(null)
+      setSortMode(null)
+    } else {
+      setSortColumn(column)
+      setSortMode(mode)
+    }
+  }, [])
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
@@ -469,52 +592,26 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 #
               </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                ODK
-              </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Qtr
-              </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Dn
-              </TableHead>
-              <TableHead className="w-[60px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Dist
-              </TableHead>
-              <TableHead className="w-[70px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Yard Ln
-              </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Hash
-              </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Yds
-              </TableHead>
-              <TableHead className="w-[80px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Result
-              </TableHead>
-              <TableHead className="w-[60px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Gn/Ls
-              </TableHead>
-              <TableHead className="w-[80px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Def Front
-              </TableHead>
-              <TableHead className="w-[70px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Def Str
-              </TableHead>
-              <TableHead className="w-[80px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Coverage
-              </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                Blitz
-              </TableHead>
+              <SortableHeader label="ODK" columnKey="odk" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="Qtr" columnKey="quarter" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="Dn" columnKey="down" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="Dist" columnKey="distance" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center" />
+              <SortableHeader label="Yard Ln" columnKey="yardLine" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] text-center" />
+              <SortableHeader label="Hash" columnKey="hash" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="Yds" columnKey="yards" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="Result" columnKey="result" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
+              <SortableHeader label="Gn/Ls" columnKey="gainLoss" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center" />
+              <SortableHeader label="Def Front" columnKey="defFront" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
+              <SortableHeader label="Def Str" columnKey="defStr" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px]" />
+              <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
+              <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
               <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 Game
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activeDataset.plays.map((play) => {
+            {sortPlays(activeDataset.plays, sortColumn, sortMode).map((play) => {
               const isPlaying = currentPlay?.id === play.id && activeTabId === playingTabId
 
               return (

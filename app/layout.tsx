@@ -39,6 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${barlow.variable} ${inter.variable} ${jetbrainsMono.variable} ${_sourceSerif_4.variable}`}
     >
       <body className={`font-sans antialiased ${_sourceSerif_4.variable}`}>

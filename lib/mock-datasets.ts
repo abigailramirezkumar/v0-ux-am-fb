@@ -33,6 +33,17 @@ export interface Dataset {
   plays: PlayData[]
 }
 
+// Simple seeded PRNG (mulberry32) for deterministic random data across server/client
+function createSeededRandom(seed: number) {
+  return function () {
+    seed |= 0
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 export const VIDEO_POOL = [
   "https://www.youtube.com/embed/LDGIdxOFgTc",
   "https://www.youtube.com/embed/3iBuXdGL7ZM",
@@ -55,7 +66,12 @@ export function getRandomVideoUrl(excludeUrl?: string | null): string {
   return available[randomIndex]
 }
 
+let globalSeed = 42
+
 const generatePlays = (count: number, gameName: string): PlayData[] => {
+  const random = createSeededRandom(globalSeed)
+  globalSeed += 1000 // Advance seed for next dataset to get different but deterministic data
+
   const personnelOOptions: PlayData["personnelO"][] = ["11", "12", "21", "22", "10", "Empty"]
   const personnelDOptions: PlayData["personnelD"][] = ["Base", "Nickel", "Dime", "Goal Line"]
   const passResults: PlayData["passResult"][] = ["Complete", "Incomplete", "Sack", "Interception", "Throwaway"]
@@ -63,11 +79,11 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
   const penaltyTypes = ["Holding", "False Start", "Offsides", "Pass Interference", "Illegal Formation"]
 
   return Array.from({ length: count }).map((_, i) => {
-    const gain = Math.floor(Math.random() * 20) - 5
-    const odk = Math.random() > 0.5 ? "O" : Math.random() > 0.5 ? "D" : "K"
-    const playType: PlayData["playType"] = odk === "K" ? "Special Teams" : Math.random() > 0.5 ? "Pass" : "Run"
-    const distance = Math.floor(Math.random() * 10) + 1
-    const isPenalty = Math.random() > 0.9
+    const gain = Math.floor(random() * 20) - 5
+    const odk = random() > 0.5 ? "O" : random() > 0.5 ? "D" : "K"
+    const playType: PlayData["playType"] = odk === "K" ? "Special Teams" : random() > 0.5 ? "Pass" : "Run"
+    const distance = Math.floor(random() * 10) + 1
+    const isPenalty = random() > 0.9
     
     return {
       id: `play-${i}`,
@@ -76,26 +92,26 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
       quarter: Math.floor(i / (count / 4)) + 1,
       down: (i % 4) + 1,
       distance,
-      yardLine: `${Math.random() > 0.5 ? "-" : "+"}${Math.floor(Math.random() * 50)}`,
-      hash: ["L", "R", "M"][Math.floor(Math.random() * 3)] as "L" | "R" | "M",
+      yardLine: `${random() > 0.5 ? "-" : "+"}${Math.floor(random() * 50)}`,
+      hash: ["L", "R", "M"][Math.floor(random() * 3)] as "L" | "R" | "M",
       yards: Math.abs(gain),
-      result: playType === "Pass" ? passResults[Math.floor(Math.random() * 2)] || "Pass" : "Run",
+      result: playType === "Pass" ? passResults[Math.floor(random() * 2)] || "Pass" : "Run",
       gainLoss: gain >= 0 ? "Gn" : "Ls",
-      defFront: ["Over", "Under", "Bear", "Okie"][Math.floor(Math.random() * 4)],
-      defStr: ["Strong", "Weak"][Math.floor(Math.random() * 2)],
-      coverage: ["Cov 1", "Cov 2", "Cov 3", "Quarters"][Math.floor(Math.random() * 4)],
-      blitz: Math.random() > 0.8 ? "Yes" : "No",
+      defFront: ["Over", "Under", "Bear", "Okie"][Math.floor(random() * 4)],
+      defStr: ["Strong", "Weak"][Math.floor(random() * 2)],
+      coverage: ["Cov 1", "Cov 2", "Cov 3", "Quarters"][Math.floor(random() * 4)],
+      blitz: random() > 0.8 ? "Yes" : "No",
       game: gameName,
       // Enhanced fields
       playType,
-      passResult: playType === "Pass" ? passResults[Math.floor(Math.random() * passResults.length)] : undefined,
-      runDirection: playType === "Run" ? runDirections[Math.floor(Math.random() * runDirections.length)] : undefined,
-      personnelO: personnelOOptions[Math.floor(Math.random() * personnelOOptions.length)],
-      personnelD: personnelDOptions[Math.floor(Math.random() * personnelDOptions.length)],
-      isTouchdown: Math.random() > 0.9,
+      passResult: playType === "Pass" ? passResults[Math.floor(random() * passResults.length)] : undefined,
+      runDirection: playType === "Run" ? runDirections[Math.floor(random() * runDirections.length)] : undefined,
+      personnelO: personnelOOptions[Math.floor(random() * personnelOOptions.length)],
+      personnelD: personnelDOptions[Math.floor(random() * personnelDOptions.length)],
+      isTouchdown: random() > 0.9,
       isFirstDown: gain >= distance,
       isPenalty,
-      penaltyType: isPenalty ? penaltyTypes[Math.floor(Math.random() * penaltyTypes.length)] : undefined,
+      penaltyType: isPenalty ? penaltyTypes[Math.floor(random() * penaltyTypes.length)] : undefined,
     }
   })
 }

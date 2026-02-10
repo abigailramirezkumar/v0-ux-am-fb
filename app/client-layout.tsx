@@ -8,6 +8,8 @@ import { Header } from "@/components/header"
 import { Analytics } from "@vercel/analytics/react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Icon } from "@/components/icon"
+import { ModuleLibraryIcon } from "@/components/module-library-icon"
 import { CatapultImportProvider } from "@/lib/catapult-import-context"
 import { DensityProvider } from "@/lib/density-context"
 import { LibraryProvider } from "@/lib/library-context"
@@ -17,13 +19,15 @@ import { CreatePlaylistModal } from "@/components/create-playlist-modal"
 import { Toaster } from "@/components/ui/toaster"
 
 function ClientLayoutInner({ 
-  isWatchPage, 
+  isWatchPage,
+  isExplorePage,
   searchValue, 
   setSearchValue, 
   router, 
   children 
 }: { 
   isWatchPage: boolean
+  isExplorePage: boolean
   searchValue: string
   setSearchValue: (value: string) => void
   router: ReturnType<typeof useRouter>
@@ -35,7 +39,8 @@ function ClientLayoutInner({
 
       <SidebarInset className="flex-1 flex flex-col bg-sidebar">
         <Header
-          title={isWatchPage ? "Watch" : "Library"}
+          title={isWatchPage ? "Watch" : isExplorePage ? "Explore" : "Library"}
+          icon={isExplorePage ? <Icon name="explore" className="w-5 h-5" /> : <ModuleLibraryIcon size={20} />}
           searchValue={searchValue}
           onSearchChange={setSearchValue}
           searchPlaceholder="Search components..."
@@ -64,6 +69,7 @@ export default function ClientLayout({
   const [searchValue, setSearchValue] = useState("")
 
   const isWatchPage = pathname === "/watch"
+  const isExplorePage = pathname.startsWith("/explore")
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
@@ -72,7 +78,7 @@ export default function ClientLayout({
           <LibraryProvider>
             <WatchProvider>
               <SidebarProvider defaultOpen={true}>
-                <ClientLayoutInner isWatchPage={isWatchPage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
+                <ClientLayoutInner isWatchPage={isWatchPage} isExplorePage={isExplorePage} searchValue={searchValue} setSearchValue={setSearchValue} router={router}>
                   {children}
                 </ClientLayoutInner>
                 <CreatePlaylistModal />

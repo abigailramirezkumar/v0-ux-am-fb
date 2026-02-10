@@ -4,6 +4,7 @@ import type * as React from "react"
 import { ChevronRight, ChevronsLeft, ChevronsRight, User, Settings, LogOut } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { Icon } from "@/components/icon"
+import { ModuleLibraryIcon } from "@/components/module-library-icon"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -158,7 +159,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/library"} tooltip="Library">
               <Link href="/library">
-                <Icon name="folder" className="w-5 h-5 flex-shrink-0" />
+                <ModuleLibraryIcon size={20} className="w-5 h-5 flex-shrink-0" />
                 <span>Library</span>
               </Link>
             </SidebarMenuButton>

@@ -652,17 +652,19 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
                 {/* Row number header - empty */}
               </TableHead>
-              <TableHead className="w-[40px] text-center border-r border-border/50">
-                <Checkbox
-                  checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      selectAllPlays()
-                    } else {
-                      clearPlaySelection()
-                    }
-                  }}
-                />
+              <TableHead className="w-[48px] px-3 border-r border-border/50">
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        selectAllPlays()
+                      } else {
+                        clearPlaySelection()
+                      }
+                    }}
+                  />
+                </div>
               </TableHead>
               <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground border-r border-border/50">
                 #
@@ -701,11 +703,13 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
                     {rowIndex + 1}
                   </TableCell>
-                  <TableCell className="text-center py-1.5 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedPlayIds.has(play.id)}
-                      onCheckedChange={() => togglePlaySelection(play.id)}
-                    />
+                  <TableCell className="py-1.5 px-3 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={selectedPlayIds.has(play.id)}
+                        onCheckedChange={() => togglePlaySelection(play.id)}
+                      />
+                    </div>
                   </TableCell>
                   <TableCell className="text-center font-medium py-1.5 border-r border-border/50">{play.playNumber}</TableCell>
                   <TableCell className="text-center py-1.5 border-r border-border/50">

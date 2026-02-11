@@ -79,10 +79,12 @@ function findItemById(folders: FolderData[], itemId: string): LibraryItemData | 
 
 export function WatchProvider({ 
   children,
-  initialTabs = [] 
+  initialTabs = [],
+  consumeLibraryEvents = false,
 }: { 
   children: ReactNode
-  initialTabs?: Dataset[] 
+  initialTabs?: Dataset[]
+  consumeLibraryEvents?: boolean
 }) {
   const router = useRouter()
   const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem, mediaItems, pendingPreviewClips, setPendingPreviewClips } = useLibraryContext()
@@ -134,6 +136,7 @@ export function WatchProvider({
   tabsRef.current = tabs
 
   useEffect(() => {
+    if (!consumeLibraryEvents) return
     if (!activeWatchItemId) return
 
     // Synchronous check: if already open, just switch the active tab and bail
@@ -221,8 +224,9 @@ export function WatchProvider({
   }, [activeWatchItemId])
 
   useEffect(() => {
+    if (!consumeLibraryEvents) return
     if (!activeWatchItems || activeWatchItems.length === 0) return
-
+    
     const currentTabs = tabsRef.current
     const newDatasets: Dataset[] = []
     let firstNewId: string | null = null
@@ -319,6 +323,7 @@ export function WatchProvider({
   const hasMountedPreview = useRef(false)
 
   useEffect(() => {
+    if (!consumeLibraryEvents) return
     if (hasMountedPreview.current) return
     const clips = pendingPreviewClipsRef.current
     if (clips.length === 0) return

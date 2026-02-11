@@ -72,6 +72,50 @@ function ToggleGroup({
   )
 }
 
+// Toggle button group that also syncs an associated range slider when a chip is clicked
+function ToggleGroupWithRange({
+  items,
+  category,
+  filters,
+  onToggle,
+  rangeMap,
+  onRangeChange,
+  rangeCategory,
+  rangeDefault,
+}: {
+  items: { value: string; label: string }[]
+  category: string
+  filters: FilterState
+  onToggle: (category: string, value: string) => void
+  rangeMap: Record<string, [number, number]>
+  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
+  rangeCategory: string
+  rangeDefault: [number, number]
+}) {
+  const handleToggle = (value: string) => {
+    const isCurrentlySelected = filters[category]?.has(value) || false
+    // Toggle the chip filter
+    onToggle(category, value)
+    // If selecting (not deselecting), update the slider to match the chip's range
+    if (!isCurrentlySelected && rangeMap[value]) {
+      onRangeChange(rangeCategory, rangeMap[value], rangeDefault)
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((item) => (
+        <ToggleButton
+          key={item.value}
+          label={item.label}
+          isSelected={filters[category]?.has(item.value) || false}
+          onClick={() => handleToggle(item.value)}
+        />
+      ))}
+    </div>
+  )
+}
+
 // Filter row with circular checkbox that toggles all sub-filters
 function FilterRow({
   label,
@@ -244,13 +288,6 @@ export function FiltersModule({
         )}
       </div>
 
-      {/* Results count */}
-      <div className="px-4 py-2 border-b border-border bg-muted/50">
-        <span className="text-xs text-muted-foreground">
-          Showing <span className="text-foreground font-medium">{filteredCount}</span> of {totalCount} plays
-        </span>
-      </div>
-
       {/* Filter Sections */}
       <ScrollArea className="flex-1 overflow-hidden">
         <Accordion
@@ -297,7 +334,7 @@ export function FiltersModule({
                 onToggleAll={onToggleAll}
                 onRangeReset={resetRange}
               >
-                <ToggleGroup
+                <ToggleGroupWithRange
                   items={[
                     { value: "Short: 1-3", label: "Short: 1-3" },
                     { value: "Medium: 4-7", label: "Medium: 4-7" },
@@ -306,6 +343,14 @@ export function FiltersModule({
                   category="distanceType"
                   filters={filters}
                   onToggle={onToggle}
+                  rangeMap={{
+                    "Short: 1-3": [1, 3],
+                    "Medium: 4-7": [4, 7],
+                    "Long: 8+": [8, 100],
+                  }}
+                  onRangeChange={onRangeChange}
+                  rangeCategory="distanceRange"
+                  rangeDefault={[0, 100]}
                 />
                 <RangeSlider 
                   min={0} 
@@ -628,7 +673,7 @@ export function FiltersModule({
                 onToggleAll={onToggleAll}
                 onRangeReset={resetRange}
               >
-                <ToggleGroup
+                <ToggleGroupWithRange
                   items={[
                     { value: "Short: 1-3", label: "Short: 1-3" },
                     { value: "Medium: 4-7", label: "Medium: 4-7" },
@@ -637,6 +682,14 @@ export function FiltersModule({
                   category="yardsAfterContact"
                   filters={filters}
                   onToggle={onToggle}
+                  rangeMap={{
+                    "Short: 1-3": [1, 3],
+                    "Medium: 4-7": [4, 7],
+                    "Long: 8+": [8, 100],
+                  }}
+                  onRangeChange={onRangeChange}
+                  rangeCategory="yardsAfterContactRange"
+                  rangeDefault={[0, 100]}
                 />
                 <RangeSlider 
                   min={0} 
@@ -801,7 +854,7 @@ export function FiltersModule({
                 onToggleAll={onToggleAll}
                 onRangeReset={resetRange}
               >
-                <ToggleGroup
+                <ToggleGroupWithRange
                   items={[
                     { value: "Short: 0-10", label: "Short: 0-10" },
                     { value: "Medium: 10-20", label: "Medium: 10-20" },
@@ -810,6 +863,14 @@ export function FiltersModule({
                   category="puntReturnYards"
                   filters={filters}
                   onToggle={onToggle}
+                  rangeMap={{
+                    "Short: 0-10": [0, 10],
+                    "Medium: 10-20": [10, 20],
+                    "Long: 20+": [20, 100],
+                  }}
+                  onRangeChange={onRangeChange}
+                  rangeCategory="puntReturnRange"
+                  rangeDefault={[0, 100]}
                 />
                 <RangeSlider 
                   min={0} 
@@ -863,7 +924,7 @@ export function FiltersModule({
                 onToggleAll={onToggleAll}
                 onRangeReset={resetRange}
               >
-                <ToggleGroup
+                <ToggleGroupWithRange
                   items={[
                     { value: "Short: 0-10", label: "Short: 0-10" },
                     { value: "Medium: 10-20", label: "Medium: 10-20" },
@@ -872,6 +933,14 @@ export function FiltersModule({
                   category="kickoffReturnYards"
                   filters={filters}
                   onToggle={onToggle}
+                  rangeMap={{
+                    "Short: 0-10": [0, 10],
+                    "Medium: 10-20": [10, 20],
+                    "Long: 20+": [20, 100],
+                  }}
+                  onRangeChange={onRangeChange}
+                  rangeCategory="kickoffReturnRange"
+                  rangeDefault={[0, 100]}
                 />
                 <RangeSlider 
                   min={0} 

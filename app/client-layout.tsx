@@ -48,7 +48,13 @@ function ClientLayoutInner({
           onDownloadClick={() => console.log("Download clicked")}
           className="bg-sidebar border-b border-sidebar-border"
           showBack={isWatchPage}
-          onBackClick={() => router.push("/library")}
+          onBackClick={() => {
+            if (window.history.length > 1) {
+              router.back()
+            } else {
+              router.push("/library")
+            }
+          }}
         />
 
         <main className={`flex-1 overflow-hidden ${isWatchPage ? "pl-2" : ""}`}>

@@ -116,7 +116,7 @@ function WatchContent() {
 
 export default function WatchPage() {
   return (
-    <WatchProvider>
+    <WatchProvider consumeLibraryEvents>
       <div className="h-full w-full overflow-hidden bg-sidebar">
         <WatchContent />
       </div>

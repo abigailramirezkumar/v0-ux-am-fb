@@ -101,82 +101,79 @@ export default function ExplorePage() {
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
-        <div className="flex flex-col h-full w-full bg-sidebar">
-        {/* Explore Tabs */}
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2 mb-2 bg-background rounded-lg mx-3 mt-3">
-          {exploreTabs.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={cn(
-                "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
-                activeTab === tab.value
-                  ? "bg-foreground text-background shadow-sm"
-                  : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted",
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col h-full w-full bg-sidebar">
+        <ResizablePanelGroup direction="horizontal" className="flex-1">
+          {/* Filters - full height left panel */}
+          <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
+            <div className="h-full pl-3 pr-1 py-3">
+              <FiltersModule
+                filters={filters}
+                rangeFilters={rangeFilters}
+                onToggle={toggleFilter}
+                onToggleAll={toggleAllInCategory}
+                onRangeChange={setRangeFilter}
+                onClear={clearFilters}
+                uniqueGames={uniqueGames}
+                activeFilterCount={activeFilterCount}
+                totalCount={allClipsDataset.plays.length}
+                filteredCount={filteredPlays.length}
+              />
+            </div>
+          </ResizablePanel>
+          <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
 
-        {/* Tab Content */}
-        {activeTab === "clips" ? (
-          <ResizablePanelGroup direction="horizontal" className="flex-1">
-            <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
-              <div className="h-full pl-3 pr-1 pb-3">
-                <FiltersModule
-                  filters={filters}
-                  rangeFilters={rangeFilters}
-                  onToggle={toggleFilter}
-                  onToggleAll={toggleAllInCategory}
-                  onRangeChange={setRangeFilter}
-                  onClear={clearFilters}
-                  uniqueGames={uniqueGames}
-                  activeFilterCount={activeFilterCount}
-                  totalCount={allClipsDataset.plays.length}
-                  filteredCount={filteredPlays.length}
-                />
+          {/* Right panel: Tabs + Content */}
+          <ResizablePanel defaultSize={78}>
+            <div className="h-full flex flex-col pl-1 pr-3 py-3">
+              {/* Explore Tabs */}
+              <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
+                {exploreTabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value)}
+                    className={cn(
+                      "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
+                      activeTab === tab.value
+                        ? "bg-foreground text-background shadow-sm"
+                        : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-            </ResizablePanel>
-            <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
-            <ResizablePanel defaultSize={78}>
-              <div className="h-full overflow-hidden pl-1 pb-3 pr-3">
-                <div className="h-full bg-background rounded-lg overflow-hidden">
-                  <GridModule 
-                    showTabs={false} 
+
+              {/* Tab Content */}
+              {activeTab === "clips" ? (
+                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                  <GridModule
+                    showTabs={false}
                     selectionActions={
                       <div className="flex items-center gap-1">
                         <AddToPlaylistMenu />
                         <PreviewClipsButton />
                       </div>
-                    } 
+                    }
                     dataset={filteredDataset}
                     onClearFilters={clearFilters}
                   />
                 </div>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : activeTab === "practice" ? (
-          <div className="flex-1 px-3 pb-3">
-            <div className="h-full bg-background rounded-lg overflow-hidden">
-              <EmptyTabState label="Practice" />
+              ) : activeTab === "practice" ? (
+                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                  <EmptyTabState label="Practice" />
+                </div>
+              ) : activeTab === "games" ? (
+                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                  <EmptyTabState label="Games" />
+                </div>
+              ) : (
+                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                  <EmptyTabState label="Teams" />
+                </div>
+              )}
             </div>
-          </div>
-        ) : activeTab === "games" ? (
-          <div className="flex-1 px-3 pb-3">
-            <div className="h-full bg-background rounded-lg overflow-hidden">
-              <EmptyTabState label="Games" />
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 px-3 pb-3">
-            <div className="h-full bg-background rounded-lg overflow-hidden">
-              <EmptyTabState label="Teams" />
-            </div>
-          </div>
-        )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </WatchProvider>
   )

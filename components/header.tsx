@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react"
 interface HeaderProps {
   className?: string
   title?: string
+  icon?: React.ReactNode
   onShareClick?: () => void
   onDownloadClick?: () => void
   showBack?: boolean
@@ -17,6 +18,7 @@ interface HeaderProps {
 export function Header({
   className,
   title = "Content Title",
+  icon,
   onShareClick,
   onDownloadClick,
   showBack,
@@ -25,15 +27,19 @@ export function Header({
   return (
     <header className={cn("bg-sidebar border-b-0 border-border px-4 py-3 font-sans border-none", className)}>
       <div className="flex items-center gap-4">
-        {showBack ? (
-          <button onClick={onBackClick} className="p-1 hover:bg-muted rounded transition-colors -ml-1">
-            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-          </button>
-        ) : (
-          <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />
-        )}
+        <div className="flex items-center gap-2">
+          {showBack ? (
+            <button onClick={onBackClick} className="p-1 hover:bg-muted rounded transition-colors -ml-1">
+              <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+            </button>
+          ) : icon ? (
+            <span className="flex items-center text-muted-foreground">{icon}</span>
+          ) : (
+            <Icon name="moduleGrid" className="w-5 h-5 text-muted-foreground" />
+          )}
 
-        <span className="text-foreground font-medium">{title}</span>
+          <span className="text-foreground font-medium">{title}</span>
+        </div>
 
         <div className="flex-1 px-4">
           <GlobalSearch />

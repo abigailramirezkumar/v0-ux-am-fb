@@ -180,30 +180,47 @@ export function LibraryItem({
             </div>
 
             {/* Icon/Thumbnail - fixed width */}
-            <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden bg-muted h-5 w-9 ml-0">
-            {item.type === "playlist" ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <Icon name="list" size={14} className={cn(isSelected ? "text-white" : "text-foreground")} />
-              </div>
-            ) : isHovered && item.type === "video" ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onOpen?.(item.id)
-                }}
-                className="w-full h-full flex items-center justify-center hover:bg-black/10 transition-colors"
-                aria-label={`Play ${item.name}`}
-              >
-                <Icon name="video" size={24} className={cn(isSelected ? "text-white" : "text-foreground")} />
-              </button>
-              ) : item.thumbnailUrl ? (
-                <img
-                  src={item.thumbnailUrl || "/placeholder.svg"}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
+            <div className="flex items-center justify-center flex-shrink-0 rounded overflow-hidden h-5 w-9 ml-0 relative">
+              {item.type === "playlist" ? (
+                <div className="w-full h-full flex items-center justify-center bg-muted">
+                  <Icon name="list" size={14} className={cn(isSelected ? "text-white" : "text-foreground")} />
+                </div>
               ) : (
-                <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
+                <>
+                  {/* Always render the static thumbnail so layout never shifts */}
+                  <div className="w-full h-full bg-muted">
+                    {item.thumbnailUrl ? (
+                      <img
+                        src={item.thumbnailUrl || "/placeholder.svg"}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full bg-gradient-to-br from-green-600 to-green-800 w-full" />
+                    )}
+                  </div>
+
+                  {/* Play button overlay on hover -- absolutely positioned so it causes no layout shift */}
+                  {isHovered && item.type === "video" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onOpen?.(item.id)
+                      }}
+                      className="absolute inset-0 flex items-center justify-center bg-muted rounded transition-colors"
+                      aria-label={`Play ${item.name}`}
+                    >
+                      <div className={cn(
+                        "flex items-center justify-center w-4 h-4 rounded-full border-[1.5px]",
+                        isSelected
+                          ? "border-white text-white"
+                          : "border-foreground/70 text-foreground/70",
+                      )}>
+                        <Icon name="play" size={8} className="fill-current ml-px" />
+                      </div>
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

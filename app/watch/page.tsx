@@ -102,7 +102,7 @@ function WatchContent() {
             order={2}
           >
             <div className="h-full overflow-hidden">
-              <GridModule selectionActions={<AddToPlaylistMenu />} />
+              <GridModule selectionActions={<AddToPlaylistMenu />} editable />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

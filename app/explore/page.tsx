@@ -124,7 +124,7 @@ export default function ExplorePage() {
         {activeTab === "clips" ? (
           <ResizablePanelGroup direction="horizontal" className="flex-1">
             <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
-              <div className="h-full pr-1 pb-3">
+              <div className="h-full pl-3 pr-1 pb-3">
                 <FiltersModule
                   filters={filters}
                   rangeFilters={rangeFilters}

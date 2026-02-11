@@ -140,6 +140,8 @@ export function WatchProvider({
     const existingTab = tabsRef.current.find((t) => t.id === activeWatchItemId)
     if (existingTab) {
       setActiveTabId(existingTab.id)
+      // Clear after consuming so it doesn't re-trigger on future mounts
+      setWatchItem(null)
       return
     }
 
@@ -213,6 +215,9 @@ export function WatchProvider({
         setCurrentPlay(datasetWithId.plays[0])
       }
     }
+
+    // Clear after consuming so it doesn't re-trigger on future mounts
+    setWatchItem(null)
   }, [activeWatchItemId])
 
   useEffect(() => {

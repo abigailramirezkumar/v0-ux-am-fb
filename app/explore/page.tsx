@@ -1,19 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
+import { PreviewModule } from "@/components/preview-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import { useExploreFilters } from "@/hooks/use-explore-filters"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 import { useLibraryContext } from "@/lib/library-context"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import type { ClipData } from "@/types/library"
+import type { PlayData } from "@/lib/mock-datasets"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -86,6 +89,17 @@ function EmptyTabState({ label }: { label: string }) {
 
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
+  const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
+  const previewPanelRef = useRef<ImperativePanelHandle>(null)
+
+  // Expand/collapse the preview panel when previewPlay changes
+  useEffect(() => {
+    if (previewPlay) {
+      previewPanelRef.current?.expand()
+    } else {
+      previewPanelRef.current?.collapse()
+    }
+  }, [previewPlay])
 
   // Get all unique clips combined into one dataset
   const allClipsDataset = getAllUniqueClips()
@@ -122,56 +136,84 @@ export default function ExplorePage() {
           </ResizablePanel>
           <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
 
-          {/* Right panel: Tabs + Content */}
+          {/* Right panel: Tabs + Content + Preview */}
           <ResizablePanel defaultSize={78}>
-            <div className="h-full flex flex-col pl-1 pr-3 py-3">
-              {/* Explore Tabs */}
-              <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
-                {exploreTabs.map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
-                    className={cn(
-                      "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
-                      activeTab === tab.value
-                        ? "bg-foreground text-background shadow-sm"
-                        : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted",
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              {/* Main content area */}
+              <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
+                <div className="h-full flex flex-col pl-1 pr-3 py-3">
+                  {/* Explore Tabs */}
+                  <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
+                    {exploreTabs.map((tab) => (
+                      <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={cn(
+                          "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
+                          activeTab === tab.value
+                            ? "bg-foreground text-background shadow-sm"
+                            : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted",
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
 
-              {/* Tab Content */}
-              {activeTab === "clips" ? (
-                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                  <GridModule
-                    showTabs={false}
-                    selectionActions={
-                      <div className="flex items-center gap-1">
-                        <AddToPlaylistMenu />
-                        <PreviewClipsButton />
-                      </div>
-                    }
-                    dataset={filteredDataset}
-                    onClearFilters={clearFilters}
-                  />
+                  {/* Tab Content */}
+                  {activeTab === "clips" ? (
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                      <GridModule
+                        showTabs={false}
+                        selectionActions={
+                          <div className="flex items-center gap-1">
+                            <AddToPlaylistMenu />
+                            <PreviewClipsButton />
+                          </div>
+                        }
+                        dataset={filteredDataset}
+                        onClearFilters={clearFilters}
+                        onDoubleClickPlay={(play) => setPreviewPlay(play)}
+                      />
+                    </div>
+                  ) : activeTab === "practice" ? (
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                      <EmptyTabState label="Practice" />
+                    </div>
+                  ) : activeTab === "games" ? (
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                      <EmptyTabState label="Games" />
+                    </div>
+                  ) : (
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                      <EmptyTabState label="Teams" />
+                    </div>
+                  )}
                 </div>
-              ) : activeTab === "practice" ? (
-                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                  <EmptyTabState label="Practice" />
+              </ResizablePanel>
+
+              {/* Preview Panel (collapsible right) */}
+              <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+              <ResizablePanel
+                ref={previewPanelRef}
+                defaultSize={0}
+                minSize={25}
+                maxSize={50}
+                collapsible
+                collapsedSize={0}
+                id="explore-preview"
+                order={2}
+              >
+                <div className="h-full pr-3 py-3">
+                  {previewPlay && (
+                    <PreviewModule
+                      play={previewPlay}
+                      onClose={() => setPreviewPlay(null)}
+                    />
+                  )}
                 </div>
-              ) : activeTab === "games" ? (
-                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                  <EmptyTabState label="Games" />
-                </div>
-              ) : (
-                <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                  <EmptyTabState label="Teams" />
-                </div>
-              )}
-            </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

@@ -244,13 +244,6 @@ export function FiltersModule({
         )}
       </div>
 
-      {/* Results count */}
-      <div className="px-4 py-2 border-b border-border bg-muted/50">
-        <span className="text-xs text-muted-foreground">
-          Showing <span className="text-foreground font-medium">{filteredCount}</span> of {totalCount} plays
-        </span>
-      </div>
-
       {/* Filter Sections */}
       <ScrollArea className="flex-1 overflow-hidden">
         <Accordion

@@ -101,7 +101,7 @@ export default function ExplorePage() {
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
-      <div className="flex flex-col h-full w-full bg-muted/30">
+        <div className="flex flex-col h-full w-full bg-background">
         {/* Explore Tabs */}
         <div className="flex items-center gap-2 px-3 pt-3 pb-2">
           {exploreTabs.map((tab) => (

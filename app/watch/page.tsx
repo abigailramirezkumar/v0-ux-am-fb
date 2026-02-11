@@ -13,9 +13,20 @@ import type { ImperativePanelHandle } from "react-resizable-panels"
 function WatchContent() {
   const { visibleModules } = useWatchContext()
 
+  const topPanelRef = useRef<ImperativePanelHandle>(null)
   const libraryPanelRef = useRef<ImperativePanelHandle>(null)
   const videoPanelRef = useRef<ImperativePanelHandle>(null)
   const gridPanelRef = useRef<ImperativePanelHandle>(null)
+
+  // Collapse/expand the top wrapper panel based on whether either child is visible
+  const topVisible = visibleModules.library || visibleModules.video
+  useEffect(() => {
+    if (topVisible) {
+      topPanelRef.current?.expand()
+    } else {
+      topPanelRef.current?.collapse()
+    }
+  }, [topVisible])
 
   useEffect(() => {
     if (visibleModules.library) {
@@ -50,7 +61,15 @@ function WatchContent() {
           className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"
         >
           {/* TOP SECTION: Library + Video */}
-          <ResizablePanel defaultSize={60} minSize={20} id="top-panel" order={1}>
+          <ResizablePanel
+            ref={topPanelRef}
+            defaultSize={60}
+            minSize={20}
+            collapsible
+            collapsedSize={0}
+            id="top-panel"
+            order={1}
+          >
             <ResizablePanelGroup
               direction="horizontal"
               className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"

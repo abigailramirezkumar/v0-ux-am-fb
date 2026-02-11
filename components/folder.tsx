@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/tooltip"
 
 import { useState, useEffect } from "react"
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/checkbox"
@@ -138,7 +137,6 @@ export function Folder({
 
   const isSelected = selectedFolders.has(folder.id)
   const isExpanded = expandedFolders.has(folder.id)
-
   const hasChildren =
     (folder.children && folder.children.length > 0) ||
     (folder.items && folder.items.length > 0) ||
@@ -791,89 +789,85 @@ export function Folder({
         {contextMenuContent}
       </ContextMenu>
 
-      {!isFlattened && hasChildren && (
-        <Collapsible open={isExpanded}>
-          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
-            <div>
-            {folder.children?.map((child, i) => (
-              <Folder
-                key={child.id}
-                folder={child}
-                level={level + 1}
-                index={i}
-                onSelect={onSelect}
-                onSelectItem={onSelectItem}
-                onDoubleClick={onDoubleClick}
-                selectedFolders={selectedFolders}
-                selectedItems={selectedItems}
-                expandedFolders={expandedFolders}
-                onToggleExpand={onToggleExpand}
-                importedFolders={importedFolders}
-                importedItems={importedItems}
-                onUpdateImported={onUpdateImported}
-                onRename={onRename}
-                onDelete={onDelete}
-                onReorderChildren={onReorderChildren}
-                onSortFolder={onSortFolder}
-                folderSortOptions={folderSortOptions}
-                onMove={onMove}
-                onOpen={onOpen}
-                onCreateSubfolder={onCreateSubfolder}
-              />
-            ))}
+      {!isFlattened && isExpanded && hasChildren && (
+        <div>
+          {folder.children?.map((child, i) => (
+            <Folder
+              key={child.id}
+              folder={child}
+              level={level + 1}
+              index={i}
+              onSelect={onSelect}
+              onSelectItem={onSelectItem}
+              onDoubleClick={onDoubleClick}
+              selectedFolders={selectedFolders}
+              selectedItems={selectedItems}
+              expandedFolders={expandedFolders}
+              onToggleExpand={onToggleExpand}
+              importedFolders={importedFolders}
+              importedItems={importedItems}
+              onUpdateImported={onUpdateImported}
+              onRename={onRename}
+              onDelete={onDelete}
+              onReorderChildren={onReorderChildren}
+              onSortFolder={onSortFolder}
+              folderSortOptions={folderSortOptions}
+              onMove={onMove}
+              onOpen={onOpen}
+              onCreateSubfolder={onCreateSubfolder}
+            />
+          ))}
 
-            {folder.items?.map((item, i) => (
-              <LibraryItem
-                key={item.id}
-                item={{
-                  ...item,
-                  thumbnailUrl: item.thumbnailUrl || "/football-field.png",
-                }}
-                level={level + 1}
-                index={i + (folder.children?.length || 0)}
-                onSelect={onSelectItem}
-                selectedItems={selectedItems}
-                importedItems={importedItems}
-                onUpdateImported={onUpdateImported}
-                onMove={onMove}
-                onOpen={onOpen}
-              />
-            ))}
+          {folder.items?.map((item, i) => (
+            <LibraryItem
+              key={item.id}
+              item={{
+                ...item,
+                thumbnailUrl: item.thumbnailUrl || "/football-field.png",
+              }}
+              level={level + 1}
+              index={i + (folder.children?.length || 0)}
+              onSelect={onSelectItem}
+              selectedItems={selectedItems}
+              importedItems={importedItems}
+              onUpdateImported={onUpdateImported}
+              onMove={onMove}
+              onOpen={onOpen}
+            />
+          ))}
 
-            {/* Dynamic media items from the flat list (segregated model) */}
-            {dynamicMediaItems.map((mediaItem, i) => (
-              <LibraryItem
-                key={mediaItem.id}
-                item={{
-                  id: mediaItem.id,
-                  name: mediaItem.name,
-                  type: mediaItem.type,
-                  itemCount: mediaItem.clips.length,
-                  thumbnailUrl: "/placeholder-logo.png",
-                  dateModified: new Date(mediaItem.modifiedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  }),
-                  createdDate: new Date(mediaItem.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  }),
-                }}
-                level={level + 1}
-                index={i + (folder.children?.length || 0) + (folder.items?.length || 0)}
-                onSelect={onSelectItem}
-                selectedItems={selectedItems}
-                importedItems={importedItems}
-                onUpdateImported={onUpdateImported}
-                onMove={onMove}
-                onOpen={onOpen}
-              />
-            ))}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+          {/* Dynamic media items from the flat list (segregated model) */}
+          {dynamicMediaItems.map((mediaItem, i) => (
+            <LibraryItem
+              key={mediaItem.id}
+              item={{
+                id: mediaItem.id,
+                name: mediaItem.name,
+                type: mediaItem.type,
+                itemCount: mediaItem.clips.length,
+                thumbnailUrl: "/placeholder-logo.png",
+                dateModified: new Date(mediaItem.modifiedAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+                createdDate: new Date(mediaItem.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+              }}
+              level={level + 1}
+              index={i + (folder.children?.length || 0) + (folder.items?.length || 0)}
+              onSelect={onSelectItem}
+              selectedItems={selectedItems}
+              importedItems={importedItems}
+              onUpdateImported={onUpdateImported}
+              onMove={onMove}
+              onOpen={onOpen}
+            />
+          ))}
+        </div>
       )}
     </div>
   )

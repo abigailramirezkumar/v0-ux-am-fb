@@ -649,7 +649,10 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
-              <TableHead className="w-[40px] text-center">
+              <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
+                {/* Row number header - empty */}
+              </TableHead>
+              <TableHead className="w-[40px] text-center border-r border-border/50">
                 <Checkbox
                   checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
                   onCheckedChange={(checked) => {
@@ -661,29 +664,29 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   }}
                 />
               </TableHead>
-              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+              <TableHead className="w-[50px] text-center text-xs uppercase tracking-wider font-semibold text-muted-foreground border-r border-border/50">
                 #
               </TableHead>
-              <SortableHeader label="ODK" columnKey="odk" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
-              <SortableHeader label="Qtr" columnKey="quarter" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
-              <SortableHeader label="Dn" columnKey="down" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
-              <SortableHeader label="Dist" columnKey="distance" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center" />
-              <SortableHeader label="Yard Ln" columnKey="yardLine" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] text-center" />
-              <SortableHeader label="Hash" columnKey="hash" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
-              <SortableHeader label="Yds" columnKey="yards" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
-              <SortableHeader label="Result" columnKey="result" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
-              <SortableHeader label="Gn/Ls" columnKey="gainLoss" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center" />
-              <SortableHeader label="Def Front" columnKey="defFront" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
-              <SortableHeader label="Def Str" columnKey="defStr" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px]" />
-              <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px]" />
-              <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center" />
+              <SortableHeader label="ODK" columnKey="odk" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
+              <SortableHeader label="Qtr" columnKey="quarter" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
+              <SortableHeader label="Dn" columnKey="down" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
+              <SortableHeader label="Dist" columnKey="distance" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center border-r border-border/50" />
+              <SortableHeader label="Yard Ln" columnKey="yardLine" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] text-center border-r border-border/50" />
+              <SortableHeader label="Hash" columnKey="hash" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
+              <SortableHeader label="Yds" columnKey="yards" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
+              <SortableHeader label="Result" columnKey="result" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
+              <SortableHeader label="Gn/Ls" columnKey="gainLoss" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] text-center border-r border-border/50" />
+              <SortableHeader label="Def Front" columnKey="defFront" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
+              <SortableHeader label="Def Str" columnKey="defStr" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
+              <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
+              <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] text-center border-r border-border/50" />
               <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-muted-foreground">
                 Game
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortPlays(activeDataset.plays, sortColumn, sortMode).map((play) => {
+            {sortPlays(activeDataset.plays, sortColumn, sortMode).map((play, rowIndex) => {
               const isPlaying = currentPlay?.id === play.id && activeTabId === playingTabId
 
               return (
@@ -695,56 +698,59 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   )}
                   onClick={() => seekToPlay(play)}
                 >
-                  <TableCell className="text-center py-1.5" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
+                    {rowIndex + 1}
+                  </TableCell>
+                  <TableCell className="text-center py-1.5 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedPlayIds.has(play.id)}
                       onCheckedChange={() => togglePlaySelection(play.id)}
                     />
                   </TableCell>
-                  <TableCell className="text-center font-medium py-1.5">{play.playNumber}</TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center font-medium py-1.5 border-r border-border/50">{play.playNumber}</TableCell>
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="odk" value={play.odk} onCommit={updatePlay} isPlaying={isPlaying} /> : play.odk}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="quarter" value={play.quarter} onCommit={updatePlay} isPlaying={isPlaying} /> : play.quarter}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="down" value={play.down} onCommit={updatePlay} isPlaying={isPlaying} /> : play.down}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="distance" value={play.distance} onCommit={updatePlay} isPlaying={isPlaying} /> : play.distance}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="yardLine" value={play.yardLine} onCommit={updatePlay} isPlaying={isPlaying} /> : play.yardLine}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="hash" value={play.hash} onCommit={updatePlay} isPlaying={isPlaying} /> : play.hash}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="yards" value={play.yards} onCommit={updatePlay} isPlaying={isPlaying} /> : play.yards}
                   </TableCell>
-                  <TableCell className="py-1.5">
+                  <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="result" value={play.result} onCommit={updatePlay} isPlaying={isPlaying} /> : play.result}
                   </TableCell>
                   <TableCell
                     className={cn(
-                      "text-center py-1.5",
+                      "text-center py-1.5 border-r border-border/50",
                       play.gainLoss === "Gn" ? "text-green-600" : "text-red-500",
                       isPlaying && "text-white",
                     )}
                   >
                     {play.gainLoss}
                   </TableCell>
-                  <TableCell className="py-1.5">
+                  <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="defFront" value={play.defFront} onCommit={updatePlay} isPlaying={isPlaying} /> : play.defFront}
                   </TableCell>
-                  <TableCell className="py-1.5">
+                  <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="defStr" value={play.defStr} onCommit={updatePlay} isPlaying={isPlaying} /> : play.defStr}
                   </TableCell>
-                  <TableCell className="py-1.5">
+                  <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="coverage" value={play.coverage} onCommit={updatePlay} isPlaying={isPlaying} /> : play.coverage}
                   </TableCell>
-                  <TableCell className="text-center py-1.5">
+                  <TableCell className="text-center py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="blitz" value={play.blitz} onCommit={updatePlay} isPlaying={isPlaying} /> : play.blitz}
                   </TableCell>
                   <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>

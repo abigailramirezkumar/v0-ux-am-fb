@@ -103,7 +103,7 @@ export default function ExplorePage() {
     <WatchProvider initialTabs={[allClipsDataset]}>
         <div className="flex flex-col h-full w-full bg-sidebar">
         {/* Explore Tabs */}
-        <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background">
+        <div className="flex items-center gap-2 px-3 pt-3 pb-2 mb-2 bg-background rounded-lg mx-3 mt-3">
           {exploreTabs.map((tab) => (
             <button
               key={tab.value}

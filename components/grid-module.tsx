@@ -652,7 +652,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
                 {/* Row number header - empty */}
               </TableHead>
-              <TableHead className="px-4 border-r border-border/50">
+              <TableHead className="px-3 border-r border-border/50">
                 <div className="flex items-center justify-center">
                   <Checkbox
                     checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
@@ -703,7 +703,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
                     {rowIndex + 1}
                   </TableCell>
-                  <TableCell className="py-1.5 px-4 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="py-1.5 px-3 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center">
                       <Checkbox
                         checked={selectedPlayIds.has(play.id)}

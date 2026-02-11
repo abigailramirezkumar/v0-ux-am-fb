@@ -793,7 +793,7 @@ export function Folder({
 
       {!isFlattened && hasChildren && (
         <Collapsible open={isExpanded}>
-          <CollapsibleContent className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden">
+          <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
             <div>
             {folder.children?.map((child, i) => (
               <Folder

@@ -10,67 +10,83 @@ export function useExploreFilters(initialPlays: PlayData[]) {
 
   const toggleFilter = useCallback((category: string, value: string) => {
     setFilters((prev) => {
-      const next = { ...prev }
-      if (!next[category]) next[category] = new Set()
+      const currentSet = prev[category]
 
-      const newSet = new Set(next[category])
-      if (newSet.has(value)) {
+      // Adding a value to a category that doesn't exist yet
+      if (!currentSet) {
+        return { ...prev, [category]: new Set([value]) }
+      }
+
+      const hasValue = currentSet.has(value)
+
+      // Removing the last value — delete the category entirely
+      if (hasValue && currentSet.size === 1) {
+        const { [category]: _, ...rest } = prev
+        return rest
+      }
+
+      // Clone the Set only when we know a mutation is needed
+      const newSet = new Set(currentSet)
+      if (hasValue) {
         newSet.delete(value)
       } else {
         newSet.add(value)
       }
 
-      if (newSet.size === 0) {
-        delete next[category]
-      } else {
-        next[category] = newSet
-      }
-      return next
+      return { ...prev, [category]: newSet }
     })
   }, [])
 
   // Toggle all values in a category - if any selected, clear all; if none selected, select all
   const toggleAllInCategory = useCallback((category: string, allValues: string[]) => {
     setFilters((prev) => {
-      const next = { ...prev }
-      const currentSet = next[category]
-      const hasAnySelected = currentSet && currentSet.size > 0
+      const currentSet = prev[category]
 
-      if (hasAnySelected) {
-        // Clear all
-        delete next[category]
-      } else {
-        // Select all
-        next[category] = new Set(allValues)
+      if (currentSet && currentSet.size > 0) {
+        // Clear all — remove category without spreading if nothing else changes
+        const { [category]: _, ...rest } = prev
+        return rest
       }
-      return next
+
+      // Select all
+      return { ...prev, [category]: new Set(allValues) }
     })
   }, [])
 
   // Set a range filter (dual-thumb slider: [min, max])
   const setRangeFilter = useCallback((category: string, value: [number, number], defaultRange: [number, number]) => {
     setRangeFilters((prev) => {
-      const next = { ...prev }
-      // If the value matches the full default range, remove the filter
-      if (value[0] === defaultRange[0] && value[1] === defaultRange[1]) {
-        delete next[category]
-      } else {
-        next[category] = value
+      const isDefault = value[0] === defaultRange[0] && value[1] === defaultRange[1]
+      const current = prev[category]
+
+      if (isDefault) {
+        // Already absent — no state change needed
+        if (!current) return prev
+        const { [category]: _, ...rest } = prev
+        return rest
       }
-      return next
+
+      // Already set to the same value — no state change needed
+      if (current && current[0] === value[0] && current[1] === value[1]) return prev
+
+      return { ...prev, [category]: value }
     })
   }, [])
 
   // Set a single-point filter (single-thumb slider, e.g. yard line)
   const setSinglePointFilter = useCallback((category: string, value: number, defaultValue: number) => {
     setRangeFilters((prev) => {
-      const next = { ...prev }
+      const current = prev[category]
+
       if (value === defaultValue) {
-        delete next[category]
-      } else {
-        next[category] = [value, value]
+        if (!current) return prev
+        const { [category]: _, ...rest } = prev
+        return rest
       }
-      return next
+
+      if (current && current[0] === value && current[1] === value) return prev
+
+      return { ...prev, [category]: [value, value] }
     })
   }, [])
 

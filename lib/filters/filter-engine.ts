@@ -70,7 +70,7 @@ export function getNumericValueForRange(
 ): number | null {
   switch (category) {
     case "yardLine":
-      return parseInt(play.yardLine.replace(/[+-]/, "")) || 0
+      return play.yardLineNumeric
     case "distanceRange":
       return play.distance
     case "yardsAfterContactRange":

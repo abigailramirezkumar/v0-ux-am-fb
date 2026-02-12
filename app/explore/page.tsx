@@ -171,7 +171,7 @@ export default function ExplorePage() {
 
           {/* Right panel: Tabs + Content + Preview */}
           <ResizablePanel defaultSize={78}>
-            <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanelGroup direction="horizontal" className="h-full [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
               {/* Main content area */}
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
                 <div className="h-full flex flex-col pl-1 pr-3 py-3">

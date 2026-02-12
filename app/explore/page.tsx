@@ -104,17 +104,27 @@ export default function ExplorePage() {
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Expand/collapse the preview panel when previewPlay changes
+  // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   useEffect(() => {
     if (previewPlay) {
       previewPanelRef.current?.expand()
+      setShowFilters(false)
     } else {
       previewPanelRef.current?.collapse()
+      setShowFilters(true)
     }
   }, [previewPlay])
 
   const handleToggleFilters = useCallback(() => {
-    setShowFilters((prev) => !prev)
-  }, [])
+    setShowFilters((prev) => {
+      const next = !prev
+      // Mutual exclusion: opening filters closes preview
+      if (next && previewPlay) {
+        setPreviewPlay(null)
+      }
+      return next
+    })
+  }, [previewPlay])
 
   // Sync the imperative panel with the showFilters state (matches watch page pattern)
   useEffect(() => {

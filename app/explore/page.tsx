@@ -107,7 +107,8 @@ export default function ExplorePage() {
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   useEffect(() => {
     if (previewPlay) {
-      previewPanelRef.current?.expand()
+      // Resize to 50% so grid and preview share space equally
+      previewPanelRef.current?.resize(50)
       setShowFilters(false)
     } else {
       previewPanelRef.current?.collapse()
@@ -162,7 +163,7 @@ export default function ExplorePage() {
             onCollapse={() => setShowFilters(false)}
             onExpand={() => setShowFilters(true)}
           >
-            <div className="h-full pl-3 pr-1 py-3">
+            <div className="h-full pl-3 py-3">
               <FiltersModule
                 filters={filters}
                 rangeFilters={rangeFilters}
@@ -177,14 +178,14 @@ export default function ExplorePage() {
               />
             </div>
           </ResizablePanel>
-          <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+          <ResizableHandle className="w-[4px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
 
           {/* Right panel: Tabs + Content + Preview */}
           <ResizablePanel defaultSize={78}>
             <ResizablePanelGroup direction="horizontal" className="h-full [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
               {/* Main content area */}
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
-                <div className="h-full flex flex-col pl-1 pr-3 py-3">
+                <div className={cn("h-full flex flex-col py-3", !previewPlay && "pr-3")}>
                   {/* Explore Tabs + Filter Toggle */}
                   <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
                     {/* Filter toggle button – matches Watch toolbar ToggleBtn style */}
@@ -265,18 +266,18 @@ export default function ExplorePage() {
               </ResizablePanel>
 
               {/* Preview Panel (collapsible right) */}
-              <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+              <ResizableHandle className="w-[4px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
               <ResizablePanel
                 ref={previewPanelRef}
                 defaultSize={0}
-                minSize={25}
-                maxSize={50}
+                minSize={30}
+                maxSize={55}
                 collapsible
                 collapsedSize={0}
                 id="explore-preview"
                 order={2}
               >
-                <div className="h-full pr-3 py-3">
+                <div className="h-full pr-3 py-3 pl-0">
                   {previewPlay && (
                     <PreviewModule
                       play={previewPlay}

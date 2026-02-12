@@ -68,10 +68,9 @@ function generatePlaySummary(play: PlayData): string {
 
   // Down & distance at yardline
   const ordinal = play.down === 1 ? "1st" : play.down === 2 ? "2nd" : play.down === 3 ? "3rd" : "4th"
-  const ylNum = parseInt(play.yardLine.replace(/[+-]/, ""), 10)
   const gameParts = play.game.split(" vs ")
   const teamAbbr = gameParts[0]?.split(" ")[0] || "OWN"
-  parts.push(`${ordinal} & ${play.distance} at ${teamAbbr} ${ylNum}`)
+  parts.push(`${ordinal} & ${play.distance} at ${teamAbbr} ${play.yardLineNumeric}`)
 
   // Play description with player name
   const offensePlayers = athletes.filter((a) => ["QB", "RB", "WR", "TE"].includes(a.position))

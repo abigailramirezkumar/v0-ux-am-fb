@@ -25,6 +25,9 @@ export interface PlayData {
   isFirstDown: boolean
   isPenalty: boolean
   penaltyType?: string
+  // Pre-computed numeric fields -- avoids parsing / regex in hot paths
+  /** Absolute yard-line number (0-50), parsed once at generation time. */
+  yardLineNumeric: number
 }
 
 export interface Dataset {
@@ -84,7 +87,8 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
     const playType: PlayData["playType"] = odk === "K" ? "Special Teams" : random() > 0.5 ? "Pass" : "Run"
     const distance = Math.floor(random() * 10) + 1
     const isPenalty = random() > 0.9
-    
+    const yardLineRaw = Math.floor(random() * 50)
+
     return {
       id: `play-${i}`,
       playNumber: i + 1,
@@ -92,7 +96,8 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
       quarter: Math.floor(i / (count / 4)) + 1,
       down: (i % 4) + 1,
       distance,
-      yardLine: `${random() > 0.5 ? "-" : "+"}${Math.floor(random() * 50)}`,
+      yardLine: `${random() > 0.5 ? "-" : "+"}${yardLineRaw}`,
+      yardLineNumeric: yardLineRaw,
       hash: ["L", "R", "M"][Math.floor(random() * 3)] as "L" | "R" | "M",
       yards: Math.abs(gain),
       result: playType === "Pass" ? passResults[Math.floor(random() * 2)] || "Pass" : "Run",

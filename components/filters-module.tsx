@@ -8,6 +8,15 @@ import { useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { FilterState, RangeFilterState } from "@/hooks/use-explore-filters"
 import { Button } from "@/components/ui/button"
+import {
+  FILTER_SECTIONS,
+  DEFAULT_OPEN_SECTIONS,
+  type FilterDef,
+  type ToggleFilterDef,
+  type ToggleWithRangeFilterDef,
+  type RangeFilterDef,
+  type SelectFilterDef,
+} from "@/lib/filter-config"
 
 interface FiltersModuleProps {
   filters: FilterState
@@ -279,6 +288,150 @@ function RangeSlider({
   )
 }
 
+// ---------------------------------------------------------------------------
+// Renders a single FilterDef driven by its `type`.
+// ---------------------------------------------------------------------------
+function ConfigDrivenFilter({
+  def,
+  filters,
+  rangeFilters,
+  onToggle,
+  onToggleAll,
+  onRangeChange,
+  resetRange,
+}: {
+  def: FilterDef
+  filters: FilterState
+  rangeFilters: RangeFilterState
+  onToggle: (category: string, value: string) => void
+  onToggleAll: (category: string, allValues: string[]) => void
+  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
+  resetRange: (category: string, defaultRange: [number, number]) => void
+}) {
+  switch (def.type) {
+    case "boolean":
+      return (
+        <FilterRow
+          label={def.label}
+          count={def.count}
+          filters={filters}
+          onToggle={onToggle}
+        />
+      )
+
+    case "toggle": {
+      const d = def as ToggleFilterDef
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category={d.category}
+          allValues={d.allValues}
+          filters={filters}
+          onToggleAll={onToggleAll}
+        >
+          {d.groups.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? "pt-1" : undefined}>
+              <ToggleGroup
+                items={group}
+                category={d.category}
+                filters={filters}
+                onToggle={onToggle}
+              />
+            </div>
+          ))}
+        </FilterRow>
+      )
+    }
+
+    case "toggleWithRange": {
+      const d = def as ToggleWithRangeFilterDef
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category={d.category}
+          allValues={d.allValues}
+          filters={filters}
+          rangeFilters={rangeFilters}
+          rangeCategory={d.rangeCategory}
+          rangeDefault={d.rangeDefault}
+          onToggleAll={onToggleAll}
+          onRangeReset={resetRange}
+        >
+          <ToggleGroupWithRange
+            items={d.groups[0]}
+            category={d.category}
+            filters={filters}
+            onToggle={onToggle}
+            rangeMap={d.rangeMap}
+            onRangeChange={onRangeChange}
+            rangeCategory={d.rangeCategory}
+            rangeDefault={d.rangeDefault}
+          />
+          <RangeSlider
+            min={d.rangeMin}
+            max={d.rangeMax}
+            value={rangeFilters[d.rangeCategory] || d.rangeDefault}
+            onChange={(v) => onRangeChange(d.rangeCategory, v, d.rangeDefault)}
+          />
+        </FilterRow>
+      )
+    }
+
+    case "range": {
+      const d = def as RangeFilterDef
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          filters={filters}
+          onToggle={onToggle}
+          rangeFilters={rangeFilters}
+          rangeCategory={d.rangeCategory}
+          rangeDefault={d.rangeDefault}
+          onRangeReset={resetRange}
+        >
+          <RangeSlider
+            min={d.rangeMin}
+            max={d.rangeMax}
+            value={rangeFilters[d.rangeCategory] || d.rangeDefault}
+            onChange={(v) => onRangeChange(d.rangeCategory, v, d.rangeDefault)}
+          />
+        </FilterRow>
+      )
+    }
+
+    case "select": {
+      const d = def as SelectFilterDef
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          filters={filters}
+          onToggle={onToggle}
+        >
+          <Select>
+            <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
+              <SelectValue placeholder={d.placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {d.options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterRow>
+      )
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main export — now data-driven via FILTER_SECTIONS
+// ---------------------------------------------------------------------------
 export function FiltersModule({
   filters,
   rangeFilters,
@@ -286,20 +439,15 @@ export function FiltersModule({
   onToggleAll,
   onRangeChange,
   onClear,
-  uniqueGames,
   activeFilterCount,
-  totalCount,
-  filteredCount,
 }: FiltersModuleProps) {
   // Helper to reset a range filter to its default
-  const resetRange = (category: string, defaultRange: [number, number]) => {
-    onRangeChange(category, defaultRange, defaultRange)
-  }
-  
-  // Count active filters per section
-  const getCount = (categories: string[]) => {
-    return categories.reduce((acc, cat) => acc + (filters[cat]?.size || 0), 0)
-  }
+  const resetRange = useCallback(
+    (category: string, defaultRange: [number, number]) => {
+      onRangeChange(category, defaultRange, defaultRange)
+    },
+    [onRangeChange]
+  )
 
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
@@ -325,669 +473,45 @@ export function FiltersModule({
         )}
       </div>
 
-      {/* Filter Sections */}
+      {/* Filter Sections — data-driven */}
       <ScrollArea className="flex-1 overflow-hidden">
         <Accordion
           type="multiple"
-          defaultValue={["game-context", "play-context"]}
+          defaultValue={DEFAULT_OPEN_SECTIONS}
           className="px-4"
         >
-          {/* Game Context */}
-          <AccordionItem value="game-context" className="border-b border-border">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Game Context
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-4">
-              <FilterRow 
-                label="Down" 
-                count={123}
-                category="down"
-                allValues={["1", "2", "3", "4"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "1", label: "1st" },
-                    { value: "2", label: "2nd" },
-                    { value: "3", label: "3rd" },
-                    { value: "4", label: "4th" },
-                  ]}
-                  category="down"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Distance to first" 
-                count={128}
-                category="distanceType"
-                allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
-                filters={filters}
-                rangeFilters={rangeFilters}
-                rangeCategory="distanceRange"
-                rangeDefault={[0, 100]}
-                onToggleAll={onToggleAll}
-                onRangeReset={resetRange}
-              >
-                <ToggleGroupWithRange
-                  items={[
-                    { value: "Short: 1-3", label: "Short: 1-3" },
-                    { value: "Medium: 4-7", label: "Medium: 4-7" },
-                    { value: "Long: 8+", label: "Long: 8+" },
-                  ]}
-                  category="distanceType"
-                  filters={filters}
-                  onToggle={onToggle}
-                  rangeMap={{
-                    "Short: 1-3": [1, 3],
-                    "Medium: 4-7": [4, 7],
-                    "Long: 8+": [8, 100],
-                  }}
-                  onRangeChange={onRangeChange}
-                  rangeCategory="distanceRange"
-                  rangeDefault={[0, 100]}
-                />
-                <RangeSlider 
-                  min={0} 
-                  max={100} 
-                  value={rangeFilters["distanceRange"] || [0, 100]}
-                  onChange={(v) => onRangeChange("distanceRange", v, [0, 100])}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Yard line" 
-                count={128} 
-                filters={filters} 
-                onToggle={onToggle}
-                rangeFilters={rangeFilters}
-                rangeCategory="yardLine"
-                rangeDefault={[0, 100]}
-                onRangeReset={resetRange}
-              >
-                <RangeSlider
-                  min={0}
-                  max={100}
-                  value={rangeFilters["yardLine"] || [0, 100]}
-                  onChange={(v) => onRangeChange("yardLine", v, [0, 100])}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Hash" 
-                count={123}
-                category="hash"
-                allValues={["L", "M", "R"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "L", label: "Left" },
-                    { value: "M", label: "Middle" },
-                    { value: "R", label: "Right" },
-                  ]}
-                  category="hash"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Play Context */}
-          <AccordionItem value="play-context" className="border-b border-border">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Play Context
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
-              <SubsectionHeader label="Play Development" />
-              
-              <FilterRow label="Play-action" count={123} filters={filters} onToggle={onToggle} />
-              
-              <FilterRow 
-                label="RPO" 
-                count={128}
-                category="playType"
-                allValues={["Pass", "Run"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Pass", label: "Pass" },
-                    { value: "Run", label: "Run" },
-                  ]}
-                  category="playType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow label="Screen" count={123} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Designed rollout" count={123} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Broken Play" count={123} filters={filters} onToggle={onToggle} />
-
-              <SubsectionHeader label="Play Result" />
-
-              <FilterRow 
-                label="Touchdown" 
-                count={123}
-                category="touchdownType"
-                allValues={["Pass", "Run", "Defensive"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Pass", label: "Pass" },
-                    { value: "Run", label: "Run" },
-                    { value: "Defensive", label: "Defensive" },
-                  ]}
-                  category="touchdownType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="First down earned" 
-                count={128}
-                category="firstDownType"
-                allValues={["Pass", "Run"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Pass", label: "Pass" },
-                    { value: "Run", label: "Run" },
-                  ]}
-                  category="firstDownType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Turnover" 
-                count={123}
-                category="turnoverType"
-                allValues={["Fumble", "Interception", "On downs", "Safety"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Fumble", label: "Fumble" },
-                    { value: "Interception", label: "Interception" },
-                    { value: "On downs", label: "On downs" },
-                  ]}
-                  category="turnoverType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-                <div className="pt-1">
-                  <ToggleGroup
-                    items={[{ value: "Safety", label: "Safety" }]}
-                    category="turnoverType"
-                    filters={filters}
-                    onToggle={onToggle}
-                  />
-                </div>
-              </FilterRow>
-
-              <FilterRow label="Penalty" count={123} filters={filters} onToggle={onToggle}>
-                <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
-                    <SelectValue placeholder="Select penalty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="holding">Holding</SelectItem>
-                    <SelectItem value="false-start">False Start</SelectItem>
-                    <SelectItem value="offsides">Offsides</SelectItem>
-                    <SelectItem value="pass-interference">Pass Interference</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterRow>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Passing */}
-          <AccordionItem value="passing" className="border-b border-border">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Passing
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
-              <SubsectionHeader label="Passing (Quarterback)" />
-
-              <FilterRow 
-                label="Pass thrown" 
-                count={62}
-                category="passResult"
-                allValues={["Complete", "Incomplete"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Complete", label: "Complete" },
-                    { value: "Incomplete", label: "Incomplete" },
-                  ]}
-                  category="passResult"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Pass thrown under pressure" 
-                count={59}
-                category="passPressureResult"
-                allValues={["Complete", "Incomplete"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Complete", label: "Complete" },
-                    { value: "Incomplete", label: "Incomplete" },
-                  ]}
-                  category="passPressureResult"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow label="Scramble" count={17} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Sack taken" count={123} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Throwaway" count={123} filters={filters} onToggle={onToggle} />
-
-              <SubsectionHeader label="Receiving" />
-
-              <FilterRow label="Target / Pass targeted" count={13} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Reception" count={7} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Drop" count={17} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Contested catch" count={123} filters={filters} onToggle={onToggle} />
-
-              <FilterRow label="Route type" count={123} filters={filters} onToggle={onToggle}>
-                <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
-                    <SelectValue placeholder="Select route type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="slant">Slant</SelectItem>
-                    <SelectItem value="go">Go</SelectItem>
-                    <SelectItem value="out">Out</SelectItem>
-                    <SelectItem value="curl">Curl</SelectItem>
-                    <SelectItem value="post">Post</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterRow>
-
-              <FilterRow 
-                label="Depth of target" 
-                count={123}
-                category="depthOfTarget"
-                allValues={["Behind LOS", "0-10", "10-20", "20+"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Behind LOS", label: "Behind LOS" },
-                    { value: "0-10", label: "0-10" },
-                    { value: "10-20", label: "10-20" },
-                    { value: "20+", label: "20+" },
-                  ]}
-                  category="depthOfTarget"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <SubsectionHeader label="Pass Defense" />
-
-              <FilterRow label="Pass defended / Breakup" count={13} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Interception" count={7} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Sack made" count={17} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Pressure generated" count={123} filters={filters} onToggle={onToggle} />
-
-              <FilterRow label="Coverage" count={123} filters={filters} onToggle={onToggle}>
-                <Select>
-                  <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
-                    <SelectValue placeholder="Select coverage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cov-1">Cover 1</SelectItem>
-                    <SelectItem value="cov-2">Cover 2</SelectItem>
-                    <SelectItem value="cov-3">Cover 3</SelectItem>
-                    <SelectItem value="cov-4">Cover 4 / Quarters</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterRow>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Rushing */}
-          <AccordionItem value="rushing" className="border-b border-border">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Rushing
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
-              <SubsectionHeader label="Rushing (Ball Carrier)" />
-
-              <FilterRow 
-                label="Rush attempt" 
-                count={62}
-                category="gainLoss"
-                allValues={["Gn", "Ls"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Gn", label: "Gain" },
-                    { value: "Ls", label: "Loss / No gain" },
-                  ]}
-                  category="gainLoss"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Yards gained after contact" 
-                count={128}
-                category="yardsAfterContact"
-                allValues={["Short: 1-3", "Medium: 4-7", "Long: 8+"]}
-                filters={filters}
-                rangeFilters={rangeFilters}
-                rangeCategory="yardsAfterContactRange"
-                rangeDefault={[0, 100]}
-                onToggleAll={onToggleAll}
-                onRangeReset={resetRange}
-              >
-                <ToggleGroupWithRange
-                  items={[
-                    { value: "Short: 1-3", label: "Short: 1-3" },
-                    { value: "Medium: 4-7", label: "Medium: 4-7" },
-                    { value: "Long: 8+", label: "Long: 8+" },
-                  ]}
-                  category="yardsAfterContact"
-                  filters={filters}
-                  onToggle={onToggle}
-                  rangeMap={{
-                    "Short: 1-3": [1, 3],
-                    "Medium: 4-7": [4, 7],
-                    "Long: 8+": [8, 100],
-                  }}
-                  onRangeChange={onRangeChange}
-                  rangeCategory="yardsAfterContactRange"
-                  rangeDefault={[0, 100]}
-                />
-                <RangeSlider 
-                  min={0} 
-                  max={100}
-                  value={rangeFilters["yardsAfterContactRange"] || [0, 100]}
-                  onChange={(v) => onRangeChange("yardsAfterContactRange", v, [0, 100])}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Rush direction" 
-                count={17}
-                category="runDirection"
-                allValues={["Left", "LeftTackle", "LeftGuard", "Middle", "RightGuard", "RightTackle", "Right"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Left", label: "Left end" },
-                    { value: "LeftTackle", label: "Left tackle" },
-                    { value: "LeftGuard", label: "Left guard" },
-                  ]}
-                  category="runDirection"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-                <div className="pt-1">
-                  <ToggleGroup
-                    items={[
-                      { value: "Middle", label: "Center" },
-                      { value: "RightGuard", label: "Right guard" },
-                      { value: "RightTackle", label: "Right tackle" },
-                    ]}
-                    category="runDirection"
-                    filters={filters}
-                    onToggle={onToggle}
-                  />
-                </div>
-                <div className="pt-1">
-                  <ToggleGroup
-                    items={[{ value: "Right", label: "Right end" }]}
-                    category="runDirection"
-                    filters={filters}
-                    onToggle={onToggle}
-                  />
-                </div>
-              </FilterRow>
-
-              <SubsectionHeader label="Rush Defense" />
-
-              <FilterRow label="Tackle made" count={13} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Tackle missed" count={7} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Tackle for loss made" count={17} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Forced fumble" count={123} filters={filters} onToggle={onToggle} />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Blocking */}
-          <AccordionItem value="blocking" className="border-b border-border">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Blocking
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
-              <SubsectionHeader label="Offensive Line" />
-
-              <FilterRow label="Pass block" count={62} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Run block" count={128} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Allowed pressure" count={17} filters={filters} onToggle={onToggle} />
-              <FilterRow label="Allowed sack" count={123} filters={filters} onToggle={onToggle} />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Special Teams */}
-          <AccordionItem value="special-teams" className="border-b-0">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
-              Special Teams
-            </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
-              <FilterRow 
-                label="Field goal attempt" 
-                count={17}
-                category="fieldGoalResult"
-                allValues={["Made", "Missed", "Blocked", "Fake"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Made", label: "Made" },
-                    { value: "Missed", label: "Missed" },
-                    { value: "Blocked", label: "Blocked" },
-                    { value: "Fake", label: "Fake" },
-                  ]}
-                  category="fieldGoalResult"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="PAT attempt" 
-                count={17}
-                category="patResult"
-                allValues={["Made", "Missed", "Blocked"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Made", label: "Made" },
-                    { value: "Missed", label: "Missed" },
-                    { value: "Blocked", label: "Blocked" },
-                  ]}
-                  category="patResult"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Punt" 
-                count={62}
-                category="puntType"
-                allValues={["Regular", "Fake", "Touchback", "Out of bounds", "Returned", "Downed"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Regular", label: "Regular" },
-                    { value: "Fake", label: "Fake" },
-                    { value: "Touchback", label: "Touchback" },
-                  ]}
-                  category="puntType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-                <div className="pt-1">
-                  <ToggleGroup
-                    items={[
-                      { value: "Out of bounds", label: "Out of bounds" },
-                      { value: "Returned", label: "Returned" },
-                      { value: "Downed", label: "Downed" },
-                    ]}
-                    category="puntType"
-                    filters={filters}
-                    onToggle={onToggle}
-                  />
-                </div>
-              </FilterRow>
-
-              <FilterRow 
-                label="Punt return" 
-                count={128}
-                category="puntReturnYards"
-                allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
-                filters={filters}
-                rangeFilters={rangeFilters}
-                rangeCategory="puntReturnRange"
-                rangeDefault={[0, 100]}
-                onToggleAll={onToggleAll}
-                onRangeReset={resetRange}
-              >
-                <ToggleGroupWithRange
-                  items={[
-                    { value: "Short: 0-10", label: "Short: 0-10" },
-                    { value: "Medium: 10-20", label: "Medium: 10-20" },
-                    { value: "Long: 20+", label: "Long: 20+" },
-                  ]}
-                  category="puntReturnYards"
-                  filters={filters}
-                  onToggle={onToggle}
-                  rangeMap={{
-                    "Short: 0-10": [0, 10],
-                    "Medium: 10-20": [10, 20],
-                    "Long: 20+": [20, 100],
-                  }}
-                  onRangeChange={onRangeChange}
-                  rangeCategory="puntReturnRange"
-                  rangeDefault={[0, 100]}
-                />
-                <RangeSlider 
-                  min={0} 
-                  max={100}
-                  value={rangeFilters["puntReturnRange"] || [0, 100]}
-                  onChange={(v) => onRangeChange("puntReturnRange", v, [0, 100])}
-                />
-              </FilterRow>
-
-              <FilterRow 
-                label="Kickoff" 
-                count={123}
-                category="kickoffType"
-                allValues={["Regular", "Onside", "Touchback", "Out of bounds", "Returned", "Downed"]}
-                filters={filters}
-                onToggleAll={onToggleAll}
-              >
-                <ToggleGroup
-                  items={[
-                    { value: "Regular", label: "Regular" },
-                    { value: "Onside", label: "Onside" },
-                    { value: "Touchback", label: "Touchback" },
-                  ]}
-                  category="kickoffType"
-                  filters={filters}
-                  onToggle={onToggle}
-                />
-                <div className="pt-1">
-                  <ToggleGroup
-                    items={[
-                      { value: "Out of bounds", label: "Out of bounds" },
-                      { value: "Returned", label: "Returned" },
-                      { value: "Downed", label: "Downed" },
-                    ]}
-                    category="kickoffType"
-                    filters={filters}
-                    onToggle={onToggle}
-                  />
-                </div>
-              </FilterRow>
-
-              <FilterRow 
-                label="Kickoff return" 
-                count={128}
-                category="kickoffReturnYards"
-                allValues={["Short: 0-10", "Medium: 10-20", "Long: 20+"]}
-                filters={filters}
-                rangeFilters={rangeFilters}
-                rangeCategory="kickoffReturnRange"
-                rangeDefault={[0, 100]}
-                onToggleAll={onToggleAll}
-                onRangeReset={resetRange}
-              >
-                <ToggleGroupWithRange
-                  items={[
-                    { value: "Short: 0-10", label: "Short: 0-10" },
-                    { value: "Medium: 10-20", label: "Medium: 10-20" },
-                    { value: "Long: 20+", label: "Long: 20+" },
-                  ]}
-                  category="kickoffReturnYards"
-                  filters={filters}
-                  onToggle={onToggle}
-                  rangeMap={{
-                    "Short: 0-10": [0, 10],
-                    "Medium: 10-20": [10, 20],
-                    "Long: 20+": [20, 100],
-                  }}
-                  onRangeChange={onRangeChange}
-                  rangeCategory="kickoffReturnRange"
-                  rangeDefault={[0, 100]}
-                />
-                <RangeSlider 
-                  min={0} 
-                  max={100}
-                  value={rangeFilters["kickoffReturnRange"] || [0, 100]}
-                  onChange={(v) => onRangeChange("kickoffReturnRange", v, [0, 100])}
-                />
-              </FilterRow>
-            </AccordionContent>
-          </AccordionItem>
+          {FILTER_SECTIONS.map((section, sIdx) => (
+            <AccordionItem
+              key={section.key}
+              value={section.key}
+              className={sIdx < FILTER_SECTIONS.length - 1 ? "border-b border-border" : "border-b-0"}
+            >
+              <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+                {section.title}
+              </AccordionTrigger>
+              <AccordionContent className="pb-4 space-y-3">
+                {section.subsections.map((sub, subIdx) => (
+                  <div key={subIdx} className="space-y-3">
+                    {sub.subsectionLabel && (
+                      <SubsectionHeader label={sub.subsectionLabel} />
+                    )}
+                    {sub.filters.map((def) => (
+                      <ConfigDrivenFilter
+                        key={def.label}
+                        def={def}
+                        filters={filters}
+                        rangeFilters={rangeFilters}
+                        onToggle={onToggle}
+                        onToggleAll={onToggleAll}
+                        onRangeChange={onRangeChange}
+                        resetRange={resetRange}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
       </ScrollArea>
     </div>

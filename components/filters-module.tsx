@@ -96,9 +96,32 @@ function ToggleGroupWithRange({
     const isCurrentlySelected = filters[category]?.has(value) || false
     // Toggle the chip filter
     onToggle(category, value)
-    // If selecting (not deselecting), update the slider to match the chip's range
-    if (!isCurrentlySelected && rangeMap[value]) {
-      onRangeChange(rangeCategory, rangeMap[value], rangeDefault)
+
+    // Compute the set of selected chips after this toggle
+    const currentSet = new Set(filters[category] || [])
+    if (isCurrentlySelected) {
+      currentSet.delete(value)
+    } else {
+      currentSet.add(value)
+    }
+
+    // Compute the union range across all selected chips
+    if (currentSet.size === 0) {
+      // No chips selected — reset slider to default
+      onRangeChange(rangeCategory, rangeDefault, rangeDefault)
+    } else {
+      let unionMin = Infinity
+      let unionMax = -Infinity
+      for (const chip of currentSet) {
+        const range = rangeMap[chip]
+        if (range) {
+          unionMin = Math.min(unionMin, range[0])
+          unionMax = Math.max(unionMax, range[1])
+        }
+      }
+      if (unionMin !== Infinity && unionMax !== -Infinity) {
+        onRangeChange(rangeCategory, [unionMin, unionMax], rangeDefault)
+      }
     }
   }
 

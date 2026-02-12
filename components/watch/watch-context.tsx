@@ -121,10 +121,13 @@ export function WatchProvider({
   })
 
   const toggleModule = (module: "library" | "video" | "grid") => {
-    setVisibleModules((prev) => ({
-      ...prev,
-      [module]: !prev[module],
-    }))
+    setVisibleModules((prev) => {
+      const next = { ...prev, [module]: !prev[module] }
+      // Prevent closing all modules -- at least one must stay visible
+      const anyVisible = next.library || next.video || next.grid
+      if (!anyVisible) return prev
+      return next
+    })
   }
 
   const playRandomVideo = () => {

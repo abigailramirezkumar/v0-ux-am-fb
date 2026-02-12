@@ -113,16 +113,17 @@ export default function ExplorePage() {
   }, [previewPlay])
 
   const handleToggleFilters = useCallback(() => {
-    setShowFilters((prev) => {
-      const next = !prev
+    const next = !showFilters
+    setShowFilters(next)
+    // Defer the imperative panel call to avoid updating PanelGroup during render
+    requestAnimationFrame(() => {
       if (next) {
         filterPanelRef.current?.expand()
       } else {
         filterPanelRef.current?.collapse()
       }
-      return next
     })
-  }, [])
+  }, [showFilters])
 
   // Memoize the base dataset so it's only computed once (mock data is static)
   const allClipsDataset = useMemo(() => getAllUniqueClips(), [])

@@ -113,16 +113,16 @@ export default function ExplorePage() {
   }, [previewPlay])
 
   const handleToggleFilters = useCallback(() => {
-    const next = !showFilters
-    setShowFilters(next)
-    // Defer the imperative panel call to avoid updating PanelGroup during render
-    requestAnimationFrame(() => {
-      if (next) {
-        filterPanelRef.current?.expand()
-      } else {
-        filterPanelRef.current?.collapse()
-      }
-    })
+    setShowFilters((prev) => !prev)
+  }, [])
+
+  // Sync the imperative panel with the showFilters state (matches watch page pattern)
+  useEffect(() => {
+    if (showFilters) {
+      filterPanelRef.current?.expand()
+    } else {
+      filterPanelRef.current?.collapse()
+    }
   }, [showFilters])
 
   // Memoize the base dataset so it's only computed once (mock data is static)
@@ -140,7 +140,7 @@ export default function ExplorePage() {
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanelGroup direction="horizontal" className="flex-1 [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
           {/* Filters - collapsible full height left panel */}
           <ResizablePanel
             ref={filterPanelRef}

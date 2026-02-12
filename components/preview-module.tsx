@@ -618,6 +618,288 @@ function formatGameLabel(game: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Global tag store – shared across all clips
+// ---------------------------------------------------------------------------
+
+const ALL_TAGS_KEY = "__preview_all_tags__"
+
+function loadAllTags(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(ALL_TAGS_KEY)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistAllTags(tags: string[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(ALL_TAGS_KEY, JSON.stringify(tags))
+}
+
+function loadClipTags(playId: string): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(`__clip_tags_${playId}__`)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistClipTags(playId: string, tags: string[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(`__clip_tags_${playId}__`, JSON.stringify(tags))
+}
+
+function loadClipNotes(playId: string): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(`__clip_notes_${playId}__`)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistClipNotes(playId: string, notes: string[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+}
+
+// ---------------------------------------------------------------------------
+// Tags & Notes Tab
+// ---------------------------------------------------------------------------
+
+function TagsAndNotesTab({ playId }: { playId: string }) {
+  const [allTags, setAllTags] = useState<string[]>(() => loadAllTags())
+  const [clipTags, setClipTags] = useState<string[]>(() => loadClipTags(playId))
+  const [notes, setNotes] = useState<string[]>(() => loadClipNotes(playId))
+  const [noteText, setNoteText] = useState("")
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
+  const [tagSearch, setTagSearch] = useState("")
+  const tagInputRef = useRef<HTMLInputElement>(null)
+  const tagDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Reload per-clip data when the playId changes
+  useEffect(() => {
+    setClipTags(loadClipTags(playId))
+    setNotes(loadClipNotes(playId))
+    setNoteText("")
+  }, [playId])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target as Node)) {
+        setTagDropdownOpen(false)
+        setTagSearch("")
+      }
+    }
+    if (tagDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [tagDropdownOpen])
+
+  const filteredTags = useMemo(() => {
+    const q = tagSearch.toLowerCase().trim()
+    if (!q) return allTags
+    return allTags.filter((t) => t.toLowerCase().includes(q))
+  }, [allTags, tagSearch])
+
+  const canCreateNew = tagSearch.trim().length > 0 && !allTags.some((t) => t.toLowerCase() === tagSearch.trim().toLowerCase())
+
+  const addTag = (tag: string) => {
+    const normalised = tag.trim()
+    if (!normalised) return
+    // Add to global tags list if new
+    if (!allTags.some((t) => t.toLowerCase() === normalised.toLowerCase())) {
+      const updated = [...allTags, normalised]
+      setAllTags(updated)
+      persistAllTags(updated)
+    }
+    // Add to clip tags if not already present
+    if (!clipTags.some((t) => t.toLowerCase() === normalised.toLowerCase())) {
+      const updated = [...clipTags, normalised]
+      setClipTags(updated)
+      persistClipTags(playId, updated)
+    }
+    setTagSearch("")
+  }
+
+  const removeTag = (tag: string) => {
+    const updated = clipTags.filter((t) => t !== tag)
+    setClipTags(updated)
+    persistClipTags(playId, updated)
+  }
+
+  const handleSubmitNote = () => {
+    if (!noteText.trim()) return
+    const updated = [...notes, noteText.trim()]
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+    setNoteText("")
+  }
+
+  return (
+    <div className="px-4 pt-4 pb-6 flex flex-col gap-5">
+      {/* Privacy notice */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Icon name="information" className="w-4 h-4 shrink-0" />
+        <span>Only your organization can see these</span>
+      </div>
+
+      {/* TAGS */}
+      <div>
+        <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Tags</h4>
+
+        {/* Selected tags */}
+        {clipTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {clipTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium"
+              >
+                {tag}
+                <button
+                  onClick={() => removeTag(tag)}
+                  className="hover:text-primary/70 transition-colors"
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  <Icon name="close" className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Dropdown */}
+        <div ref={tagDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setTagDropdownOpen(!tagDropdownOpen)
+              setTimeout(() => tagInputRef.current?.focus(), 0)
+            }}
+            className="w-full flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2.5 text-sm hover:border-ring transition-colors text-left"
+          >
+            <span className="text-muted-foreground">{clipTags.length > 0 ? `${clipTags.length} tag${clipTags.length > 1 ? "s" : ""} selected` : "Select or create tags"}</span>
+            <Icon name="chevronDown" className={cn("w-4 h-4 text-muted-foreground transition-transform", tagDropdownOpen && "rotate-180")} />
+          </button>
+
+          {tagDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-border bg-popover shadow-md">
+              <div className="p-2 border-b border-border">
+                <input
+                  ref={tagInputRef}
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && canCreateNew) {
+                      addTag(tagSearch)
+                    } else if (e.key === "Enter" && filteredTags.length > 0) {
+                      const firstUnselected = filteredTags.find((t) => !clipTags.includes(t))
+                      if (firstUnselected) addTag(firstUnselected)
+                    }
+                  }}
+                  placeholder="Search or type to create..."
+                  className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              <div className="max-h-48 overflow-y-auto p-1">
+                {filteredTags.map((tag) => {
+                  const isSelected = clipTags.includes(tag)
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => (isSelected ? removeTag(tag) : addTag(tag))}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left transition-colors",
+                        isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                      )}
+                    >
+                      <Icon name="tag" className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{tag}</span>
+                      {isSelected && <Icon name="close" className="w-3 h-3 ml-auto shrink-0" />}
+                    </button>
+                  )
+                })}
+
+                {canCreateNew && (
+                  <button
+                    onClick={() => addTag(tagSearch)}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left text-primary hover:bg-muted transition-colors"
+                  >
+                    <Icon name="add" className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Create &ldquo;{tagSearch.trim()}&rdquo;
+                    </span>
+                  </button>
+                )}
+
+                {filteredTags.length === 0 && !canCreateNew && (
+                  <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                    No tags yet. Type to create one.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* NOTES */}
+      <div>
+        <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Notes</h4>
+
+        {/* Previous notes */}
+        {notes.length > 0 && (
+          <div className="flex flex-col gap-2 mb-3">
+            {notes.map((note, i) => (
+              <div key={i} className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground">
+                {note}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Note input */}
+        <div className="relative">
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmitNote()
+              }
+            }}
+            placeholder="Write a note..."
+            rows={3}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={handleSubmitNote}
+            disabled={!noteText.trim()}
+            className={cn(
+              "absolute bottom-3 right-3 transition-colors",
+              noteText.trim() ? "text-primary hover:text-primary/80" : "text-muted-foreground/40"
+            )}
+            aria-label="Submit note"
+          >
+            <Icon name="send" className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // PreviewModule
 // ---------------------------------------------------------------------------
 
@@ -632,6 +914,8 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   const roster = useMemo(() => assignPlayRoster(play), [play])
   const sourceType = useMemo(() => getSourceType(play), [play])
   const score = useMemo(() => getGameScore(play), [play])
+
+  const [activeTab, setActiveTab] = useState<"info" | "tags-notes">("info")
 
   const { setPendingPreviewClips, setWatchItem } = useLibraryContext()
   const router = useRouter()
@@ -683,31 +967,63 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
           />
         </div>
 
-        {/* Play Summary */}
-        <div className="px-4 pt-5 pb-3">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
-          <p className="text-sm leading-relaxed text-foreground">{summary}</p>
+        {/* Tabs */}
+        <div className="px-4 pt-4 flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab("info")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors",
+              activeTab === "info"
+                ? "bg-accent-foreground text-background"
+                : "bg-transparent text-muted-foreground border border-border hover:bg-muted"
+            )}
+          >
+            Info
+          </button>
+          <button
+            onClick={() => setActiveTab("tags-notes")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors",
+              activeTab === "tags-notes"
+                ? "bg-accent-foreground text-background"
+                : "bg-transparent text-muted-foreground border border-border hover:bg-muted"
+            )}
+          >
+            {"Tags & Notes"}
+          </button>
         </div>
 
-        {/* Offense on the field */}
-        <div className="px-4 pt-4">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {roster.offense.map((player, i) => (
-              <PlayerChip key={`off-${i}`} player={player} />
-            ))}
-          </div>
-        </div>
+        {activeTab === "info" ? (
+          <>
+            {/* Play Summary */}
+            <div className="px-4 pt-5 pb-3">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
+              <p className="text-sm leading-relaxed text-foreground">{summary}</p>
+            </div>
 
-        {/* Defense on the field */}
-        <div className="px-4 pt-5 pb-6">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {roster.defense.map((player, i) => (
-              <PlayerChip key={`def-${i}`} player={player} />
-            ))}
-          </div>
-        </div>
+            {/* Offense on the field */}
+            <div className="px-4 pt-4">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {roster.offense.map((player, i) => (
+                  <PlayerChip key={`off-${i}`} player={player} />
+                ))}
+              </div>
+            </div>
+
+            {/* Defense on the field */}
+            <div className="px-4 pt-5 pb-6">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {roster.defense.map((player, i) => (
+                  <PlayerChip key={`def-${i}`} player={player} />
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <TagsAndNotesTab playId={play.id} />
+        )}
       </div>
 
       {/* Fixed Footer */}

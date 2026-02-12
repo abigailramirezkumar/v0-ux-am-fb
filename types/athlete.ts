@@ -9,7 +9,7 @@
 // Positions
 // ---------------------------------------------------------------------------
 
-export type OffensivePosition = "QB" | "RB" | "WR" | "TE"
+export type OffensivePosition = "QB" | "RB" | "WR" | "TE" | "OL"
 export type DefensivePosition = "DE" | "DT" | "LB" | "CB" | "S"
 export type Position = OffensivePosition | DefensivePosition
 

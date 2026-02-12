@@ -95,12 +95,20 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilters({})
   }, [])
 
-  const filteredPlays = useMemo(() => {
-    const activeCategories = Object.entries(filters).filter(
-      ([, values]) => values.size > 0
-    )
-    const activeRanges = Object.entries(rangeFilters)
+  // Memoize active set-based categories independently so downstream
+  // consumers (and filteredPlays) only recalculate when these actually change.
+  const activeCategories = useMemo(
+    () => Object.entries(filters).filter(([, values]) => values.size > 0),
+    [filters]
+  )
 
+  // Memoize active range entries independently
+  const activeRanges = useMemo(
+    () => Object.entries(rangeFilters),
+    [rangeFilters]
+  )
+
+  const filteredPlays = useMemo(() => {
     if (activeCategories.length === 0 && activeRanges.length === 0) return initialPlays
 
     return initialPlays.filter((play) => {
@@ -133,7 +141,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
 
       return matchesRangeFilters
     })
-  }, [initialPlays, filters, rangeFilters])
+  }, [initialPlays, activeCategories, activeRanges])
 
   // Get unique values for dynamic filter options
   const uniqueGames = useMemo(() => {

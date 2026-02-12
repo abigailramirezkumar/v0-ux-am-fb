@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
@@ -101,17 +101,17 @@ export default function ExplorePage() {
     }
   }, [previewPlay])
 
-  // Get all unique clips combined into one dataset
-  const allClipsDataset = getAllUniqueClips()
+  // Memoize the base dataset so it's only computed once (mock data is static)
+  const allClipsDataset = useMemo(() => getAllUniqueClips(), [])
   
   // Use hook to filter clips
   const { filters, rangeFilters, toggleFilter, toggleAllInCategory, setRangeFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
 
-  // Construct filtered dataset to pass to Grid
-  const filteredDataset = {
-    ...allClipsDataset,
-    plays: filteredPlays
-  }
+  // Memoize the filtered dataset so children only re-render when filteredPlays changes
+  const filteredDataset = useMemo(
+    () => ({ ...allClipsDataset, plays: filteredPlays }),
+    [allClipsDataset, filteredPlays]
+  )
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>

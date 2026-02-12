@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
-import { athletes } from "@/lib/athletes-data"
+import { athletes, getAthleteByName } from "@/lib/athletes-data"
 import { useLibraryContext } from "@/lib/library-context"
 import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
@@ -546,20 +546,225 @@ function PreviewVideoPlayer({
 // Player Chip
 // ---------------------------------------------------------------------------
 
-function PlayerChip({ player }: { player: PlayerOnField }) {
+function PlayerChip({ player, onClick }: { player: PlayerOnField; onClick?: () => void }) {
   const nameParts = player.name.split(" ")
   const firstInitial = nameParts[0][0]
   const lastName = nameParts.slice(1).join(" ")
 
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-1 text-xs whitespace-nowrap">
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-1 text-xs whitespace-nowrap transition-colors hover:bg-primary/10 hover:ring-1 hover:ring-primary/30 cursor-pointer"
+    >
       <span className="font-bold text-foreground">
         {firstInitial}. {lastName}
       </span>
       <span className="text-muted-foreground">
         {player.position} #{player.jersey_number}
       </span>
-    </span>
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Athlete Profile View
+// ---------------------------------------------------------------------------
+
+const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
+
+/** Return position-relevant stats for an NFL player */
+function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string; secondary?: string; note?: string }[] {
+  const s = athlete.stats
+  const pos = athlete.position
+
+  if (pos === "QB") {
+    return [
+      { label: "Pass Yards", value: s.passing_yards.toLocaleString(), secondary: `/ ${s.passing_tds} TDs`, note: "Career total" },
+      { label: "Passer Rating", value: ((s.passing_tds / Math.max(s.passing_yards / 250, 1)) * 30 + 65).toFixed(1), note: "Estimated" },
+      { label: "Rush Yards", value: s.rushing_yards.toLocaleString(), secondary: `/ ${s.rushing_tds} TDs`, note: "Dual threat" },
+      { label: "Total TDs", value: (s.passing_tds + s.rushing_tds).toString(), note: "Pass + Rush" },
+      { label: "YPG", value: (s.passing_yards / 17).toFixed(1), note: "Yards per game avg" },
+      { label: "Comp %", value: (58 + (hashString(athlete.name) % 12)).toFixed(1) + "%", note: "Estimated" },
+    ]
+  }
+
+  if (pos === "RB") {
+    return [
+      { label: "Rush Yards", value: s.rushing_yards.toLocaleString(), secondary: `/ ${s.rushing_tds} TDs`, note: "Career total" },
+      { label: "YPC", value: (s.rushing_yards / Math.max((s.rushing_yards / 4.5), 1)).toFixed(1), note: "Yards per carry" },
+      { label: "Rec Yards", value: s.receiving_yards.toLocaleString(), secondary: `/ ${s.receiving_tds} TDs`, note: "Receiving" },
+      { label: "Total TDs", value: (s.rushing_tds + s.receiving_tds).toString(), note: "Rush + Rec" },
+      { label: "Scrimmage", value: (s.rushing_yards + s.receiving_yards).toLocaleString(), note: "Total yards" },
+      { label: "Rush YPG", value: (s.rushing_yards / 17).toFixed(1), note: "Yards per game avg" },
+    ]
+  }
+
+  if (pos === "WR" || pos === "TE") {
+    return [
+      { label: "Rec Yards", value: s.receiving_yards.toLocaleString(), secondary: `/ ${s.receiving_tds} TDs`, note: "Career total" },
+      { label: "Rec/Game", value: ((s.receiving_yards / 12) / 17).toFixed(1), note: "Receptions avg" },
+      { label: "YPR", value: (s.receiving_yards / Math.max(s.receiving_yards / 12, 1)).toFixed(1), note: "Yards per reception" },
+      { label: "Total TDs", value: (s.receiving_tds + s.rushing_tds).toString(), note: "All touchdowns" },
+      { label: "Rec YPG", value: (s.receiving_yards / 17).toFixed(1), note: "Yards per game avg" },
+      { label: "Targets", value: Math.round(s.receiving_yards / 8.5).toLocaleString(), note: "Estimated" },
+    ]
+  }
+
+  if (pos === "DE" || pos === "DT") {
+    return [
+      { label: "Sacks", value: s.sacks.toFixed(1), note: "Career total" },
+      { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+      { label: "TFL", value: Math.round(s.sacks * 1.4 + 8).toString(), note: "Tackles for loss" },
+      { label: "QB Hits", value: Math.round(s.sacks * 2.2 + 5).toString(), note: "Estimated" },
+      { label: "Sacks/Game", value: (s.sacks / 34).toFixed(2), note: "Per game avg" },
+      { label: "FF", value: Math.round(s.sacks * 0.3 + 1).toString(), note: "Forced fumbles" },
+    ]
+  }
+
+  if (pos === "LB") {
+    return [
+      { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+      { label: "Sacks", value: s.sacks.toFixed(1), note: "Career total" },
+      { label: "TFL", value: Math.round(s.sacks * 1.5 + 12).toString(), note: "Tackles for loss" },
+      { label: "Tkl/Game", value: (s.tackles / 34).toFixed(1), note: "Per game avg" },
+      { label: "PD", value: Math.round(s.tackles * 0.08 + 3).toString(), note: "Pass deflections" },
+      { label: "INT", value: Math.round(s.tackles * 0.02 + 1).toString(), note: "Interceptions" },
+    ]
+  }
+
+  // CB / S
+  return [
+    { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+    { label: "INT", value: Math.round(s.tackles * 0.04 + 2).toString(), note: "Interceptions" },
+    { label: "PD", value: Math.round(s.tackles * 0.12 + 5).toString(), note: "Pass deflections" },
+    { label: "Tkl/Game", value: (s.tackles / 34).toFixed(1), note: "Per game avg" },
+    { label: "Sacks", value: s.sacks.toFixed(1), note: "Blitz production" },
+    { label: "FF", value: Math.round(s.tackles * 0.015 + 1).toString(), note: "Forced fumbles" },
+  ]
+}
+
+const TEAM_FULL_NAMES: Record<string, string> = {
+  BAL: "Baltimore Ravens", BUF: "Buffalo Bills", KC: "Kansas City Chiefs",
+  DET: "Detroit Lions", CIN: "Cincinnati Bengals", HOU: "Houston Texans",
+  SF: "San Francisco 49ers", PHI: "Philadelphia Eagles", MIN: "Minnesota Vikings",
+  MIA: "Miami Dolphins", DAL: "Dallas Cowboys", LAR: "Los Angeles Rams",
+  NYJ: "New York Jets", ATL: "Atlanta Falcons", LV: "Las Vegas Raiders",
+  CLE: "Cleveland Browns", NYG: "New York Giants", PIT: "Pittsburgh Steelers",
+  DEN: "Denver Broncos", IND: "Indianapolis Colts", NE: "New England Patriots",
+  TB: "Tampa Bay Buccaneers",
+}
+
+function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () => void }) {
+  const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
+  const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
+  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+
+  return (
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
+      {/* Header with back button */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 shrink-0">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          aria-label="Back to clip"
+        >
+          <Icon name="chevronLeft" className="w-4 h-4" />
+        </button>
+        <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Avatar + Name + Team/Position */}
+        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
+            {athlete.name.split(" ").map((n) => n[0]).join("")}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+              <span className="text-primary font-medium">{teamName}</span>
+              <span className="text-border">{"·"}</span>
+              <span>{athlete.position}</span>
+              <span className="text-border">{"·"}</span>
+              <span>#{athlete.jersey_number}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile tabs */}
+        <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
+          {PROFILE_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setProfileTab(tab)}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
+                profileTab === tab
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {profileTab === "Overview" ? (
+          <div className="px-5 pb-6">
+            {/* Identity section */}
+            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
+            <div className="flex flex-col">
+              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+              <IdentityRow label="Position" value={athlete.position} />
+              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+              <IdentityRow label="College" value={athlete.college} />
+              <IdentityRow label="Team" value={teamName} isLast />
+            </div>
+
+            {/* Key Stats */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
+                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
+                  2025/26
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {keyStats.map((stat) => (
+                  <div key={stat.label} className="rounded-lg border border-border p-3">
+                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
+                      {stat.secondary && (
+                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
+                      )}
+                    </div>
+                    {stat.note && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {profileTab} content coming soon.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function IdentityRow({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
+  return (
+    <div className={cn("flex items-center justify-between py-3", !isLast && "border-b border-dotted border-border")}>
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{value}</span>
+    </div>
   )
 }
 
@@ -1143,9 +1348,20 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   const score = useMemo(() => getGameScore(play), [play])
 
   const [activeTab, setActiveTab] = useState<"info" | "tags-notes">("info")
+  const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null)
 
   const { setPendingPreviewClips, setWatchItem } = useLibraryContext()
   const router = useRouter()
+
+  // Reset athlete view when play changes
+  useEffect(() => {
+    setSelectedAthlete(null)
+  }, [play])
+
+  const handlePlayerClick = useCallback((playerName: string) => {
+    const athlete = getAthleteByName(playerName)
+    if (athlete) setSelectedAthlete(athlete)
+  }, [])
 
   // "Open Clip" -- open as unsaved playlist in watch page
   const handleOpenClip = useCallback(() => {
@@ -1161,6 +1377,11 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
     setWatchItem(null)
     router.push("/watch")
   }, [setWatchItem, router])
+
+  // If an athlete is selected, show their profile instead of the clip view
+  if (selectedAthlete) {
+    return <AthleteProfileView athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />
+  }
 
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
@@ -1233,7 +1454,7 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
               <div className="flex flex-wrap gap-1.5">
                 {roster.offense.map((player, i) => (
-                  <PlayerChip key={`off-${i}`} player={player} />
+                  <PlayerChip key={`off-${i}`} player={player} onClick={() => handlePlayerClick(player.name)} />
                 ))}
               </div>
             </div>
@@ -1243,7 +1464,7 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
               <div className="flex flex-wrap gap-1.5">
                 {roster.defense.map((player, i) => (
-                  <PlayerChip key={`def-${i}`} player={player} />
+                  <PlayerChip key={`def-${i}`} player={player} onClick={() => handlePlayerClick(player.name)} />
                 ))}
               </div>
             </div>

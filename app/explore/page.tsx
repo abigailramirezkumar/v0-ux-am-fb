@@ -178,7 +178,7 @@ export default function ExplorePage() {
               />
             </div>
           </ResizablePanel>
-          <ResizableHandle className="w-[4px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+          <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
 
           {/* Right panel: Tabs + Content + Preview */}
           <ResizablePanel defaultSize={78}>
@@ -266,7 +266,7 @@ export default function ExplorePage() {
               </ResizablePanel>
 
               {/* Preview Panel (collapsible right) */}
-              <ResizableHandle className="w-[4px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+              <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
               <ResizablePanel
                 ref={previewPanelRef}
                 defaultSize={0}

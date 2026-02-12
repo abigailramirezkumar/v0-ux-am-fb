@@ -654,14 +654,21 @@ function persistClipTags(playId: string, tags: string[]) {
 }
 
 interface ClipNote {
+  id: string
   text: string
   authorName: string
   authorAvatar: string
   timestamp: number // ms since epoch
 }
 
+let _noteIdCounter = 0
+function generateNoteId(): string {
+  _noteIdCounter += 1
+  return `note-${Date.now()}-${_noteIdCounter}`
+}
+
 const DEFAULT_USER = {
-  name: "Abby Wambach",
+  name: "Dan Campbell",
   avatar: "/placeholder.svg?height=40&width=40",
 }
 
@@ -678,6 +685,90 @@ function loadClipNotes(playId: string): ClipNote[] {
 function persistClipNotes(playId: string, notes: ClipNote[]) {
   if (typeof window === "undefined") return
   sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+}
+
+// ---------------------------------------------------------------------------
+// Sample note seeding – ~33% of clips get pre-populated notes
+// ---------------------------------------------------------------------------
+
+const SAMPLE_NOTE_AUTHORS = [
+  { name: "Ben Johnson", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Aaron Glenn", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Hank Fraley", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Kelvin Sheppard", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Deshea Townsend", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Scottie Montgomery", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Antwaan Randle El", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Matt Allison", avatar: "/placeholder.svg?height=40&width=40" },
+]
+
+const SAMPLE_NOTE_TEXTS = [
+  "Great pocket presence on this play. QB had time to work through his progressions cleanly.",
+  "Watch the left guard here -- missed the stunt pickup. Need to drill this in practice.",
+  "Coverage busted on the back end. Looks like a communication issue between the safety and corner.",
+  "Good run fit by the linebacker. He stayed disciplined in his gap assignment.",
+  "The motion pre-snap created the mismatch we wanted. Let's run this look more in the red zone.",
+  "Receiver ran a sharp route here. The break at the top was crisp and created separation.",
+  "D-line got great push up the middle on this snap. Interior pressure forced the early throw.",
+  "Need to review the protection call here -- we left the edge rusher unblocked.",
+  "Play action worked perfectly. Both linebackers bit on the fake and left the seam wide open.",
+  "This is a good example of a contested catch drill scenario. Receiver showed strong hands.",
+  "Personnel grouping gave us the look we wanted. Defense stayed in base and we had numbers.",
+  "Blitz pickup was clean. RB identified the rusher and picked it up without hesitation.",
+]
+
+const SEEDED_NOTES_KEY = "__preview_notes_seeded__"
+
+function seedSampleNotes() {
+  if (typeof window === "undefined") return
+  if (sessionStorage.getItem(SEEDED_NOTES_KEY)) return
+
+  // Deterministic selection of play IDs that get notes (~33%)
+  // Covers plays from multiple datasets
+  const seededPlayIds = [
+    "play-0", "play-2", "play-5", "play-8",                     // dataset-a (BUF vs LA)
+    "play-1", "play-4", "play-9",                                // dataset-b (Practice)
+    "play-3", "play-7", "play-11", "play-14",                    // dataset-c (Scrimmage)
+    "play-0", "play-6", "play-12", "play-17",                    // dataset-d (SF vs PHI) -- note: these keys differ once accessed via getAllUniqueClips
+    "dataset-a-play-0", "dataset-a-play-2", "dataset-a-play-5",
+    "dataset-b-play-1", "dataset-b-play-4",
+    "dataset-c-play-3", "dataset-c-play-7", "dataset-c-play-11",
+    "dataset-d-play-6", "dataset-d-play-12", "dataset-d-play-17",
+  ]
+
+  const now = Date.now()
+
+  seededPlayIds.forEach((playId, idx) => {
+    // Skip if notes already exist for this clip
+    const existing = sessionStorage.getItem(`__clip_notes_${playId}__`)
+    if (existing) return
+
+    const noteCount = (idx % 3) + 1 // 1, 2, or 3 notes per clip
+    const notes: ClipNote[] = []
+
+    for (let n = 0; n < noteCount; n++) {
+      const author = SAMPLE_NOTE_AUTHORS[(idx + n) % SAMPLE_NOTE_AUTHORS.length]
+      const text = SAMPLE_NOTE_TEXTS[(idx * 3 + n) % SAMPLE_NOTE_TEXTS.length]
+      // Spread timestamps out: oldest first, ranging from 3 days ago to 10 mins ago
+      const ageMs = (noteCount - n) * (1000 * 60 * 60 * (2 + idx % 72))
+      notes.push({
+        id: `seed-${playId}-${n}`,
+        text,
+        authorName: author.name,
+        authorAvatar: author.avatar,
+        timestamp: now - ageMs,
+      })
+    }
+
+    sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+  })
+
+  sessionStorage.setItem(SEEDED_NOTES_KEY, "true")
+}
+
+// Run once on load
+if (typeof window !== "undefined") {
+  seedSampleNotes()
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -704,6 +795,8 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
   const [clipTags, setClipTags] = useState<string[]>(() => loadClipTags(playId))
   const [notes, setNotes] = useState<ClipNote[]>(() => loadClipNotes(playId))
   const [noteText, setNoteText] = useState("")
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteText, setEditingNoteText] = useState("")
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
   const [tagSearch, setTagSearch] = useState("")
   const tagInputRef = useRef<HTMLInputElement>(null)
@@ -714,6 +807,8 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
     setClipTags(loadClipTags(playId))
     setNotes(loadClipNotes(playId))
     setNoteText("")
+    setEditingNoteId(null)
+    setEditingNoteText("")
   }, [playId])
 
   // Close dropdown on outside click
@@ -765,6 +860,7 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
   const handleSubmitNote = () => {
     if (!noteText.trim()) return
     const newNote: ClipNote = {
+      id: generateNoteId(),
       text: noteText.trim(),
       authorName: DEFAULT_USER.name,
       authorAvatar: DEFAULT_USER.avatar,
@@ -774,6 +870,33 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
     setNotes(updated)
     persistClipNotes(playId, updated)
     setNoteText("")
+  }
+
+  const handleDeleteNote = (noteId: string) => {
+    const updated = notes.filter((n) => n.id !== noteId)
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+  }
+
+  const handleStartEdit = (note: ClipNote) => {
+    setEditingNoteId(note.id)
+    setEditingNoteText(note.text)
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingNoteId || !editingNoteText.trim()) return
+    const updated = notes.map((n) =>
+      n.id === editingNoteId ? { ...n, text: editingNoteText.trim() } : n
+    )
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+    setEditingNoteId(null)
+    setEditingNoteText("")
+  }
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null)
+    setEditingNoteText("")
   }
 
   return (
@@ -892,22 +1015,82 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
         {/* Previous notes */}
         {notes.length > 0 && (
           <div className="flex flex-col divide-y divide-border mb-3">
-            {notes.map((note, i) => (
-              <div key={i} className="py-4 first:pt-2">
-                <div className="flex items-start gap-3">
-                  <img
-                    src={note.authorAvatar}
-                    alt={note.authorName}
-                    className="w-9 h-9 rounded-full object-cover shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-accent-foreground leading-tight">{note.authorName}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(note.timestamp)}</p>
+            {notes.map((note) => {
+              const isEditing = editingNoteId === note.id
+              const isOwnNote = note.authorName === DEFAULT_USER.name
+
+              return (
+                <div key={note.id} className="py-4 first:pt-2 group">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={note.authorAvatar}
+                      alt={note.authorName}
+                      className="w-9 h-9 rounded-full object-cover shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-accent-foreground leading-tight">{note.authorName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(note.timestamp)}</p>
+                    </div>
+                    {isOwnNote && !isEditing && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                          onClick={() => handleStartEdit(note)}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Edit note"
+                        >
+                          <Icon name="edit" className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          aria-label="Delete note"
+                        >
+                          <Icon name="delete" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
+
+                  {isEditing ? (
+                    <div className="mt-2 ml-12">
+                      <textarea
+                        value={editingNoteText}
+                        onChange={(e) => setEditingNoteText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSaveEdit()
+                          }
+                          if (e.key === "Escape") {
+                            handleCancelEdit()
+                          }
+                        }}
+                        rows={2}
+                        className="w-full rounded-lg border border-ring bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                        autoFocus
+                      />
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={!editingNoteText.trim()}
+                          className="px-3 py-1 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-1 text-xs font-semibold rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground mt-2 ml-12">{note.text}</p>
+                  )}
                 </div>
-                <p className="text-sm leading-relaxed text-foreground mt-2 ml-12">{note.text}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 

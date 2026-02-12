@@ -105,7 +105,7 @@ export default function ExplorePage() {
   const allClipsDataset = useMemo(() => getAllUniqueClips(), [])
   
   // Use hook to filter clips
-  const { filters, rangeFilters, toggleFilter, toggleAllInCategory, setRangeFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount } = useExploreFilters(allClipsDataset.plays)
+  const { filters, rangeFilters, toggleFilter, toggleAllInCategory, setRangeFilter, clearFilters, filteredPlays, uniqueGames, activeFilterCount, isFiltering } = useExploreFilters(allClipsDataset.plays)
 
   // Memoize the filtered dataset so children only re-render when filteredPlays changes
   const filteredDataset = useMemo(
@@ -162,7 +162,7 @@ export default function ExplorePage() {
 
                   {/* Tab Content */}
                   {activeTab === "clips" ? (
-                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden relative">
                       <GridModule
                         showTabs={false}
                         selectionActions={
@@ -175,6 +175,18 @@ export default function ExplorePage() {
                         onClearFilters={clearFilters}
                         onDoubleClickPlay={(play) => setPreviewPlay(play)}
                       />
+                      {/* Subtle overlay while deferred filter computation catches up */}
+                      {isFiltering && (
+                        <div className="absolute inset-0 bg-background/60 flex items-center justify-center pointer-events-none z-10">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            <span>Filtering...</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : activeTab === "practice" ? (
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">

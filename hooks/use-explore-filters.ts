@@ -1,13 +1,35 @@
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useDeferredValue } from "react"
 import type { PlayData } from "@/lib/mock-datasets"
 import { filterPlays } from "@/lib/filters/filter-engine"
 
 export type FilterState = Record<string, Set<string>>
 export type RangeFilterState = Record<string, [number, number]>
 
+/** Datasets at or below this threshold skip the deferred path entirely. */
+const DEFERRED_THRESHOLD = 500
+
 export function useExploreFilters(initialPlays: PlayData[]) {
   const [filters, setFilters] = useState<FilterState>({})
   const [rangeFilters, setRangeFilters] = useState<RangeFilterState>({})
+
+  // -----------------------------------------------------------------------
+  // Deferred filtering: keep filter controls responsive while the expensive
+  // filterPlays computation runs at lower priority.  For small datasets the
+  // deferred values are identical to the immediate ones (zero overhead).
+  // -----------------------------------------------------------------------
+  const useDeferral = initialPlays.length > DEFERRED_THRESHOLD
+
+  const deferredFilters = useDeferredValue(filters)
+  const deferredRangeFilters = useDeferredValue(rangeFilters)
+
+  // Pick immediate or deferred depending on dataset size
+  const effectiveFilters = useDeferral ? deferredFilters : filters
+  const effectiveRangeFilters = useDeferral ? deferredRangeFilters : rangeFilters
+
+  // True while the deferred values haven't caught up with the latest state.
+  const isFiltering =
+    useDeferral &&
+    (effectiveFilters !== filters || effectiveRangeFilters !== rangeFilters)
 
   const toggleFilter = useCallback((category: string, value: string) => {
     setFilters((prev) => {
@@ -96,12 +118,11 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilters({})
   }, [])
 
-  // Delegate to the pure filter engine -- no filtering logic lives in
-  // the hook any more.  filterPlays returns the original array reference
-  // when no filters are active, preventing unnecessary downstream renders.
+  // Delegate to the pure filter engine.  Uses the deferred snapshots so
+  // this expensive computation yields to urgent UI updates (filter clicks).
   const filteredPlays = useMemo(
-    () => filterPlays(initialPlays, filters, rangeFilters),
-    [initialPlays, filters, rangeFilters],
+    () => filterPlays(initialPlays, effectiveFilters, effectiveRangeFilters),
+    [initialPlays, effectiveFilters, effectiveRangeFilters],
   )
 
   // Get unique values for dynamic filter options
@@ -127,6 +148,8 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     filteredPlays,
     uniqueGames,
     activeFilterCount,
+    /** True while the deferred filter computation is still catching up. */
+    isFiltering,
   }
 }
 

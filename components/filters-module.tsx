@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { FilterState, RangeFilterState } from "@/hooks/use-explore-filters"
 import { Button } from "@/components/ui/button"
@@ -139,6 +140,8 @@ function ToggleGroupWithRange({
   )
 }
 
+const ENABLED_DEFAULT: string[] = ["enabled"]
+
 // Filter row with circular checkbox that toggles all sub-filters
 function FilterRow({
   label,
@@ -169,7 +172,7 @@ function FilterRow({
 }) {
   // Derive a category key: use explicit category, or a normalized label for simple boolean filters
   const effectiveCategory = category || `_filter_${label.toLowerCase().replace(/[\s\/]+/g, "_")}`
-  const effectiveValues = allValues || ["enabled"]
+  const effectiveValues = allValues || ENABLED_DEFAULT
   
   // Check if any set-based values in this category are selected
   const hasSetSelected = filters && filters[effectiveCategory]?.size > 0
@@ -178,7 +181,7 @@ function FilterRow({
   
   const isActive = hasSetSelected || hasRangeSelected
 
-  const handleCircleClick = () => {
+  const handleCircleClick = useCallback(() => {
     if (isActive) {
       // Clear everything: set-based filters and range filter
       if (hasSetSelected && onToggleAll) {
@@ -197,7 +200,18 @@ function FilterRow({
         onToggle(effectiveCategory, "enabled")
       }
     }
-  }
+  }, [
+    isActive,
+    hasSetSelected,
+    hasRangeSelected,
+    effectiveCategory,
+    effectiveValues,
+    onToggleAll,
+    onToggle,
+    onRangeReset,
+    rangeCategory,
+    rangeDefault,
+  ])
 
   return (
     <div className="space-y-2">

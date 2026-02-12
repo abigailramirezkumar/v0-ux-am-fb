@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
@@ -87,10 +87,21 @@ function EmptyTabState({ label }: { label: string }) {
   )
 }
 
+const FilterIcon = ({ className }: { className?: string }) => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M1.75 2.625H12.25" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    <path d="M3.5 5.25H10.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    <path d="M5.25 7.875H8.75" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+    <path d="M6.125 10.5H7.875" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+  </svg>
+)
+
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
+  const [showFilters, setShowFilters] = useState(true)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Expand/collapse the preview panel when previewPlay changes
   useEffect(() => {
@@ -100,6 +111,18 @@ export default function ExplorePage() {
       previewPanelRef.current?.collapse()
     }
   }, [previewPlay])
+
+  const handleToggleFilters = useCallback(() => {
+    setShowFilters((prev) => {
+      const next = !prev
+      if (next) {
+        filterPanelRef.current?.expand()
+      } else {
+        filterPanelRef.current?.collapse()
+      }
+      return next
+    })
+  }, [])
 
   // Memoize the base dataset so it's only computed once (mock data is static)
   const allClipsDataset = useMemo(() => getAllUniqueClips(), [])
@@ -117,8 +140,17 @@ export default function ExplorePage() {
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-          {/* Filters - full height left panel */}
-          <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
+          {/* Filters - collapsible full height left panel */}
+          <ResizablePanel
+            ref={filterPanelRef}
+            defaultSize={22}
+            minSize={18}
+            maxSize={35}
+            collapsible
+            collapsedSize={0}
+            onCollapse={() => setShowFilters(false)}
+            onExpand={() => setShowFilters(true)}
+          >
             <div className="h-full pl-3 pr-1 py-3">
               <FiltersModule
                 filters={filters}
@@ -142,8 +174,25 @@ export default function ExplorePage() {
               {/* Main content area */}
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
                 <div className="h-full flex flex-col pl-1 pr-3 py-3">
-                  {/* Explore Tabs */}
+                  {/* Explore Tabs + Filter Toggle */}
                   <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
+                    {/* Filter toggle button – matches Watch toolbar ToggleBtn style */}
+                    <button
+                      onClick={handleToggleFilters}
+                      className={cn(
+                        "flex flex-col items-center justify-center rounded-md transition-colors h-10 w-10 gap-1 shrink-0",
+                        showFilters
+                          ? "bg-foreground/90 text-background dark:bg-white/90 dark:text-sidebar"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                      aria-label={showFilters ? "Hide filters" : "Show filters"}
+                    >
+                      <FilterIcon className="w-4 h-4" />
+                      <span className="text-[10px] font-medium leading-none">Filters</span>
+                    </button>
+
+                    <div className="w-px h-6 bg-border/50 shrink-0" />
+
                     {exploreTabs.map((tab) => (
                       <button
                         key={tab.value}

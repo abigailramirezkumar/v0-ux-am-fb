@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
@@ -87,19 +87,51 @@ function EmptyTabState({ label }: { label: string }) {
   )
 }
 
+const FilterToggleIcon = ({ className }: { className?: string }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path fillRule="evenodd" clipRule="evenodd" d="M2 2.25C2 2.11193 2.11193 2 2.25 2H13.75C13.8881 2 14 2.11193 14 2.25V3.34315C14 4.53662 13.5259 5.68121 12.682 6.52513L10 9.20711V13.75C10 13.8881 9.88807 14 9.75 14H6.25C6.11193 14 6 13.8881 6 13.75V9.20711L3.31802 6.52513C2.47411 5.68121 2 4.53662 2 3.34315V2.25ZM3 3V3.34315C3 4.2714 3.36875 5.16164 4.02513 5.81802L7 8.79289V13H9V8.79289L11.9749 5.81802C12.6313 5.16164 13 4.2714 13 3.34315V3H3Z" fill="currentColor"/>
+  </svg>
+)
+
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
+  const [showFilters, setShowFilters] = useState(true)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Expand/collapse the preview panel when previewPlay changes
+  // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   useEffect(() => {
     if (previewPlay) {
-      previewPanelRef.current?.expand()
+      // Resize to 50% so grid and preview share space equally
+      previewPanelRef.current?.resize(50)
+      setShowFilters(false)
     } else {
       previewPanelRef.current?.collapse()
+      setShowFilters(true)
     }
   }, [previewPlay])
+
+  const handleToggleFilters = useCallback(() => {
+    setShowFilters((prev) => {
+      const next = !prev
+      // Mutual exclusion: opening filters closes preview
+      if (next && previewPlay) {
+        setPreviewPlay(null)
+      }
+      return next
+    })
+  }, [previewPlay])
+
+  // Sync the imperative panel with the showFilters state (matches watch page pattern)
+  useEffect(() => {
+    if (showFilters) {
+      filterPanelRef.current?.expand()
+    } else {
+      filterPanelRef.current?.collapse()
+    }
+  }, [showFilters])
 
   // Memoize the base dataset so it's only computed once (mock data is static)
   const allClipsDataset = useMemo(() => getAllUniqueClips(), [])
@@ -116,10 +148,19 @@ export default function ExplorePage() {
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          {/* Filters - full height left panel */}
-          <ResizablePanel defaultSize={22} minSize={18} maxSize={35}>
-            <div className="h-full pl-3 pr-1 py-3">
+        <ResizablePanelGroup direction="horizontal" className="flex-1 [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
+          {/* Filters - collapsible full height left panel */}
+          <ResizablePanel
+            ref={filterPanelRef}
+            defaultSize={22}
+            minSize={18}
+            maxSize={35}
+            collapsible
+            collapsedSize={0}
+            onCollapse={() => setShowFilters(false)}
+            onExpand={() => setShowFilters(true)}
+          >
+            <div className="h-full pl-3 py-3">
               <FiltersModule
                 filters={filters}
                 rangeFilters={rangeFilters}
@@ -134,16 +175,32 @@ export default function ExplorePage() {
               />
             </div>
           </ResizablePanel>
-          <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+          <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
 
           {/* Right panel: Tabs + Content + Preview */}
           <ResizablePanel defaultSize={78}>
-            <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanelGroup direction="horizontal" className="h-full [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
               {/* Main content area */}
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
-                <div className="h-full flex flex-col pl-1 pr-3 py-3">
-                  {/* Explore Tabs */}
+                <div className={cn("h-full flex flex-col py-3", !previewPlay && "pr-3")}>
+                  {/* Explore Tabs + Filter Toggle */}
                   <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
+                    {/* Filter toggle button – matches Watch toolbar ToggleBtn style */}
+                    <button
+                      onClick={handleToggleFilters}
+                      className={cn(
+                        "flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
+                        showFilters
+                          ? "bg-foreground/90 text-background dark:bg-white/90 dark:text-sidebar"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                      aria-label={showFilters ? "Hide filters" : "Show filters"}
+                    >
+                      <FilterToggleIcon className="w-4 h-4" />
+                    </button>
+
+                    <div className="w-px h-6 bg-border/50 shrink-0" />
+
                     {exploreTabs.map((tab) => (
                       <button
                         key={tab.value}
@@ -205,18 +262,18 @@ export default function ExplorePage() {
               </ResizablePanel>
 
               {/* Preview Panel (collapsible right) */}
-              <ResizableHandle className="w-1 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+              <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
               <ResizablePanel
                 ref={previewPanelRef}
                 defaultSize={0}
-                minSize={25}
-                maxSize={50}
+                minSize={30}
+                maxSize={55}
                 collapsible
                 collapsedSize={0}
                 id="explore-preview"
                 order={2}
               >
-                <div className="h-full pr-3 py-3">
+                <div className="h-full pr-3 py-3 pl-0">
                   {previewPlay && (
                     <PreviewModule
                       play={previewPlay}

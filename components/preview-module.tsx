@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
-import { athletes } from "@/lib/athletes-data"
+import { athletes, getAthleteByName } from "@/lib/athletes-data"
 import { useLibraryContext } from "@/lib/library-context"
 import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
@@ -546,20 +546,243 @@ function PreviewVideoPlayer({
 // Player Chip
 // ---------------------------------------------------------------------------
 
-function PlayerChip({ player }: { player: PlayerOnField }) {
+function PlayerChip({ player, onClick }: { player: PlayerOnField; onClick?: () => void }) {
   const nameParts = player.name.split(" ")
   const firstInitial = nameParts[0][0]
   const lastName = nameParts.slice(1).join(" ")
 
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-1 text-xs whitespace-nowrap">
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-1 text-xs whitespace-nowrap transition-colors hover:bg-primary/10 hover:ring-1 hover:ring-primary/30 cursor-pointer"
+    >
       <span className="font-bold text-foreground">
         {firstInitial}. {lastName}
       </span>
       <span className="text-muted-foreground">
         {player.position} #{player.jersey_number}
       </span>
-    </span>
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Athlete Profile View
+// ---------------------------------------------------------------------------
+
+const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
+
+/** Return position-relevant stats for an NFL player */
+function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string; secondary?: string; note?: string }[] {
+  const s = athlete.stats
+  const pos = athlete.position
+
+  if (pos === "QB") {
+    return [
+      { label: "Pass Yards", value: s.passing_yards.toLocaleString(), secondary: `/ ${s.passing_tds} TDs`, note: "Career total" },
+      { label: "Passer Rating", value: ((s.passing_tds / Math.max(s.passing_yards / 250, 1)) * 30 + 65).toFixed(1), note: "Estimated" },
+      { label: "Rush Yards", value: s.rushing_yards.toLocaleString(), secondary: `/ ${s.rushing_tds} TDs`, note: "Dual threat" },
+      { label: "Total TDs", value: (s.passing_tds + s.rushing_tds).toString(), note: "Pass + Rush" },
+      { label: "YPG", value: (s.passing_yards / 17).toFixed(1), note: "Yards per game avg" },
+      { label: "Comp %", value: (58 + (hashString(athlete.name) % 12)).toFixed(1) + "%", note: "Estimated" },
+    ]
+  }
+
+  if (pos === "RB") {
+    return [
+      { label: "Rush Yards", value: s.rushing_yards.toLocaleString(), secondary: `/ ${s.rushing_tds} TDs`, note: "Career total" },
+      { label: "YPC", value: (s.rushing_yards / Math.max((s.rushing_yards / 4.5), 1)).toFixed(1), note: "Yards per carry" },
+      { label: "Rec Yards", value: s.receiving_yards.toLocaleString(), secondary: `/ ${s.receiving_tds} TDs`, note: "Receiving" },
+      { label: "Total TDs", value: (s.rushing_tds + s.receiving_tds).toString(), note: "Rush + Rec" },
+      { label: "Scrimmage", value: (s.rushing_yards + s.receiving_yards).toLocaleString(), note: "Total yards" },
+      { label: "Rush YPG", value: (s.rushing_yards / 17).toFixed(1), note: "Yards per game avg" },
+    ]
+  }
+
+  if (pos === "WR" || pos === "TE") {
+    return [
+      { label: "Rec Yards", value: s.receiving_yards.toLocaleString(), secondary: `/ ${s.receiving_tds} TDs`, note: "Career total" },
+      { label: "Rec/Game", value: ((s.receiving_yards / 12) / 17).toFixed(1), note: "Receptions avg" },
+      { label: "YPR", value: (s.receiving_yards / Math.max(s.receiving_yards / 12, 1)).toFixed(1), note: "Yards per reception" },
+      { label: "Total TDs", value: (s.receiving_tds + s.rushing_tds).toString(), note: "All touchdowns" },
+      { label: "Rec YPG", value: (s.receiving_yards / 17).toFixed(1), note: "Yards per game avg" },
+      { label: "Targets", value: Math.round(s.receiving_yards / 8.5).toLocaleString(), note: "Estimated" },
+    ]
+  }
+
+  if (pos === "OL") {
+    const h = hashString(athlete.name)
+    const proB = 2 + (h % 5)
+    const allPro = 1 + (h % 3)
+    const snaps = 850 + (h % 250)
+    const penPct = (1.2 + (h % 20) / 10).toFixed(1)
+    const sackAllow = (h % 5)
+    const runBlock = (78 + (h % 15)).toFixed(1)
+    return [
+      { label: "Pro Bowls", value: proB.toString(), note: "Career selections" },
+      { label: "All-Pro", value: allPro.toString(), note: "First-team nods" },
+      { label: "Snaps", value: snaps.toLocaleString(), note: "2025 season" },
+      { label: "Penalty %", value: penPct + "%", note: "Of total snaps" },
+      { label: "Sacks Allowed", value: sackAllow.toString(), note: "2025 season" },
+      { label: "Run Block", value: runBlock, note: "PFF grade" },
+    ]
+  }
+
+  if (pos === "DE" || pos === "DT") {
+    return [
+      { label: "Sacks", value: s.sacks.toFixed(1), note: "Career total" },
+      { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+      { label: "TFL", value: Math.round(s.sacks * 1.4 + 8).toString(), note: "Tackles for loss" },
+      { label: "QB Hits", value: Math.round(s.sacks * 2.2 + 5).toString(), note: "Estimated" },
+      { label: "Sacks/Game", value: (s.sacks / 34).toFixed(2), note: "Per game avg" },
+      { label: "FF", value: Math.round(s.sacks * 0.3 + 1).toString(), note: "Forced fumbles" },
+    ]
+  }
+
+  if (pos === "LB") {
+    return [
+      { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+      { label: "Sacks", value: s.sacks.toFixed(1), note: "Career total" },
+      { label: "TFL", value: Math.round(s.sacks * 1.5 + 12).toString(), note: "Tackles for loss" },
+      { label: "Tkl/Game", value: (s.tackles / 34).toFixed(1), note: "Per game avg" },
+      { label: "PD", value: Math.round(s.tackles * 0.08 + 3).toString(), note: "Pass deflections" },
+      { label: "INT", value: Math.round(s.tackles * 0.02 + 1).toString(), note: "Interceptions" },
+    ]
+  }
+
+  // CB / S
+  return [
+    { label: "Tackles", value: s.tackles.toString(), note: "Career total" },
+    { label: "INT", value: Math.round(s.tackles * 0.04 + 2).toString(), note: "Interceptions" },
+    { label: "PD", value: Math.round(s.tackles * 0.12 + 5).toString(), note: "Pass deflections" },
+    { label: "Tkl/Game", value: (s.tackles / 34).toFixed(1), note: "Per game avg" },
+    { label: "Sacks", value: s.sacks.toFixed(1), note: "Blitz production" },
+    { label: "FF", value: Math.round(s.tackles * 0.015 + 1).toString(), note: "Forced fumbles" },
+  ]
+}
+
+const TEAM_FULL_NAMES: Record<string, string> = {
+  BAL: "Baltimore Ravens", BUF: "Buffalo Bills", KC: "Kansas City Chiefs",
+  DET: "Detroit Lions", CIN: "Cincinnati Bengals", HOU: "Houston Texans",
+  SF: "San Francisco 49ers", PHI: "Philadelphia Eagles", MIN: "Minnesota Vikings",
+  MIA: "Miami Dolphins", DAL: "Dallas Cowboys", LAR: "Los Angeles Rams",
+  NYJ: "New York Jets", ATL: "Atlanta Falcons", LV: "Las Vegas Raiders",
+  CLE: "Cleveland Browns", NYG: "New York Giants", PIT: "Pittsburgh Steelers",
+  DEN: "Denver Broncos", IND: "Indianapolis Colts", NE: "New England Patriots",
+  TB: "Tampa Bay Buccaneers",
+}
+
+function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () => void }) {
+  const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
+  const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
+  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+
+  return (
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
+      {/* Header with back button */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 shrink-0">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          aria-label="Back to clip"
+        >
+          <Icon name="chevronLeft" className="w-4 h-4" />
+        </button>
+        <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Avatar + Name + Team/Position */}
+        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
+            {athlete.name.split(" ").map((n) => n[0]).join("")}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+              <span className="text-primary font-medium">{teamName}</span>
+              <span className="text-border">{"·"}</span>
+              <span>{athlete.position}</span>
+              <span className="text-border">{"·"}</span>
+              <span>#{athlete.jersey_number}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile tabs */}
+        <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
+          {PROFILE_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setProfileTab(tab)}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
+                profileTab === tab
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {profileTab === "Overview" ? (
+          <div className="px-5 pb-6">
+            {/* Identity section */}
+            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
+            <div className="flex flex-col">
+              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+              <IdentityRow label="Position" value={athlete.position} />
+              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+              <IdentityRow label="College" value={athlete.college} />
+              <IdentityRow label="Team" value={teamName} isLast />
+            </div>
+
+            {/* Key Stats */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
+                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
+                  2025/26
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {keyStats.map((stat) => (
+                  <div key={stat.label} className="rounded-lg border border-border p-3">
+                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
+                      {stat.secondary && (
+                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
+                      )}
+                    </div>
+                    {stat.note && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {profileTab} content coming soon.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function IdentityRow({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
+  return (
+    <div className={cn("flex items-center justify-between py-3", !isLast && "border-b border-dotted border-border")}>
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <span className="text-sm text-muted-foreground">{value}</span>
+    </div>
   )
 }
 
@@ -618,6 +841,515 @@ function formatGameLabel(game: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Global tag store – shared across all clips
+// ---------------------------------------------------------------------------
+
+const ALL_TAGS_KEY = "__preview_all_tags__"
+
+function loadAllTags(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(ALL_TAGS_KEY)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistAllTags(tags: string[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(ALL_TAGS_KEY, JSON.stringify(tags))
+}
+
+function loadClipTags(playId: string): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(`__clip_tags_${playId}__`)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistClipTags(playId: string, tags: string[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(`__clip_tags_${playId}__`, JSON.stringify(tags))
+}
+
+interface ClipNote {
+  id: string
+  text: string
+  authorName: string
+  authorAvatar: string
+  timestamp: number // ms since epoch
+}
+
+let _noteIdCounter = 0
+function generateNoteId(): string {
+  _noteIdCounter += 1
+  return `note-${Date.now()}-${_noteIdCounter}`
+}
+
+const DEFAULT_USER = {
+  name: "Dan Campbell",
+  avatar: "/placeholder.svg?height=40&width=40",
+}
+
+function loadClipNotes(playId: string): ClipNote[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = sessionStorage.getItem(`__clip_notes_${playId}__`)
+    return raw ? (JSON.parse(raw) as ClipNote[]) : []
+  } catch {
+    return []
+  }
+}
+
+function persistClipNotes(playId: string, notes: ClipNote[]) {
+  if (typeof window === "undefined") return
+  sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+}
+
+// ---------------------------------------------------------------------------
+// Sample note seeding – ~33% of clips get pre-populated notes
+// ---------------------------------------------------------------------------
+
+const SAMPLE_NOTE_AUTHORS = [
+  { name: "Ben Johnson", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Aaron Glenn", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Hank Fraley", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Kelvin Sheppard", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Deshea Townsend", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Scottie Montgomery", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Antwaan Randle El", avatar: "/placeholder.svg?height=40&width=40" },
+  { name: "Matt Allison", avatar: "/placeholder.svg?height=40&width=40" },
+]
+
+const SAMPLE_NOTE_TEXTS = [
+  "Great pocket presence on this play. QB had time to work through his progressions cleanly.",
+  "Watch the left guard here -- missed the stunt pickup. Need to drill this in practice.",
+  "Coverage busted on the back end. Looks like a communication issue between the safety and corner.",
+  "Good run fit by the linebacker. He stayed disciplined in his gap assignment.",
+  "The motion pre-snap created the mismatch we wanted. Let's run this look more in the red zone.",
+  "Receiver ran a sharp route here. The break at the top was crisp and created separation.",
+  "D-line got great push up the middle on this snap. Interior pressure forced the early throw.",
+  "Need to review the protection call here -- we left the edge rusher unblocked.",
+  "Play action worked perfectly. Both linebackers bit on the fake and left the seam wide open.",
+  "This is a good example of a contested catch drill scenario. Receiver showed strong hands.",
+  "Personnel grouping gave us the look we wanted. Defense stayed in base and we had numbers.",
+  "Blitz pickup was clean. RB identified the rusher and picked it up without hesitation.",
+]
+
+const SEEDED_NOTES_KEY = "__preview_notes_seeded__"
+
+function seedSampleNotes() {
+  if (typeof window === "undefined") return
+  if (sessionStorage.getItem(SEEDED_NOTES_KEY)) return
+
+  // Deterministic selection of play IDs that get notes (~33%)
+  // Covers plays from multiple datasets
+  const seededPlayIds = [
+    "play-0", "play-2", "play-5", "play-8",                     // dataset-a (BUF vs LA)
+    "play-1", "play-4", "play-9",                                // dataset-b (Practice)
+    "play-3", "play-7", "play-11", "play-14",                    // dataset-c (Scrimmage)
+    "play-0", "play-6", "play-12", "play-17",                    // dataset-d (SF vs PHI) -- note: these keys differ once accessed via getAllUniqueClips
+    "dataset-a-play-0", "dataset-a-play-2", "dataset-a-play-5",
+    "dataset-b-play-1", "dataset-b-play-4",
+    "dataset-c-play-3", "dataset-c-play-7", "dataset-c-play-11",
+    "dataset-d-play-6", "dataset-d-play-12", "dataset-d-play-17",
+  ]
+
+  const now = Date.now()
+
+  seededPlayIds.forEach((playId, idx) => {
+    // Skip if notes already exist for this clip
+    const existing = sessionStorage.getItem(`__clip_notes_${playId}__`)
+    if (existing) return
+
+    const noteCount = (idx % 3) + 1 // 1, 2, or 3 notes per clip
+    const notes: ClipNote[] = []
+
+    for (let n = 0; n < noteCount; n++) {
+      const author = SAMPLE_NOTE_AUTHORS[(idx + n) % SAMPLE_NOTE_AUTHORS.length]
+      const text = SAMPLE_NOTE_TEXTS[(idx * 3 + n) % SAMPLE_NOTE_TEXTS.length]
+      // Spread timestamps out: oldest first, ranging from 3 days ago to 10 mins ago
+      const ageMs = (noteCount - n) * (1000 * 60 * 60 * (2 + idx % 72))
+      notes.push({
+        id: `seed-${playId}-${n}`,
+        text,
+        authorName: author.name,
+        authorAvatar: author.avatar,
+        timestamp: now - ageMs,
+      })
+    }
+
+    sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+  })
+
+  sessionStorage.setItem(SEEDED_NOTES_KEY, "true")
+}
+
+// Run once on load
+if (typeof window !== "undefined") {
+  seedSampleNotes()
+}
+
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now()
+  const diffMs = now - timestamp
+  const diffSec = Math.floor(diffMs / 1000)
+  if (diffSec < 60) return "Just now"
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 30) return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`
+  const diffMonth = Math.floor(diffDay / 30)
+  return `${diffMonth} month${diffMonth > 1 ? "s" : ""} ago`
+}
+
+// ---------------------------------------------------------------------------
+// Tags & Notes Tab
+// ---------------------------------------------------------------------------
+
+function TagsAndNotesTab({ playId }: { playId: string }) {
+  const [allTags, setAllTags] = useState<string[]>(() => loadAllTags())
+  const [clipTags, setClipTags] = useState<string[]>(() => loadClipTags(playId))
+  const [notes, setNotes] = useState<ClipNote[]>(() => loadClipNotes(playId))
+  const [noteText, setNoteText] = useState("")
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteText, setEditingNoteText] = useState("")
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
+  const [tagSearch, setTagSearch] = useState("")
+  const tagInputRef = useRef<HTMLInputElement>(null)
+  const tagDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Reload per-clip data when the playId changes
+  useEffect(() => {
+    setClipTags(loadClipTags(playId))
+    setNotes(loadClipNotes(playId))
+    setNoteText("")
+    setEditingNoteId(null)
+    setEditingNoteText("")
+  }, [playId])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target as Node)) {
+        setTagDropdownOpen(false)
+        setTagSearch("")
+      }
+    }
+    if (tagDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [tagDropdownOpen])
+
+  const filteredTags = useMemo(() => {
+    const q = tagSearch.toLowerCase().trim()
+    if (!q) return allTags
+    return allTags.filter((t) => t.toLowerCase().includes(q))
+  }, [allTags, tagSearch])
+
+  const canCreateNew = tagSearch.trim().length > 0 && !allTags.some((t) => t.toLowerCase() === tagSearch.trim().toLowerCase())
+
+  const addTag = (tag: string) => {
+    const normalised = tag.trim()
+    if (!normalised) return
+    // Add to global tags list if new
+    if (!allTags.some((t) => t.toLowerCase() === normalised.toLowerCase())) {
+      const updated = [...allTags, normalised]
+      setAllTags(updated)
+      persistAllTags(updated)
+    }
+    // Add to clip tags if not already present
+    if (!clipTags.some((t) => t.toLowerCase() === normalised.toLowerCase())) {
+      const updated = [...clipTags, normalised]
+      setClipTags(updated)
+      persistClipTags(playId, updated)
+    }
+    setTagSearch("")
+  }
+
+  const removeTag = (tag: string) => {
+    const updated = clipTags.filter((t) => t !== tag)
+    setClipTags(updated)
+    persistClipTags(playId, updated)
+  }
+
+  const handleSubmitNote = () => {
+    if (!noteText.trim()) return
+    const newNote: ClipNote = {
+      id: generateNoteId(),
+      text: noteText.trim(),
+      authorName: DEFAULT_USER.name,
+      authorAvatar: DEFAULT_USER.avatar,
+      timestamp: Date.now(),
+    }
+    const updated = [...notes, newNote]
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+    setNoteText("")
+  }
+
+  const handleDeleteNote = (noteId: string) => {
+    const updated = notes.filter((n) => n.id !== noteId)
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+  }
+
+  const handleStartEdit = (note: ClipNote) => {
+    setEditingNoteId(note.id)
+    setEditingNoteText(note.text)
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingNoteId || !editingNoteText.trim()) return
+    const updated = notes.map((n) =>
+      n.id === editingNoteId ? { ...n, text: editingNoteText.trim() } : n
+    )
+    setNotes(updated)
+    persistClipNotes(playId, updated)
+    setEditingNoteId(null)
+    setEditingNoteText("")
+  }
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null)
+    setEditingNoteText("")
+  }
+
+  return (
+    <div className="px-4 pt-4 pb-6 flex flex-col gap-5">
+      {/* Privacy notice */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Icon name="information" className="w-4 h-4 shrink-0" />
+        <span>Only your organization can see these</span>
+      </div>
+
+      {/* TAGS */}
+      <div>
+        <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Tags</h4>
+
+        {/* Selected tags */}
+        {clipTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {clipTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold"
+              >
+                {tag}
+                <button
+                  onClick={() => removeTag(tag)}
+                  className="hover:opacity-70 transition-opacity"
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  <Icon name="close" className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Dropdown */}
+        <div ref={tagDropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setTagDropdownOpen(!tagDropdownOpen)
+              setTimeout(() => tagInputRef.current?.focus(), 0)
+            }}
+            className="w-full flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2.5 text-sm hover:border-ring transition-colors text-left"
+          >
+            <span className="text-muted-foreground">{clipTags.length > 0 ? `${clipTags.length} tag${clipTags.length > 1 ? "s" : ""} selected` : "Select or create tags"}</span>
+            <Icon name="chevronDown" className={cn("w-4 h-4 text-muted-foreground transition-transform", tagDropdownOpen && "rotate-180")} />
+          </button>
+
+          {tagDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-lg border border-border bg-popover shadow-md">
+              <div className="p-2 border-b border-border">
+                <input
+                  ref={tagInputRef}
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && canCreateNew) {
+                      addTag(tagSearch)
+                    } else if (e.key === "Enter" && filteredTags.length > 0) {
+                      const firstUnselected = filteredTags.find((t) => !clipTags.includes(t))
+                      if (firstUnselected) addTag(firstUnselected)
+                    }
+                  }}
+                  placeholder="Search or type to create..."
+                  className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+
+              <div className="max-h-48 overflow-y-auto p-1">
+                {filteredTags.map((tag) => {
+                  const isSelected = clipTags.includes(tag)
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => (isSelected ? removeTag(tag) : addTag(tag))}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left transition-colors",
+                        isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted text-foreground"
+                      )}
+                    >
+                      <Icon name="tag" className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{tag}</span>
+                      {isSelected && <Icon name="close" className="w-3 h-3 ml-auto shrink-0" />}
+                    </button>
+                  )
+                })}
+
+                {canCreateNew && (
+                  <button
+                    onClick={() => addTag(tagSearch)}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left text-primary hover:bg-muted transition-colors"
+                  >
+                    <Icon name="add" className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Create &ldquo;{tagSearch.trim()}&rdquo;
+                    </span>
+                  </button>
+                )}
+
+                {filteredTags.length === 0 && !canCreateNew && (
+                  <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                    No tags yet. Type to create one.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* NOTES */}
+      <div>
+        <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-2">Notes</h4>
+
+        {/* Previous notes */}
+        {notes.length > 0 && (
+          <div className="flex flex-col divide-y divide-border mb-3">
+            {notes.map((note) => {
+              const isEditing = editingNoteId === note.id
+              const isOwnNote = note.authorName === DEFAULT_USER.name
+
+              return (
+                <div key={note.id} className="py-4 first:pt-2 group">
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={note.authorAvatar}
+                      alt={note.authorName}
+                      className="w-9 h-9 rounded-full object-cover shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-accent-foreground leading-tight">{note.authorName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(note.timestamp)}</p>
+                    </div>
+                    {isOwnNote && !isEditing && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                        <button
+                          onClick={() => handleStartEdit(note)}
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Edit note"
+                        >
+                          <Icon name="edit" className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          aria-label="Delete note"
+                        >
+                          <Icon name="delete" className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="mt-2 ml-12">
+                      <textarea
+                        value={editingNoteText}
+                        onChange={(e) => setEditingNoteText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSaveEdit()
+                          }
+                          if (e.key === "Escape") {
+                            handleCancelEdit()
+                          }
+                        }}
+                        rows={2}
+                        className="w-full rounded-lg border border-ring bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                        autoFocus
+                      />
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={!editingNoteText.trim()}
+                          className="px-3 py-1 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-3 py-1 text-xs font-semibold rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground mt-2 ml-12">{note.text}</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Note input */}
+        <div className="relative">
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSubmitNote()
+              }
+            }}
+            placeholder="Write a note..."
+            rows={3}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={handleSubmitNote}
+            disabled={!noteText.trim()}
+            className={cn(
+              "absolute bottom-3 right-3 transition-colors",
+              noteText.trim() ? "text-primary hover:text-primary/80" : "text-muted-foreground/40"
+            )}
+            aria-label="Submit note"
+          >
+            <Icon name="send" className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // PreviewModule
 // ---------------------------------------------------------------------------
 
@@ -633,8 +1365,21 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   const sourceType = useMemo(() => getSourceType(play), [play])
   const score = useMemo(() => getGameScore(play), [play])
 
+  const [activeTab, setActiveTab] = useState<"info" | "tags-notes">("info")
+  const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null)
+
   const { setPendingPreviewClips, setWatchItem } = useLibraryContext()
   const router = useRouter()
+
+  // Reset athlete view when play changes
+  useEffect(() => {
+    setSelectedAthlete(null)
+  }, [play])
+
+  const handlePlayerClick = useCallback((playerName: string) => {
+    const athlete = getAthleteByName(playerName)
+    if (athlete) setSelectedAthlete(athlete)
+  }, [])
 
   // "Open Clip" -- open as unsaved playlist in watch page
   const handleOpenClip = useCallback(() => {
@@ -650,6 +1395,11 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
     setWatchItem(null)
     router.push("/watch")
   }, [setWatchItem, router])
+
+  // If an athlete is selected, show their profile instead of the clip view
+  if (selectedAthlete) {
+    return <AthleteProfileView athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />
+  }
 
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
@@ -683,31 +1433,63 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
           />
         </div>
 
-        {/* Play Summary */}
-        <div className="px-4 pt-5 pb-3">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
-          <p className="text-sm leading-relaxed text-foreground">{summary}</p>
+        {/* Tabs */}
+        <div className="px-4 pt-4 flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab("info")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors",
+              activeTab === "info"
+                ? "bg-accent-foreground text-background"
+                : "bg-transparent text-muted-foreground border border-border hover:bg-muted"
+            )}
+          >
+            Info
+          </button>
+          <button
+            onClick={() => setActiveTab("tags-notes")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors",
+              activeTab === "tags-notes"
+                ? "bg-accent-foreground text-background"
+                : "bg-transparent text-muted-foreground border border-border hover:bg-muted"
+            )}
+          >
+            {"Tags & Notes"}
+          </button>
         </div>
 
-        {/* Offense on the field */}
-        <div className="px-4 pt-4">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {roster.offense.map((player, i) => (
-              <PlayerChip key={`off-${i}`} player={player} />
-            ))}
-          </div>
-        </div>
+        {activeTab === "info" ? (
+          <>
+            {/* Play Summary */}
+            <div className="px-4 pt-5 pb-3">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
+              <p className="text-sm leading-relaxed text-foreground">{summary}</p>
+            </div>
 
-        {/* Defense on the field */}
-        <div className="px-4 pt-5 pb-6">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
-          <div className="flex flex-wrap gap-1.5">
-            {roster.defense.map((player, i) => (
-              <PlayerChip key={`def-${i}`} player={player} />
-            ))}
-          </div>
-        </div>
+            {/* Offense on the field */}
+            <div className="px-4 pt-4">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {roster.offense.map((player, i) => (
+                  <PlayerChip key={`off-${i}`} player={player} onClick={() => handlePlayerClick(player.name)} />
+                ))}
+              </div>
+            </div>
+
+            {/* Defense on the field */}
+            <div className="px-4 pt-5 pb-6">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {roster.defense.map((player, i) => (
+                  <PlayerChip key={`def-${i}`} player={player} onClick={() => handlePlayerClick(player.name)} />
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <TagsAndNotesTab playId={play.id} />
+        )}
       </div>
 
       {/* Fixed Footer */}

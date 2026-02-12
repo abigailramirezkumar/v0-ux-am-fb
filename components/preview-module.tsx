@@ -653,19 +653,46 @@ function persistClipTags(playId: string, tags: string[]) {
   sessionStorage.setItem(`__clip_tags_${playId}__`, JSON.stringify(tags))
 }
 
-function loadClipNotes(playId: string): string[] {
+interface ClipNote {
+  text: string
+  authorName: string
+  authorAvatar: string
+  timestamp: number // ms since epoch
+}
+
+const DEFAULT_USER = {
+  name: "Abby Wambach",
+  avatar: "/placeholder.svg?height=40&width=40",
+}
+
+function loadClipNotes(playId: string): ClipNote[] {
   if (typeof window === "undefined") return []
   try {
     const raw = sessionStorage.getItem(`__clip_notes_${playId}__`)
-    return raw ? (JSON.parse(raw) as string[]) : []
+    return raw ? (JSON.parse(raw) as ClipNote[]) : []
   } catch {
     return []
   }
 }
 
-function persistClipNotes(playId: string, notes: string[]) {
+function persistClipNotes(playId: string, notes: ClipNote[]) {
   if (typeof window === "undefined") return
   sessionStorage.setItem(`__clip_notes_${playId}__`, JSON.stringify(notes))
+}
+
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now()
+  const diffMs = now - timestamp
+  const diffSec = Math.floor(diffMs / 1000)
+  if (diffSec < 60) return "Just now"
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`
+  const diffDay = Math.floor(diffHr / 24)
+  if (diffDay < 30) return `${diffDay} day${diffDay > 1 ? "s" : ""} ago`
+  const diffMonth = Math.floor(diffDay / 30)
+  return `${diffMonth} month${diffMonth > 1 ? "s" : ""} ago`
 }
 
 // ---------------------------------------------------------------------------
@@ -675,7 +702,7 @@ function persistClipNotes(playId: string, notes: string[]) {
 function TagsAndNotesTab({ playId }: { playId: string }) {
   const [allTags, setAllTags] = useState<string[]>(() => loadAllTags())
   const [clipTags, setClipTags] = useState<string[]>(() => loadClipTags(playId))
-  const [notes, setNotes] = useState<string[]>(() => loadClipNotes(playId))
+  const [notes, setNotes] = useState<ClipNote[]>(() => loadClipNotes(playId))
   const [noteText, setNoteText] = useState("")
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false)
   const [tagSearch, setTagSearch] = useState("")
@@ -737,7 +764,13 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 
   const handleSubmitNote = () => {
     if (!noteText.trim()) return
-    const updated = [...notes, noteText.trim()]
+    const newNote: ClipNote = {
+      text: noteText.trim(),
+      authorName: DEFAULT_USER.name,
+      authorAvatar: DEFAULT_USER.avatar,
+      timestamp: Date.now(),
+    }
+    const updated = [...notes, newNote]
     setNotes(updated)
     persistClipNotes(playId, updated)
     setNoteText("")
@@ -761,12 +794,12 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
             {clipTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-medium"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-3 py-1 text-xs font-semibold"
               >
                 {tag}
                 <button
                   onClick={() => removeTag(tag)}
-                  className="hover:text-primary/70 transition-colors"
+                  className="hover:opacity-70 transition-opacity"
                   aria-label={`Remove tag ${tag}`}
                 >
                   <Icon name="close" className="w-3 h-3" />
@@ -858,10 +891,21 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 
         {/* Previous notes */}
         {notes.length > 0 && (
-          <div className="flex flex-col gap-2 mb-3">
+          <div className="flex flex-col divide-y divide-border mb-3">
             {notes.map((note, i) => (
-              <div key={i} className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground">
-                {note}
+              <div key={i} className="py-4 first:pt-2">
+                <div className="flex items-start gap-3">
+                  <img
+                    src={note.authorAvatar}
+                    alt={note.authorName}
+                    className="w-9 h-9 rounded-full object-cover shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-accent-foreground leading-tight">{note.authorName}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatRelativeTime(note.timestamp)}</p>
+                  </div>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground mt-2 ml-12">{note.text}</p>
               </div>
             ))}
           </div>

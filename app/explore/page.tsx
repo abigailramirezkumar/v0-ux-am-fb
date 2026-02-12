@@ -88,11 +88,8 @@ function EmptyTabState({ label }: { label: string }) {
 }
 
 const FilterIcon = ({ className }: { className?: string }) => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M1.75 2.625H12.25" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-    <path d="M3.5 5.25H10.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-    <path d="M5.25 7.875H8.75" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-    <path d="M6.125 10.5H7.875" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path fillRule="evenodd" clipRule="evenodd" d="M2 2.25C2 2.11193 2.11193 2 2.25 2H13.75C13.8881 2 14 2.11193 14 2.25V3.34315C14 4.53662 13.5259 5.68121 12.682 6.52513L10 9.20711V13.75C10 13.8881 9.88807 14 9.75 14H6.25C6.11193 14 6 13.8881 6 13.75V9.20711L3.31802 6.52513C2.47411 5.68121 2 4.53662 2 3.34315V2.25ZM3 3V3.34315C3 4.2714 3.36875 5.16164 4.02513 5.81802L7 8.79289V13H9V8.79289L11.9749 5.81802C12.6313 5.16164 13 4.2714 13 3.34315V3H3Z" fill="currentColor"/>
   </svg>
 )
 
@@ -192,7 +189,7 @@ export default function ExplorePage() {
                     <button
                       onClick={handleToggleFilters}
                       className={cn(
-                        "flex flex-col items-center justify-center rounded-md transition-colors h-10 w-10 gap-1 shrink-0",
+                        "flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
                         showFilters
                           ? "bg-foreground/90 text-background dark:bg-white/90 dark:text-sidebar"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -200,7 +197,6 @@ export default function ExplorePage() {
                       aria-label={showFilters ? "Hide filters" : "Show filters"}
                     >
                       <FilterIcon className="w-4 h-4" />
-                      <span className="text-[10px] font-medium leading-none">Filters</span>
                     </button>
 
                     <div className="w-px h-6 bg-border/50 shrink-0" />

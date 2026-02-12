@@ -3,12 +3,16 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
 import { athletes } from "@/lib/athletes-data"
+import { useLibraryContext } from "@/lib/library-context"
+import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
+import type { ClipData } from "@/types/library"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,127 +56,203 @@ function getVideoForPlay(play: PlayData): string {
 const PASS_DIRECTIONS = ["short left", "short right", "short middle", "deep left", "deep right", "deep middle"]
 const RUN_DIRECTIONS_DESC = ["left end", "left tackle", "left guard", "up the middle", "right guard", "right tackle", "right end"]
 
+/** Generate a human-readable summary like "Q1 11:25 . 2nd & 6 at BUF 3 . J. Cook run left, gain of 7 yards . Tackled by J. Poyer" */
 function generatePlaySummary(play: PlayData): string {
   const parts: string[] = []
+  const h = hashString(play.id)
 
-  // Quarter
-  parts.push(`Q${play.quarter}`)
+  // Quarter + game clock
+  const clockMin = (h % 12) + 1
+  const clockSec = h % 60
+  parts.push(`Q${play.quarter} ${clockMin}:${clockSec.toString().padStart(2, "0")}`)
 
   // Down & distance at yardline
   const ordinal = play.down === 1 ? "1st" : play.down === 2 ? "2nd" : play.down === 3 ? "3rd" : "4th"
-  // Parse yard line: positive = own territory, negative = opponent territory
   const ylNum = parseInt(play.yardLine.replace(/[+-]/, ""), 10)
-  const teamAbbr = play.game.split(" vs ")[0]?.split(" ")[0] || "OWN"
-  const oppAbbr = play.game.split(" vs ")[1]?.split(" ")[0] || "OPP"
-  const isOwnTerritory = play.yardLine.startsWith("+") || play.yardLine.startsWith("-") === false
-  const fieldPos = isOwnTerritory ? `${teamAbbr} ${ylNum}` : `${oppAbbr} ${ylNum}`
-  parts.push(`${ordinal} & ${play.distance} at ${fieldPos}`)
+  const gameParts = play.game.split(" vs ")
+  const teamAbbr = gameParts[0]?.split(" ")[0] || "OWN"
+  parts.push(`${ordinal} & ${play.distance} at ${teamAbbr} ${ylNum}`)
 
-  // Play description
-  const h = hashString(play.id)
+  // Play description with player name
+  const offensePlayers = athletes.filter((a) => ["QB", "RB", "WR", "TE"].includes(a.position))
+  const defPlayers = athletes.filter((a) => ["LB", "CB", "S", "DE", "DT"].includes(a.position))
+  const primaryPlayer = offensePlayers[h % offensePlayers.length]
+  const tackler = defPlayers[(h + 3) % defPlayers.length]
+  const pInitial = primaryPlayer.name.split(" ")[0][0]
+  const pLast = primaryPlayer.name.split(" ").slice(1).join(" ")
+  const tInitial = tackler.name.split(" ")[0][0]
+  const tLast = tackler.name.split(" ").slice(1).join(" ")
+
   if (play.playType === "Pass") {
     const dir = PASS_DIRECTIONS[h % PASS_DIRECTIONS.length]
-    const gainLossWord = play.gainLoss === "Gn" ? `for ${play.yards} yards` : `loss of ${play.yards}`
     if (play.passResult === "Complete") {
-      parts.push(`pass ${dir} ${gainLossWord}`)
+      const receiver = offensePlayers[(h + 7) % offensePlayers.length]
+      const rInitial = receiver.name.split(" ")[0][0]
+      const rLast = receiver.name.split(" ").slice(1).join(" ")
+      parts.push(
+        `#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} pass ${dir} to #${receiver.jersey_number} ${rInitial}. ${rLast} for ${play.yards} yards`
+      )
     } else if (play.passResult === "Incomplete") {
-      parts.push(`pass ${dir} incomplete`)
+      parts.push(`#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} pass ${dir} incomplete`)
     } else if (play.passResult === "Sack") {
-      parts.push(`sacked ${gainLossWord}`)
+      parts.push(`#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} sacked for loss of ${play.yards}`)
     } else if (play.passResult === "Interception") {
-      parts.push(`pass ${dir} INTERCEPTED`)
-    } else if (play.passResult === "Throwaway") {
-      parts.push(`pass thrown away`)
+      parts.push(`#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} pass ${dir} INTERCEPTED`)
     } else {
-      parts.push(`pass ${dir} ${gainLossWord}`)
+      parts.push(`#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} pass ${dir}`)
     }
   } else if (play.playType === "Run") {
     const dir = RUN_DIRECTIONS_DESC[h % RUN_DIRECTIONS_DESC.length]
-    const gainLossWord = play.gainLoss === "Gn" ? `for ${play.yards} yards` : `loss of ${play.yards}`
-    parts.push(`run ${dir} ${gainLossWord}`)
+    const gainWord = play.gainLoss === "Gn" ? `gain of ${play.yards} yards` : `loss of ${play.yards}`
+    parts.push(`#${primaryPlayer.jersey_number} ${pInitial}. ${pLast} run ${dir}, ${gainWord}`)
   } else {
     parts.push(`special teams play for ${play.yards} yards`)
   }
 
-  if (play.isTouchdown) parts.push("TOUCHDOWN")
-  if (play.isFirstDown && !play.isTouchdown) parts.push("First Down")
-  if (play.isPenalty && play.penaltyType) parts.push(`(Penalty: ${play.penaltyType})`)
+  // Tackled by
+  if (play.playType !== "Special Teams" && play.passResult !== "Incomplete" && play.passResult !== "Interception") {
+    parts.push(`Tackled by ${tInitial}. ${tLast}`)
+  }
 
-  return parts.join(" | ")
+  if (play.isTouchdown) parts.push("TOUCHDOWN")
+
+  return parts.join("  \u2022  ")
+}
+
+// ---------------------------------------------------------------------------
+// Source type + score helpers
+// ---------------------------------------------------------------------------
+
+type SourceType = "GAME" | "PRACTICE" | "SCOUT"
+
+function getSourceType(play: PlayData): SourceType {
+  const g = play.game.toLowerCase()
+  if (g.includes("practice") || g.includes("drill")) return "PRACTICE"
+  if (g.includes("scout")) return "SCOUT"
+  return "GAME"
+}
+
+function getGameScore(play: PlayData): string | null {
+  const source = getSourceType(play)
+  if (source !== "GAME") return null
+  const h = hashString(play.id)
+  const gameParts = play.game.split(" vs ")
+  const team1 = gameParts[0]?.split(" ")[0] || "HOME"
+  const team2 = gameParts[1]?.split(" ")[0] || "AWAY"
+  const score1 = 10 + (h % 28)
+  const score2 = 3 + ((h + 5) % 31)
+  return `${team1} ${score1} - ${score2}`
 }
 
 // ---------------------------------------------------------------------------
 // 22-player roster assignment (deterministic per play)
 // ---------------------------------------------------------------------------
 
-interface PlayRoster {
-  offense: Athlete[]
-  defense: Athlete[]
+interface PlayerOnField {
+  name: string
+  position: string
+  jersey_number: number
 }
 
-const OFFENSE_SLOTS: { position: string; count: number }[] = [
-  { position: "QB", count: 1 },
-  { position: "RB", count: 1 },
-  { position: "WR", count: 3 },
-  { position: "TE", count: 1 },
-]
-// Remaining 5 offensive spots are OL (not in athlete pool, so we generate placeholder names)
+interface PlayRoster {
+  offense: PlayerOnField[]
+  defense: PlayerOnField[]
+}
 
-const DEFENSE_SLOTS: { position: string; count: number }[] = [
-  { position: "DE", count: 2 },
-  { position: "DT", count: 1 },
-  { position: "LB", count: 2 },
-  { position: "CB", count: 2 },
-  { position: "S", count: 2 },
-]
-// Remaining 2 defensive spots are extra DL
-
-const OL_NAMES: Athlete[] = [
-  { name: "Penei Sewell", team: "DET", position: "QB" as any, jersey_number: 58, height: "6'5", weight: 331, college: "Oregon", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 } },
-  { name: "Tristan Wirfs", team: "TB", position: "QB" as any, jersey_number: 78, height: "6'5", weight: 320, college: "Iowa", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 } },
-  { name: "Rashawn Slater", team: "LAC", position: "QB" as any, jersey_number: 70, height: "6'3", weight: 315, college: "Northwestern", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 } },
-  { name: "Zack Martin", team: "DAL", position: "QB" as any, jersey_number: 70, height: "6'4", weight: 315, college: "Notre Dame", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 } },
-  { name: "Creed Humphrey", team: "KC", position: "QB" as any, jersey_number: 52, height: "6'5", weight: 320, college: "Oklahoma", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 } },
+const OL_PLAYERS: PlayerOnField[] = [
+  { name: "Penei Sewell", position: "LT", jersey_number: 58 },
+  { name: "Quenton Nelson", position: "LG", jersey_number: 56 },
+  { name: "Creed Humphrey", position: "C", jersey_number: 52 },
+  { name: "Zack Martin", position: "RG", jersey_number: 70 },
+  { name: "Tristan Wirfs", position: "RT", jersey_number: 78 },
 ]
 
-const OL_POSITIONS = ["LT", "LG", "C", "RG", "RT"]
-
-const EXTRA_DL: Athlete[] = [
-  { name: "Jalen Carter", team: "PHI", position: "DT", jersey_number: 98, height: "6'3", weight: 314, college: "Georgia", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 72, sacks: 7 } },
-  { name: "Calijah Kancey", team: "TB", position: "DT", jersey_number: 93, height: "6'1", weight: 281, college: "Pittsburgh", stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 54, sacks: 6 } },
+const EXTRA_DL: PlayerOnField[] = [
+  { name: "Jalen Carter", position: "DT", jersey_number: 98 },
+  { name: "Calijah Kancey", position: "DT", jersey_number: 93 },
 ]
 
 function assignPlayRoster(play: PlayData): PlayRoster {
   const h = hashString(play.id)
 
-  // Group athletes by position
   const byPosition: Record<string, Athlete[]> = {}
   for (const a of athletes) {
     if (!byPosition[a.position]) byPosition[a.position] = []
     byPosition[a.position].push(a)
   }
 
-  const offense: Athlete[] = []
-  let offset = h
-  for (const slot of OFFENSE_SLOTS) {
-    const pool = byPosition[slot.position] || []
-    for (let i = 0; i < slot.count && pool.length > 0; i++) {
-      const idx = (offset + i) % pool.length
-      offense.push(pool[idx])
-      offset += 3
-    }
+  const offense: PlayerOnField[] = []
+
+  // QB x1
+  const qbs = byPosition["QB"] || []
+  if (qbs.length > 0) {
+    const qb = qbs[h % qbs.length]
+    offense.push({ name: qb.name, position: "QB", jersey_number: qb.jersey_number })
   }
 
-  const defense: Athlete[] = []
-  offset = h + 7
-  for (const slot of DEFENSE_SLOTS) {
-    const pool = byPosition[slot.position] || []
-    for (let i = 0; i < slot.count && pool.length > 0; i++) {
-      const idx = (offset + i) % pool.length
-      defense.push(pool[idx])
-      offset += 3
-    }
+  // RB x1
+  const rbs = byPosition["RB"] || []
+  if (rbs.length > 0) {
+    const rb = rbs[(h + 1) % rbs.length]
+    offense.push({ name: rb.name, position: "RB", jersey_number: rb.jersey_number })
   }
+
+  // WR x3
+  const wrs = byPosition["WR"] || []
+  for (let i = 0; i < 3 && wrs.length > 0; i++) {
+    const wr = wrs[(h + 2 + i) % wrs.length]
+    offense.push({ name: wr.name, position: "WR", jersey_number: wr.jersey_number })
+  }
+
+  // TE x1
+  const tes = byPosition["TE"] || []
+  if (tes.length > 0) {
+    const te = tes[(h + 5) % tes.length]
+    offense.push({ name: te.name, position: "TE", jersey_number: te.jersey_number })
+  }
+
+  // OL x5
+  offense.push(...OL_PLAYERS)
+
+  const defense: PlayerOnField[] = []
+
+  // DE x2
+  const des = byPosition["DE"] || []
+  for (let i = 0; i < 2 && des.length > 0; i++) {
+    const de = des[(h + i) % des.length]
+    defense.push({ name: de.name, position: "DE", jersey_number: de.jersey_number })
+  }
+
+  // DT x1
+  const dts = byPosition["DT"] || []
+  if (dts.length > 0) {
+    const dt = dts[h % dts.length]
+    defense.push({ name: dt.name, position: "DT", jersey_number: dt.jersey_number })
+  }
+
+  // LB x2
+  const lbs = byPosition["LB"] || []
+  for (let i = 0; i < 2 && lbs.length > 0; i++) {
+    const lb = lbs[(h + i) % lbs.length]
+    defense.push({ name: lb.name, position: "LB", jersey_number: lb.jersey_number })
+  }
+
+  // CB x2
+  const cbs = byPosition["CB"] || []
+  for (let i = 0; i < 2 && cbs.length > 0; i++) {
+    const cb = cbs[(h + i) % cbs.length]
+    defense.push({ name: cb.name, position: "CB", jersey_number: cb.jersey_number })
+  }
+
+  // S x2
+  const ss = byPosition["S"] || []
+  for (let i = 0; i < 2 && ss.length > 0; i++) {
+    const s = ss[(h + i) % ss.length]
+    defense.push({ name: s.name, position: "S", jersey_number: s.jersey_number })
+  }
+
+  // Extra DL to reach 11
+  defense.push(...EXTRA_DL)
 
   return { offense, defense }
 }
@@ -189,10 +269,57 @@ declare global {
 }
 
 // ---------------------------------------------------------------------------
+// Camera Angle Menu
+// ---------------------------------------------------------------------------
+
+const CAMERA_ANGLES = ["Sideline", "Endzone", "Wide Endzone", "TV", "Scoreboard"] as const
+
+function AngleMenu() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="flex items-center gap-1.5 rounded bg-background/80 backdrop-blur-sm px-2 py-1 text-xs font-semibold text-foreground hover:bg-background/95 transition-colors"
+        >
+          <Icon name="record" className="w-3.5 h-3.5" />
+          <span>{CAMERA_ANGLES.length}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-44 p-1"
+        side="top"
+        align="start"
+      >
+        <div className="text-xs font-semibold text-muted-foreground px-2 py-1.5">Camera Angles</div>
+        {CAMERA_ANGLES.map((angle) => (
+          <button
+            key={angle}
+            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left"
+          >
+            <Icon name="record" className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>{angle}</span>
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // PreviewVideoPlayer
 // ---------------------------------------------------------------------------
 
-function PreviewVideoPlayer({ videoUrl }: { videoUrl: string }) {
+function PreviewVideoPlayer({
+  videoUrl,
+  sourceType,
+  score,
+  onOpenClip,
+}: {
+  videoUrl: string
+  sourceType: SourceType
+  score: string | null
+  onOpenClip: () => void
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<any>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -323,7 +450,7 @@ function PreviewVideoPlayer({ videoUrl }: { videoUrl: string }) {
   return (
     <div
       ref={containerRef}
-      className="w-full aspect-video bg-black flex flex-col relative overflow-hidden group/video rounded-lg"
+      className="w-full aspect-video bg-black flex flex-col relative overflow-hidden rounded-lg"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
@@ -332,10 +459,47 @@ function PreviewVideoPlayer({ videoUrl }: { videoUrl: string }) {
         <div className="absolute inset-0 bg-transparent" onClick={togglePlay} />
       </div>
 
+      {/* Persistent overlays (always visible) */}
+      {/* Top left: Source type badge */}
+      <div className="absolute top-2 left-2 z-30">
+        <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-foreground/80 text-background">
+          {sourceType}
+        </span>
+      </div>
+
+      {/* Top right: Score */}
+      {score && (
+        <div className="absolute top-2 right-2 z-30">
+          <span className="px-2 py-0.5 rounded text-[11px] font-bold tabular-nums bg-foreground/80 text-background">
+            {score}
+          </span>
+        </div>
+      )}
+
+      {/* Bottom left: Angle switcher */}
+      <div className="absolute bottom-2 left-2 z-30">
+        <AngleMenu />
+      </div>
+
+      {/* Bottom right: Open Clip button */}
+      <div className="absolute bottom-2 right-2 z-30">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpenClip()
+          }}
+          className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <Icon name="share" className="w-3 h-3" />
+          Open Clip
+        </button>
+      </div>
+
+      {/* Hover controls */}
       <div
         className={cn(
           "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent px-3 py-2 transition-opacity duration-300 flex flex-col gap-1.5 z-20",
-          showControls ? "opacity-100" : "opacity-0",
+          showControls ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
       >
         <Slider
@@ -380,6 +544,81 @@ function PreviewVideoPlayer({ videoUrl }: { videoUrl: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Player Chip
+// ---------------------------------------------------------------------------
+
+function PlayerChip({ player }: { player: PlayerOnField }) {
+  const nameParts = player.name.split(" ")
+  const firstInitial = nameParts[0][0]
+  const lastName = nameParts.slice(1).join(" ")
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-1 text-xs whitespace-nowrap">
+      <span className="font-bold text-foreground">
+        {firstInitial}. {lastName}
+      </span>
+      <span className="text-muted-foreground">
+        {player.position} #{player.jersey_number}
+      </span>
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Convert PlayData to ClipData
+// ---------------------------------------------------------------------------
+
+function playToClip(play: PlayData): ClipData {
+  return {
+    id: play.id,
+    playNumber: play.playNumber,
+    odk: play.odk,
+    quarter: play.quarter,
+    down: play.down,
+    distance: play.distance,
+    yardLine: play.yardLine,
+    hash: play.hash,
+    yards: play.yards,
+    result: play.result,
+    gainLoss: play.gainLoss,
+    defFront: play.defFront,
+    defStr: play.defStr,
+    coverage: play.coverage,
+    blitz: play.blitz,
+    game: play.game,
+    playType: play.playType,
+    passResult: play.passResult,
+    runDirection: play.runDirection,
+    personnelO: play.personnelO,
+    personnelD: play.personnelD,
+    isTouchdown: play.isTouchdown,
+    isFirstDown: play.isFirstDown,
+    isPenalty: play.isPenalty,
+    penaltyType: play.penaltyType,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Format game label for header
+// ---------------------------------------------------------------------------
+
+function formatGameLabel(game: string): string {
+  // e.g. "BUF vs LA 01.01.26" -> "01.01.26 BUF @ LA"
+  const parts = game.split(" vs ")
+  if (parts.length === 2) {
+    const team1 = parts[0].trim()
+    const team2Parts = parts[1].trim().split(" ")
+    if (team2Parts.length >= 2) {
+      const team2 = team2Parts[0]
+      const date = team2Parts.slice(1).join(" ")
+      return `${date} ${team1} @ ${team2}`
+    }
+    return game
+  }
+  return game
+}
+
+// ---------------------------------------------------------------------------
 // PreviewModule
 // ---------------------------------------------------------------------------
 
@@ -392,94 +631,249 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   const videoUrl = useMemo(() => getVideoForPlay(play), [play])
   const summary = useMemo(() => generatePlaySummary(play), [play])
   const roster = useMemo(() => assignPlayRoster(play), [play])
+  const sourceType = useMemo(() => getSourceType(play), [play])
+  const score = useMemo(() => getGameScore(play), [play])
+
+  const { setPendingPreviewClips, setWatchItem } = useLibraryContext()
+  const router = useRouter()
+
+  // "Open Clip" -- open as unsaved playlist in watch page
+  const handleOpenClip = useCallback(() => {
+    const clip = playToClip(play)
+    setPendingPreviewClips([clip])
+    router.push("/watch")
+  }, [play, setPendingPreviewClips, router])
+
+  // "View Full Game" -- open the Library Item the clip references
+  const handleViewFullGame = useCallback(() => {
+    // Identify a library item by matching the game string
+    // For now we use a hash of the game name as a deterministic item id
+    setWatchItem(null)
+    router.push("/watch")
+  }, [setWatchItem, router])
 
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-        <div className="flex items-center gap-2">
-          <Icon name="video" className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Clip Preview</h3>
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
+      {/* Fixed Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-sm font-bold truncate">Clip {play.playNumber}</span>
+          <span className="text-muted-foreground text-sm shrink-0">|</span>
+          <span className="text-sm text-muted-foreground truncate">{formatGameLabel(play.game)}</span>
         </div>
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={onClose}
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
         >
           <Icon name="close" className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-20">
         {/* Video Player */}
         <div className="px-4 pt-4">
-          <PreviewVideoPlayer videoUrl={videoUrl} />
+          <PreviewVideoPlayer
+            videoUrl={videoUrl}
+            sourceType={sourceType}
+            score={score}
+            onOpenClip={handleOpenClip}
+          />
         </div>
 
         {/* Play Summary */}
-        <div className="px-4 pt-4 pb-3">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
+        <div className="px-4 pt-5 pb-3">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
           <p className="text-sm leading-relaxed text-foreground">{summary}</p>
         </div>
 
-        {/* Divider */}
-        <div className="mx-4 border-t border-border/50" />
-
-        {/* Players on the field */}
-        <div className="px-4 pt-3 pb-6">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Players on Field</h4>
-
-          {/* Offense */}
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-foreground mb-2">Offense ({roster.offense.length + 5})</p>
-            <div className="flex flex-col gap-1">
-              {roster.offense.map((player, i) => (
-                <div key={`off-${i}`} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                  <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{player.jersey_number}</span>
-                  <span className="text-sm text-foreground flex-1">{player.name}</span>
-                  <span className="text-xs text-muted-foreground font-medium">{player.position}</span>
-                  <span className="text-xs text-muted-foreground">{player.team}</span>
-                </div>
-              ))}
-              {/* OL placeholders */}
-              {OL_NAMES.map((player, i) => (
-                <div key={`ol-${i}`} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                  <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{player.jersey_number}</span>
-                  <span className="text-sm text-foreground flex-1">{player.name}</span>
-                  <span className="text-xs text-muted-foreground font-medium">{OL_POSITIONS[i]}</span>
-                  <span className="text-xs text-muted-foreground">{player.team}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Defense */}
-          <div>
-            <p className="text-xs font-semibold text-foreground mb-2">Defense ({roster.defense.length + 2})</p>
-            <div className="flex flex-col gap-1">
-              {roster.defense.map((player, i) => (
-                <div key={`def-${i}`} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                  <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{player.jersey_number}</span>
-                  <span className="text-sm text-foreground flex-1">{player.name}</span>
-                  <span className="text-xs text-muted-foreground font-medium">{player.position}</span>
-                  <span className="text-xs text-muted-foreground">{player.team}</span>
-                </div>
-              ))}
-              {/* Extra DL */}
-              {EXTRA_DL.map((player, i) => (
-                <div key={`edl-${i}`} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
-                  <span className="w-8 text-center text-xs font-bold text-muted-foreground">#{player.jersey_number}</span>
-                  <span className="text-sm text-foreground flex-1">{player.name}</span>
-                  <span className="text-xs text-muted-foreground font-medium">{player.position}</span>
-                  <span className="text-xs text-muted-foreground">{player.team}</span>
-                </div>
-              ))}
-            </div>
+        {/* Offense on the field */}
+        <div className="px-4 pt-4">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Offense on the Field</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {roster.offense.map((player, i) => (
+              <PlayerChip key={`off-${i}`} player={player} />
+            ))}
           </div>
         </div>
+
+        {/* Defense on the field */}
+        <div className="px-4 pt-5 pb-6">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Defense on the Field</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {roster.defense.map((player, i) => (
+              <PlayerChip key={`def-${i}`} player={player} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Fixed Footer */}
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+        <AddToPlaylistButton play={play} />
+        <Button
+          variant="outline"
+          className="flex-1 font-semibold"
+          onClick={handleViewFullGame}
+        >
+          View Full Game
+        </Button>
       </div>
     </div>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Add to Playlist button (for preview footer)
+// ---------------------------------------------------------------------------
+
+function AddToPlaylistButton({ play }: { play: PlayData }) {
+  const [open, setOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const { folders, rootItems, recentPlaylists, addToPlaylist, mediaItems, addClipsToPlaylist, openCreatePlaylistModal, setWatchItem } = useLibraryContext()
+  const { toast } = useToast()
+  const router = useRouter()
+
+  const allPlaylists = useMemo(() => {
+    const playlists: Array<{ id: string; name: string; folderId: string | null }> = []
+    rootItems.forEach((item) => {
+      if (item.type === "playlist") {
+        playlists.push({ id: item.id, name: item.name, folderId: null })
+      }
+    })
+    const findPlaylists = (nodes: any[], _parentId: string | null) => {
+      nodes.forEach((node) => {
+        if (node.items) {
+          node.items.forEach((item: any) => {
+            if (item.type === "playlist") {
+              playlists.push({ id: item.id, name: item.name, folderId: node.id })
+            }
+          })
+        }
+        if (node.children) {
+          findPlaylists(node.children, node.id)
+        }
+      })
+    }
+    findPlaylists(folders, null)
+    mediaItems.forEach((mi) => {
+      if (mi.type === "playlist" && !playlists.some((p) => p.id === mi.id)) {
+        playlists.push({ id: mi.id, name: mi.name, folderId: mi.parentId })
+      }
+    })
+    return playlists
+  }, [folders, rootItems, mediaItems])
+
+  const filteredPlaylists = useMemo(() => {
+    if (!searchQuery.trim()) return allPlaylists
+    const query = searchQuery.toLowerCase()
+    return allPlaylists.filter((p) => p.name.toLowerCase().includes(query))
+  }, [allPlaylists, searchQuery])
+
+  const handleAddToPlaylist = (playlistId: string) => {
+    const clip = playToClip(play)
+    addClipsToPlaylist(playlistId, [clip])
+    addToPlaylist(playlistId, [clip.id])
+
+    toast({
+      description: "1 clip added to playlist.",
+      action: (
+        <ToastAction
+          altText="View Playlist"
+          onClick={() => {
+            setWatchItem(playlistId)
+            router.push("/watch")
+          }}
+          className="h-7 px-2 text-xs"
+        >
+          View Playlist
+        </ToastAction>
+      ),
+    })
+
+    setOpen(false)
+    setSearchQuery("")
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button className="flex-1 font-semibold">
+          Add to Playlist
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0" align="start" side="top">
+        <div className="p-3 border-b border-border">
+          <input
+            placeholder="Search playlists..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-8 px-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+
+        <div className="max-h-64 overflow-y-auto">
+          {recentPlaylists.length > 0 && !searchQuery && (
+            <div className="p-2">
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1">Recent</div>
+              {recentPlaylists.map((playlist) => (
+                <button
+                  key={playlist.id}
+                  onClick={() => handleAddToPlaylist(playlist.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left"
+                >
+                  <Icon name="playlist" className="w-4 h-4 text-muted-foreground" />
+                  <span className="truncate">{playlist.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="p-2">
+            {!searchQuery && recentPlaylists.length > 0 && (
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1">All Playlists</div>
+            )}
+            {filteredPlaylists.length > 0 ? (
+              filteredPlaylists.map((playlist) => (
+                <button
+                  key={playlist.id}
+                  onClick={() => handleAddToPlaylist(playlist.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left"
+                >
+                  <Icon name="playlist" className="w-4 h-4 text-muted-foreground" />
+                  <span className="truncate">{playlist.name}</span>
+                </button>
+              ))
+            ) : (
+              <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                {searchQuery ? "No playlists found" : "No playlists available"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-2 border-t border-border">
+          <button
+            onClick={() => {
+              const clip = playToClip(play)
+              setOpen(false)
+              setSearchQuery("")
+              openCreatePlaylistModal(undefined, [clip])
+            }}
+            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-muted text-left text-primary"
+          >
+            <Icon name="add" className="w-4 h-4" />
+            <span>Create New Playlist</span>
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// Import toast
+import { useToast } from "@/hooks/use-toast"
+import { ToastAction } from "@/components/ui/toast"

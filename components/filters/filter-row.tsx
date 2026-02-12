@@ -2,7 +2,8 @@
 
 import { useCallback } from "react"
 import { cn } from "@/lib/utils"
-import type { FilterState, RangeFilterState } from "@/hooks/use-explore-filters"
+import type { FilterState, RangeFilterState, AnyFilterCategory, RangeCategory } from "@/types/filters"
+import { getFilterSet, hasActiveRange } from "@/types/filters"
 
 /** Stable fallback so `useCallback` deps don't churn. */
 const ENABLED_DEFAULT: string[] = ["enabled"]
@@ -13,7 +14,7 @@ export interface FilterRowProps {
   /** Optional play count badge displayed on the right. */
   count?: number
   /** The filter category key (derived from label when omitted). */
-  category?: string
+  category?: AnyFilterCategory
   /** All possible values for this category (defaults to `["enabled"]`). */
   allValues?: string[]
   /** Current set-based filter state. */
@@ -21,15 +22,15 @@ export interface FilterRowProps {
   /** Current range-based filter state. */
   rangeFilters?: RangeFilterState
   /** Key into `rangeFilters` for an associated range slider. */
-  rangeCategory?: string
+  rangeCategory?: RangeCategory
   /** Default range used when resetting the slider. */
   rangeDefault?: [number, number]
   /** Callback to toggle all values in a category at once. */
-  onToggleAll?: (category: string, allValues: string[]) => void
+  onToggleAll?: (category: AnyFilterCategory, allValues: string[]) => void
   /** Callback to toggle a single boolean value. */
-  onToggle?: (category: string, value: string) => void
+  onToggle?: (category: AnyFilterCategory, value: string) => void
   /** Callback to reset a range filter to its default. */
-  onRangeReset?: (category: string, defaultRange: [number, number]) => void
+  onRangeReset?: (category: RangeCategory, defaultRange: [number, number]) => void
   /** Child content rendered below the header row (chips, sliders, selects). */
   children?: React.ReactNode
 }
@@ -55,13 +56,14 @@ export function FilterRow({
   children,
 }: FilterRowProps) {
   // Derive a category key: use explicit category, or a normalized label for simple boolean filters
-  const effectiveCategory = category || `_filter_${label.toLowerCase().replace(/[\s\/]+/g, "_")}`
+  const effectiveCategory = (category || `_filter_${label.toLowerCase().replace(/[\s\/]+/g, "_")}`) as AnyFilterCategory
   const effectiveValues = allValues || ENABLED_DEFAULT
 
   // Check if any set-based values in this category are selected
-  const hasSetSelected = filters && filters[effectiveCategory]?.size > 0
+  const filterSet = filters ? getFilterSet(filters, effectiveCategory) : undefined
+  const hasSetSelected = filterSet !== undefined && filterSet.size > 0
   // Check if the associated range slider is active
-  const hasRangeSelected = rangeCategory && rangeFilters && rangeCategory in rangeFilters
+  const hasRangeSelected = !!(rangeCategory && rangeFilters && hasActiveRange(rangeFilters, rangeCategory))
 
   const isActive = hasSetSelected || hasRangeSelected
 

@@ -1,17 +1,18 @@
 "use client"
 
-import type { FilterState } from "@/hooks/use-explore-filters"
+import type { FilterState, AnyFilterCategory } from "@/types/filters"
+import { hasFilter } from "@/types/filters"
 import { ToggleButton } from "./toggle-button"
 
 export interface ToggleGroupProps {
   /** The chip definitions to render. */
   items: { value: string; label: string }[]
   /** The filter category key these chips belong to. */
-  category: string
+  category: AnyFilterCategory
   /** Current filter state (used to derive selected chips). */
   filters: FilterState
   /** Callback to toggle a single value within the category. */
-  onToggle: (category: string, value: string) => void
+  onToggle: (category: AnyFilterCategory, value: string) => void
 }
 
 /**
@@ -26,7 +27,7 @@ export function ToggleGroup({ items, category, filters, onToggle }: ToggleGroupP
         <ToggleButton
           key={item.value}
           label={item.label}
-          isSelected={filters[category]?.has(item.value) || false}
+          isSelected={hasFilter(filters, category, item.value)}
           onClick={() => onToggle(category, item.value)}
         />
       ))}

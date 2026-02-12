@@ -3,6 +3,8 @@
 // used by <FiltersModule>.
 // ---------------------------------------------------------------------------
 
+import type { FilterCategory, RangeCategory } from "@/types/filters"
+
 // ---- Type definitions -----------------------------------------------------
 
 /** A simple toggle chip (e.g. "1st", "2nd", "3rd", "4th") */
@@ -16,7 +18,7 @@ export interface ToggleFilterDef {
   type: "toggle"
   label: string
   count?: number
-  category: string
+  category: FilterCategory
   allValues: string[]
   /** Groups of toggle items – each inner array renders as its own row. */
   groups: ToggleItem[][]
@@ -27,14 +29,14 @@ export interface ToggleWithRangeFilterDef {
   type: "toggleWithRange"
   label: string
   count?: number
-  category: string
+  category: FilterCategory
   allValues: string[]
   /** Toggle chip groups */
   groups: ToggleItem[][]
   /** Map from chip value → [min, max] used to union-compute the slider */
   rangeMap: Record<string, [number, number]>
   /** Key used for the range state in `rangeFilters` */
-  rangeCategory: string
+  rangeCategory: RangeCategory
   /** Default slider range */
   rangeDefault: [number, number]
   /** Slider min/max */
@@ -47,7 +49,7 @@ export interface RangeFilterDef {
   type: "range"
   label: string
   count?: number
-  rangeCategory: string
+  rangeCategory: RangeCategory
   rangeDefault: [number, number]
   rangeMin: number
   rangeMax: number

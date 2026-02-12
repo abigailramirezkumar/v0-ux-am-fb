@@ -1,23 +1,24 @@
 "use client"
 
-import type { FilterState } from "@/hooks/use-explore-filters"
+import type { FilterState, AnyFilterCategory, RangeCategory } from "@/types/filters"
+import { hasFilter, getFilterSet } from "@/types/filters"
 import { ToggleButton } from "./toggle-button"
 
 export interface ToggleGroupWithRangeProps {
   /** The chip definitions to render. */
   items: { value: string; label: string }[]
   /** The filter category key these chips belong to. */
-  category: string
+  category: AnyFilterCategory
   /** Current filter state. */
   filters: FilterState
   /** Callback to toggle a single chip value. */
-  onToggle: (category: string, value: string) => void
+  onToggle: (category: AnyFilterCategory, value: string) => void
   /** Map from chip value to a numeric [min, max] range. */
   rangeMap: Record<string, [number, number]>
   /** Callback to update the associated range slider. */
-  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
+  onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
   /** Key used for the range state in `rangeFilters`. */
-  rangeCategory: string
+  rangeCategory: RangeCategory
   /** The full default range the slider resets to. */
   rangeDefault: [number, number]
 }
@@ -40,12 +41,12 @@ export function ToggleGroupWithRange({
   rangeDefault,
 }: ToggleGroupWithRangeProps) {
   const handleToggle = (value: string) => {
-    const isCurrentlySelected = filters[category]?.has(value) || false
+    const isCurrentlySelected = hasFilter(filters, category, value)
     // Toggle the chip filter
     onToggle(category, value)
 
     // Compute the set of selected chips after this toggle
-    const currentSet = new Set(filters[category] || [])
+    const currentSet = new Set(getFilterSet(filters, category) ?? [])
     if (isCurrentlySelected) {
       currentSet.delete(value)
     } else {
@@ -78,7 +79,7 @@ export function ToggleGroupWithRange({
         <ToggleButton
           key={item.value}
           label={item.label}
-          isSelected={filters[category]?.has(item.value) || false}
+          isSelected={hasFilter(filters, category, item.value)}
           onClick={() => handleToggle(item.value)}
         />
       ))}

@@ -1,14 +1,10 @@
 import type { PlayData } from "@/lib/mock-datasets"
-
-// --------------------------------------------------------------------------
-// Types (re-exported so consumers can avoid a React-hook dependency)
-// --------------------------------------------------------------------------
-
-/** A set of selected string values keyed by category name. */
-export type FilterState = Record<string, Set<string>>
-
-/** Active range filters keyed by category name. Each value is [lo, hi]. */
-export type RangeFilterState = Record<string, [number, number]>
+import type {
+  FilterState,
+  RangeFilterState,
+  AnyFilterCategory,
+  RangeCategory,
+} from "@/types/filters"
 
 // --------------------------------------------------------------------------
 // Value accessors -- pure functions that map a play to the value used by

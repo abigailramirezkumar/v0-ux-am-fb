@@ -5,7 +5,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import type { FilterState, RangeFilterState } from "@/hooks/use-explore-filters"
+import type { FilterState, RangeFilterState, AnyFilterCategory, RangeCategory } from "@/types/filters"
+import { getRangeValue } from "@/types/filters"
 import {
   FILTER_SECTIONS,
   DEFAULT_OPEN_SECTIONS,
@@ -24,9 +25,9 @@ import { SubsectionHeader } from "@/components/filters/subsection-header"
 interface FiltersModuleProps {
   filters: FilterState
   rangeFilters: RangeFilterState
-  onToggle: (category: string, value: string) => void
-  onToggleAll: (category: string, allValues: string[]) => void
-  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
+  onToggle: (category: AnyFilterCategory, value: string) => void
+  onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
+  onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -49,10 +50,10 @@ function ConfigDrivenFilter({
   def: FilterDef
   filters: FilterState
   rangeFilters: RangeFilterState
-  onToggle: (category: string, value: string) => void
-  onToggleAll: (category: string, allValues: string[]) => void
-  onRangeChange: (category: string, value: [number, number], defaultRange: [number, number]) => void
-  resetRange: (category: string, defaultRange: [number, number]) => void
+  onToggle: (category: AnyFilterCategory, value: string) => void
+  onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
+  onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
+  resetRange: (category: RangeCategory, defaultRange: [number, number]) => void
 }) {
   switch (def.type) {
     case "boolean":
@@ -118,7 +119,7 @@ function ConfigDrivenFilter({
           <RangeSlider
             min={d.rangeMin}
             max={d.rangeMax}
-            value={rangeFilters[d.rangeCategory] || d.rangeDefault}
+            value={getRangeValue(rangeFilters, d.rangeCategory, d.rangeDefault)}
             onChange={(v) => onRangeChange(d.rangeCategory, v, d.rangeDefault)}
           />
         </FilterRow>
@@ -141,7 +142,7 @@ function ConfigDrivenFilter({
           <RangeSlider
             min={d.rangeMin}
             max={d.rangeMax}
-            value={rangeFilters[d.rangeCategory] || d.rangeDefault}
+            value={getRangeValue(rangeFilters, d.rangeCategory, d.rangeDefault)}
             onChange={(v) => onRangeChange(d.rangeCategory, v, d.rangeDefault)}
           />
         </FilterRow>
@@ -189,7 +190,7 @@ export function FiltersModule({
 }: FiltersModuleProps) {
   // Helper to reset a range filter to its default
   const resetRange = useCallback(
-    (category: string, defaultRange: [number, number]) => {
+    (category: RangeCategory, defaultRange: [number, number]) => {
       onRangeChange(category, defaultRange, defaultRange)
     },
     [onRangeChange]

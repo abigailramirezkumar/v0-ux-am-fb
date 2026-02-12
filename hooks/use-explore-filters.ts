@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback, useDeferredValue } from "react"
 import type { PlayData } from "@/lib/mock-datasets"
 import { filterPlays } from "@/lib/filters/filter-engine"
+import type { FilterState, RangeFilterState, AnyFilterCategory, RangeCategory } from "@/types/filters"
 
-export type FilterState = Record<string, Set<string>>
-export type RangeFilterState = Record<string, [number, number]>
+// Re-export so existing consumers that import from the hook still work.
+export type { FilterState, RangeFilterState, AnyFilterCategory, RangeCategory }
 
 /** Datasets at or below this threshold skip the deferred path entirely. */
 const DEFERRED_THRESHOLD = 500
@@ -31,7 +32,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     useDeferral &&
     (effectiveFilters !== filters || effectiveRangeFilters !== rangeFilters)
 
-  const toggleFilter = useCallback((category: string, value: string) => {
+  const toggleFilter = useCallback((category: AnyFilterCategory, value: string) => {
     setFilters((prev) => {
       const currentSet = prev[category]
 
@@ -61,7 +62,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
   }, [])
 
   // Toggle all values in a category - if any selected, clear all; if none selected, select all
-  const toggleAllInCategory = useCallback((category: string, allValues: string[]) => {
+  const toggleAllInCategory = useCallback((category: AnyFilterCategory, allValues: string[]) => {
     setFilters((prev) => {
       const currentSet = prev[category]
 
@@ -77,7 +78,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
   }, [])
 
   // Set a range filter (dual-thumb slider: [min, max])
-  const setRangeFilter = useCallback((category: string, value: [number, number], defaultRange: [number, number]) => {
+  const setRangeFilter = useCallback((category: RangeCategory, value: [number, number], defaultRange: [number, number]) => {
     setRangeFilters((prev) => {
       const isDefault = value[0] === defaultRange[0] && value[1] === defaultRange[1]
       const current = prev[category]
@@ -97,7 +98,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
   }, [])
 
   // Set a single-point filter (single-thumb slider, e.g. yard line)
-  const setSinglePointFilter = useCallback((category: string, value: number, defaultValue: number) => {
+  const setSinglePointFilter = useCallback((category: RangeCategory, value: number, defaultValue: number) => {
     setRangeFilters((prev) => {
       const current = prev[category]
 

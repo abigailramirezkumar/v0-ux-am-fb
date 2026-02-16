@@ -3,77 +3,38 @@
 import { useState, useRef, useEffect } from "react"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Icon } from "@/components/icon"
-import { cn } from "@/lib/utils"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import { CatapultImportV1 } from "@/components/catapult-import-v1"
 import { useCatapultImportContext } from "@/lib/catapult-import-context"
-import { useLibraryContext } from "@/lib/library-context"
-import { useDensity } from "@/lib/density-context"
 import type { FolderData } from "@/components/folder"
 
 interface LibraryHeaderProps {
   showStorageIndicator?: boolean
-  onImportComplete?: (folders: FolderData[]) => void
+  onImportComplete?: (folders: FolderData[]) => void // Removed items and importFolderName parameters since items now come with folder structure
   showImportButton?: boolean
-  onReorderFolders?: () => void
 }
 
 export function LibraryHeader({
   showStorageIndicator = false,
   onImportComplete,
   showImportButton = true,
-  onReorderFolders,
 }: LibraryHeaderProps) {
-  const { viewMode, setViewMode, columns, setColumns, layoutMode, setLayoutMode } = useLibraryContext()
-  const { density, setDensity } = useDensity()
+  const [orientation, setOrientation] = useState("folder")
+  const [viewMode, setViewMode] = useState("grid")
   const [useDropdown, setUseDropdown] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const { activeVersion } = useCatapultImportContext()
 
   const orientations = [
-    // { value: "date", label: "By Date" },
+    { value: "date", label: "By Date" },
     { value: "schedule", label: "By Schedule" },
     { value: "folder", label: "By Folder" },
-    // { value: "team", label: "By Team" },
+    { value: "team", label: "By Team" },
   ]
 
-  const orientation = viewMode === "schedule" ? "schedule" : "folder"
   const currentOrientation = orientations.find((item) => item.value === orientation)
-
-  const handleOrientationChange = (value: string) => {
-    if (value === "schedule") {
-      setViewMode("schedule")
-    } else if (value === "folder") {
-      setViewMode("folder")
-    }
-    // "date" and "team" are placeholders for now, default to folder
-    if (value === "date" || value === "team") {
-      setViewMode("folder")
-    }
-  }
-
-  const toggleColumn = (columnId: string) => {
-    setColumns(
-      columns.map((col) => {
-        if (col.id === columnId) {
-          return { ...col, visible: !col.visible }
-        }
-        return col
-      }),
-    )
-  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -101,7 +62,7 @@ export function LibraryHeader({
         {useDropdown ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="bg-foreground text-background text-sm py-2 px-4 font-semibold flex items-center gap-2 rounded-lg shadow-sm">
+              <button className="rounded-full bg-white text-black text-sm py-2 px-4 font-semibold flex items-center gap-2 hover:bg-gray-100 transition-colors">
                 {currentOrientation?.label}
                 <Icon name="chevronDown" size={16} />
               </button>
@@ -110,7 +71,7 @@ export function LibraryHeader({
               {orientations.map((item) => (
                 <DropdownMenuItem
                   key={item.value}
-                  onClick={() => handleOrientationChange(item.value)}
+                  onClick={() => setOrientation(item.value)}
                   className={orientation === item.value ? "bg-accent" : ""}
                 >
                   {item.label}
@@ -123,13 +84,10 @@ export function LibraryHeader({
             {orientations.map((item) => (
               <button
                 key={item.value}
-                onClick={() => handleOrientationChange(item.value)}
-                className={cn(
-                  "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
-                  orientation === item.value
-                    ? "bg-foreground text-background shadow-sm" // Active: High Contrast
-                    : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted", // Inactive: Subtle pill background
-                )}
+                onClick={() => setOrientation(item.value)}
+                className={`rounded-full transition-colors text-sm py-2 px-4 font-semibold whitespace-nowrap ${
+                  orientation === item.value ? "bg-white text-black" : "bg-[#2a2a2a] text-white hover:bg-[#353535]"
+                }`}
               >
                 {item.label}
               </button>
@@ -150,11 +108,7 @@ export function LibraryHeader({
             </div>
           )}
 
-          <ToggleGroup
-            type="single"
-            value={layoutMode}
-            onValueChange={(value) => value && setLayoutMode(value as "list" | "grid")}
-          >
+          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <Icon name="viewGrid" className="w-5 h-5" />
             </ToggleGroupItem>
@@ -163,70 +117,17 @@ export function LibraryHeader({
             </ToggleGroupItem>
           </ToggleGroup>
 
-          {/* {showImportButton && activeVersion === "v1" && (
+          {showImportButton && activeVersion === "v1" && (
             <Button
               onClick={() => setImportModalOpen(true)}
-              variant="outline"
-              className="text-foreground hover:bg-accent hover:text-accent-foreground"
+              className="text-primary-foreground hover:bg-primary/90 bg-muted"
             >
               Import
             </Button>
-          )} */}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
-                <Icon name="settings" className="w-5 h-5 text-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Show/Hide Columns</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {columns.map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.visible}
-                      onCheckedChange={() => toggleColumn(column.id)}
-                      disabled={column.id === "name"}
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {column.label}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Density</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup
-                    value={density}
-                    onValueChange={(value) => setDensity(value as "default" | "dense" | "spacious")}
-                  >
-                    <DropdownMenuRadioItem value="default">Default</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="dense">Dense</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="spacious">Spacious</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              {onReorderFolders && (
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    onReorderFolders()
-                  }}
-                >
-                  Set Folder Order
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          )}
         </div>
       </div>
 
-      {/* Keep Catapult Import modal functionality */}
       {showImportButton && activeVersion === "v1" && onImportComplete && (
         <CatapultImportV1
           open={importModalOpen}

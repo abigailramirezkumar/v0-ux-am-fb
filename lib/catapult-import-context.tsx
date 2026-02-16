@@ -7,20 +7,15 @@ type CatapultVersion = "v1" | "v2" | "v3"
 interface CatapultImportContextType {
   activeVersion: CatapultVersion
   setActiveVersion: (version: CatapultVersion) => void
-  isCatapultImportOpen: boolean
-  setIsCatapultImportOpen: (open: boolean) => void
 }
 
 const CatapultImportContext = createContext<CatapultImportContextType | undefined>(undefined)
 
 export function CatapultImportProvider({ children }: { children: ReactNode }) {
   const [activeVersion, setActiveVersion] = useState<CatapultVersion>("v1")
-  const [isCatapultImportOpen, setIsCatapultImportOpen] = useState(false)
 
   return (
-    <CatapultImportContext.Provider
-      value={{ activeVersion, setActiveVersion, isCatapultImportOpen, setIsCatapultImportOpen }}
-    >
+    <CatapultImportContext.Provider value={{ activeVersion, setActiveVersion }}>
       {children}
     </CatapultImportContext.Provider>
   )
@@ -33,5 +28,3 @@ export function useCatapultImportContext() {
   }
   return context
 }
-
-export const useCatapultImport = useCatapultImportContext

@@ -1,531 +1,718 @@
 import type { FolderData } from "@/components/folder"
-import type { LibraryItemData } from "@/components/library-item"
-
-// Helper to generate random library items for leaf nodes
-const generateLeafItems = (year: number, folderId: string, count = 2): LibraryItemData[] => {
-  const items: LibraryItemData[] = []
-
-  // NFL-style dates (approximate regular season start)
-  const baseMonth = 9 // September
-  const baseDay = 8
-
-  for (let i = 0; i < count; i++) {
-    const month = baseMonth + Math.floor(Math.random() * 4)
-    const day = baseDay + i * 7
-    const dateStr = `${String(month).padStart(2, "0")} ${String(day).padStart(2, "0")} ${year.toString().slice(-2)}`
-
-    // Randomize some metadata
-    const durationMin = 20 + Math.floor(Math.random() * 100)
-    const sizeGB = (1 + Math.random() * 4).toFixed(1)
-
-    items.push({
-      id: `item-${folderId}-${i}`,
-      name: `${dateStr} Sample Game`,
-      type: "video",
-      dateModified: `Oct ${10 + i}, ${year}`,
-      createdDate: `Sep ${day}, ${year}`,
-      hasData: Math.random() > 0.3,
-      itemCount: Math.floor(Math.random() * 150) + 50, // Clip count
-      duration: `${Math.floor(durationMin / 60)}:${String(durationMin % 60).padStart(2, "0")}:00`,
-      size: `${sizeGB} GB`,
-      angles: 2 + Math.floor(Math.random() * 3),
-      comments: Math.floor(Math.random() * 20),
-    })
-  }
-
-  return items
-}
-
-// --- Structure Generators ---
-
-function createSelfScoutSubfolderStructure(year: number, parentId: string): FolderData[] {
-  const baseId = `${parentId}-sub`
-
-  const structure: { name: string; children?: { name: string }[] }[] = [
-    { name: "Masters Work" },
-    { name: "Masters" },
-    { name: "Practice Masters" },
-    { name: "Offensive Reporting" },
-    { name: "Defensive Reporting" },
-    { name: "Special Team Reporting" },
-    {
-      name: "Offense Share",
-      children: [
-        { name: "Games" },
-        { name: "Preseason Games" },
-        { name: "Cutups" },
-        { name: "Hot Folder" },
-        { name: "Meetings" },
-        { name: "Practice Drills" },
-        { name: "Player Profiles" },
-        { name: "Situational Masters" },
-      ],
-    },
-    { name: "Defense Share" },
-    { name: "Special Teams Share" },
-    { name: "Gameday" },
-    { name: "Temp Plane Work" },
-    { name: "Work" },
-  ]
-
-  return structure.map((f, i) => {
-    const id = `${baseId}-${i}`
-    const children = f.children
-      ? f.children.map((c, j) => ({
-          id: `${id}-${j}`,
-          name: c.name,
-          dateModified: `Dec ${10 + j}, ${year}`,
-          items: generateLeafItems(year, `${id}-${j}`),
-        }))
-      : undefined
-
-    return {
-      id,
-      name: f.name,
-      dateModified: `Dec ${5 + i}, ${year}`,
-      children,
-      items: children ? undefined : generateLeafItems(year, id),
-    }
-  })
-}
-
-function createTrainingCampStructure(year: number, parentId: string): FolderData[] {
-  const baseId = `${parentId}-tc`
-
-  const structure: { name: string; children?: { name: string }[] }[] = [
-    { name: "Masters Work" },
-    { name: "Meeting Masters" },
-    {
-      name: "Practice Masters",
-      children: [{ name: "Practice Masters Today" }],
-    },
-    { name: "Offense Share" },
-    { name: "Defense Share" },
-    { name: "Special Teams Share" },
-    { name: "Work" },
-  ]
-
-  return structure.map((f, i) => {
-    const id = `${baseId}-${i}`
-    const children = f.children
-      ? f.children.map((c, j) => ({
-          id: `${id}-${j}`,
-          name: c.name,
-          dateModified: `Jul 25, ${year}`,
-          items: generateLeafItems(year, `${id}-${j}`),
-        }))
-      : undefined
-
-    return {
-      id,
-      name: f.name,
-      dateModified: `Jul ${15 + i}, ${year}`,
-      children,
-      items: children ? undefined : generateLeafItems(year, id),
-    }
-  })
-}
-
-function createOffseasonStudiesStructure(year: number, parentId: string): FolderData[] {
-  const baseId = `${parentId}-off`
-
-  const structure: { name: string; children?: { name: string }[] }[] = [
-    {
-      name: "Offense Share",
-      children: [
-        { name: "Hot Folder" },
-        { name: "13 GB OFF PFF Cutups" },
-        { name: `${year} LaFleur Cutups` },
-        { name: `${year.toString().slice(-2)} CIN OFF PFF Cutups` },
-        { name: `${year.toString().slice(-2)} LA OFF PFF Cutups` },
-      ],
-    },
-    { name: "Defense Share" },
-    { name: "Special Teams Share" },
-    { name: "Work" },
-  ]
-
-  return structure.map((f, i) => {
-    const id = `${baseId}-${i}`
-    const children = f.children
-      ? f.children.map((c, j) => ({
-          id: `${id}-${j}`,
-          name: c.name,
-          dateModified: `Feb ${5 + j}, ${year}`,
-          items: generateLeafItems(year, `${id}-${j}`),
-        }))
-      : undefined
-
-    return {
-      id,
-      name: f.name,
-      dateModified: `Jan ${10 + i}, ${year}`,
-      children,
-      items: children ? undefined : generateLeafItems(year, id),
-    }
-  })
-}
-
-function createMiniCampOTAStructure(year: number, parentId: string): FolderData[] {
-  const baseId = `${parentId}-ota`
-
-  const structure: { name: string; children?: { name: string }[] }[] = [
-    { name: "Masters Work" },
-    { name: "Meeting Masters" },
-    { name: "Practice Masters" },
-    {
-      name: "Offense Share",
-      children: [
-        { name: "Mini Camp OTA Installs" },
-        { name: "Hot Folder" },
-        { name: "Workouts" },
-        { name: "Meetings" },
-        { name: "Cutups" },
-        { name: "Phase 1 Field Work Week 01" },
-        { name: "Phase 1 Field Work Week 02" },
-        { name: "Phase 2 Practice Week 01" },
-        { name: "Phase 2 Practice Week 02" },
-        { name: "Phase 3 Practice Week 01" },
-        { name: "Mauicamp Practice" },
-        { name: "Practice Drills" },
-      ],
-    },
-    { name: "Defense Share" },
-    { name: "Special Teams Share" },
-    { name: "Work" },
-  ]
-
-  return structure.map((f, i) => {
-    const id = `${baseId}-${i}`
-    const children = f.children
-      ? f.children.map((c, j) => ({
-          id: `${id}-${j}`,
-          name: c.name,
-          dateModified: `May ${25 + j}, ${year}`,
-          items: generateLeafItems(year, `${id}-${j}`),
-        }))
-      : undefined
-
-    return {
-      id,
-      name: f.name,
-      dateModified: `May ${15 + i}, ${year}`,
-      children,
-      items: children ? undefined : generateLeafItems(year, id),
-    }
-  })
-}
-
-function createSelfScoutYearFolders(): FolderData[] {
-  const yearFolders: FolderData[] = []
-
-  // Create folders for years 2020-2025 (Reduced range for performance, can extend to 2006)
-  for (let year = 2025; year >= 2020; year--) {
-    const yearId = `self-scout-${year}`
-    yearFolders.push({
-      id: yearId,
-      name: year.toString(),
-      dateModified: `Dec 31, ${year}`,
-      children: [
-        {
-          id: `${yearId}-offseason`,
-          name: "Offseason Studies",
-          children: createOffseasonStudiesStructure(year, `${yearId}-offseason`),
-        },
-        {
-          id: `${yearId}-minicamp`,
-          name: "Mini-Camp OTA",
-          children: createMiniCampOTAStructure(year, `${yearId}-minicamp`),
-        },
-        {
-          id: `${yearId}-training-camp`,
-          name: "Training Camp",
-          children: createTrainingCampStructure(year, `${yearId}-training-camp`),
-        },
-        {
-          id: `${yearId}-self-scout`,
-          name: "Self Scout",
-          children: createSelfScoutSubfolderStructure(year, `${yearId}-self-scout`),
-        },
-      ],
-    })
-  }
-
-  return yearFolders
-}
-
-function createDetailedOpponentStructure(year: number, teamName: string, parentId: string): FolderData[] {
-  const teamSlug = teamName.toLowerCase().replace(/\s+/g, "-")
-  const baseId = `${parentId}-${year}-${teamSlug}`
-
-  const createStandardSubfolders = (sectionId: string) =>
-    [
-      { name: "Games" },
-      { name: "Breakdown Games" },
-      { name: "Cutups" },
-      { name: "Meetings" },
-      { name: "Practice 01" },
-      { name: "Practice 02" },
-      { name: "Practice 03" },
-    ].map((f, i) => ({
-      id: `${sectionId}-${i}`,
-      name: f.name,
-      dateModified: `Dec 14, ${year}`,
-      items: generateLeafItems(year, `${sectionId}-${i}`),
-    }))
-
-  const structure: { name: string; children?: FolderData[] }[] = [
-    { name: "Masters Work" },
-    { name: "Meeting Masters" },
-    { name: "Practice Masters" },
-    { name: "Offensive Reporting" },
-    { name: "Special Teams Reporting" },
-    {
-      name: "Offense Share",
-      children: createStandardSubfolders(`${baseId}-off`),
-    },
-    {
-      name: "Defense Share",
-      children: createStandardSubfolders(`${baseId}-def`),
-    },
-    {
-      name: "Special Teams Share",
-      children: createStandardSubfolders(`${baseId}-st`),
-    },
-    { name: "Work" },
-  ]
-
-  return structure.map((f, i) => {
-    const id = `${baseId}-${i}`
-
-    return {
-      id,
-      name: f.name,
-      dateModified: `Dec 14, ${year}`,
-      children: f.children,
-      items: f.children ? undefined : generateLeafItems(year, id),
-    }
-  })
-}
-
-function createTeamStructure(teamName: string, teamNickname: string): FolderData {
-  const years: FolderData[] = []
-  const teamId = teamName.toLowerCase().replace(/\s+/g, "-")
-
-  // Create year folders from 2022-2025
-  for (let year = 2022; year <= 2025; year++) {
-    const yearId = `${teamId}-${year}`
-    years.push({
-      id: yearId,
-      name: `${year} ${teamNickname}`,
-      dateModified: `Dec 14, ${year}`,
-      children: createDetailedOpponentStructure(year, teamNickname, yearId),
-    })
-  }
-
-  return {
-    id: teamId,
-    name: teamName,
-    dateModified: "Dec 14, 2024",
-    children: years,
-  }
-}
-
-function createCollegeScoutingStructure(yearRange: string): FolderData[] {
-  const parentId = `scouting-${yearRange}`
-  const endYear = Number.parseInt(yearRange.split("-")[1])
-
-  const createAlphabetFolders = (prefix: string) => {
-    const schools = [
-      "A Schools",
-      "C Schools",
-      "D Schools",
-      "F Schools",
-      "G Schools",
-      "H Schools",
-      "I Schools",
-      "K Schools",
-      "L Schools",
-      "M Schools",
-      "N Schools",
-      "O Schools",
-      "P Schools",
-      "R Schools",
-      "S Schools",
-      "T Schools",
-      "U Schools",
-      "V Schools",
-      "W Schools",
-    ]
-    return schools.map((school, i) => ({
-      id: `${prefix}-${i}`,
-      name: school,
-      dateModified: "Feb 15, 2025",
-      items: generateLeafItems(endYear, `${prefix}-${i}`, 3),
-    }))
-  }
-
-  interface ScoutingFolder {
-    name: string
-    items?: boolean
-    children?: ScoutingFolder[]
-  }
-
-  const structure: ScoutingFolder[] = [
-    { name: "Masters", items: true },
-    { name: "Masters Working", items: true },
-    {
-      name: "College Games",
-      children: [{ name: "Division I" }, { name: "Division II - Others" }],
-    },
-    {
-      name: "All Star Games",
-      children: [
-        {
-          name: "Senior Bowl",
-          children: [
-            { name: "Hot Folder", items: true },
-            { name: "Game", items: true },
-            { name: "American Team Practice", items: true },
-            { name: "National Team Practice", items: true },
-            { name: "TV Content", items: true },
-          ],
-        },
-        {
-          name: "East-West Shrine Bowl",
-          children: [
-            { name: "Hot Folder", items: true },
-            { name: "Game", items: true },
-            { name: "East Team Practice", items: true },
-            { name: "West Team Practice", items: true },
-          ],
-        },
-        { name: "Hula Bowl", items: true },
-        { name: "Tropical Bowl", items: true },
-      ],
-    },
-    {
-      name: "Combine",
-      children: [
-        { name: "Informal Interviews", items: true },
-        { name: "Position Workouts", items: true },
-        { name: "TV Broadcast", items: true },
-      ],
-    },
-    { name: "Pro Days", items: true },
-    { name: "NFL Games", items: true },
-  ]
-
-  const processChildren = (children: ScoutingFolder[], parentPrefix: string): FolderData[] => {
-    return children.map((c, j) => {
-      const childId = `${parentPrefix}-${j}`
-      let processedChildren: FolderData[] | undefined = undefined
-
-      if (c.name === "Division I" || c.name === "Division II - Others") {
-        processedChildren = createAlphabetFolders(childId)
-      } else if (c.children) {
-        processedChildren = processChildren(c.children, childId)
-      }
-
-      return {
-        id: childId,
-        name: c.name,
-        dateModified: "Feb 10, 2025",
-        items: c.items ? generateLeafItems(endYear, childId) : undefined,
-        children: processedChildren,
-      }
-    })
-  }
-
-  return structure.map((f, i) => {
-    const id = `${parentId}-${i}`
-
-    return {
-      id,
-      name: f.name,
-      dateModified: "Feb 8, 2025",
-      items: f.items ? generateLeafItems(endYear, id) : undefined,
-      children: f.children ? processChildren(f.children, id) : undefined,
-    }
-  })
-}
-
-// --- Main Data Export ---
 
 export const mockCatapultData: FolderData[] = [
   {
-    id: "self-scout",
-    name: "Self Scout",
-    dateModified: "Dec 15, 2024",
-    createdDate: "Sep 1, 2010",
-    children: createSelfScoutYearFolders(),
-  },
-  {
-    id: "opponent-scout",
-    name: "Opponent Scout",
-    dateModified: "Dec 14, 2024",
+    id: "catapult-folder-1",
+    name: "Offensive Game Film",
     children: [
-      createTeamStructure("Arizona Cardinals", "Cardinals"),
-      createTeamStructure("Atlanta Falcons", "Falcons"),
-      createTeamStructure("Baltimore Ravens", "Ravens"),
-      createTeamStructure("Buffalo Bills", "Bills"),
-      createTeamStructure("Chicago Bears", "Bears"),
-      createTeamStructure("Dallas Cowboys", "Cowboys"),
-      createTeamStructure("Denver Broncos", "Broncos"),
-      createTeamStructure("Detroit Lions", "Lions"),
-      createTeamStructure("Green Bay Packers", "Packers"),
-      createTeamStructure("Kansas City Chiefs", "Chiefs"),
-      createTeamStructure("Los Angeles Rams", "Rams"),
-      createTeamStructure("Minnesota Vikings", "Vikings"),
-      createTeamStructure("New England Patriots", "Patriots"),
-      createTeamStructure("New Orleans Saints", "Saints"),
-      createTeamStructure("New York Giants", "Giants"),
-      createTeamStructure("Philadelphia Eagles", "Eagles"),
-      createTeamStructure("San Francisco 49ers", "49ers"),
-      createTeamStructure("Seattle Seahawks", "Seahawks"),
+      {
+        id: "catapult-subfolder-1-1",
+        name: "Red Zone Plays",
+        children: [
+          {
+            id: "catapult-subsubfolder-1-1-1",
+            name: "Week 1-4",
+            items: [
+              { id: "item-1-1-1-1", name: "RZ TD vs Cowboys", type: "video" },
+              { id: "item-1-1-1-2", name: "RZ FG vs Eagles", type: "video" },
+              { id: "item-1-1-1-3", name: "RZ Turnover vs Giants", type: "video" },
+            ],
+          },
+          {
+            id: "catapult-subsubfolder-1-1-2",
+            name: "Week 5-8",
+            items: [
+              { id: "item-1-1-2-1", name: "RZ Success vs 49ers", type: "video" },
+              { id: "item-1-1-2-2", name: "RZ Breakdown vs Seahawks", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-1-2",
+        name: "Third Down Conversions",
+        children: [
+          {
+            id: "catapult-subsubfolder-1-2-1",
+            name: "Short Yardage",
+            items: [
+              { id: "item-1-2-1-1", name: "3rd & 2 QB Sneak", type: "video" },
+              { id: "item-1-2-1-2", name: "3rd & 1 Power Run", type: "video" },
+              { id: "item-1-2-1-3", name: "3rd & 3 Play Action", type: "video" },
+              { id: "item-1-2-1-4", name: "3rd & 2 RPO Success", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-1-3",
+        name: "Two Minute Drill",
+        children: [
+          {
+            id: "catapult-subsubfolder-1-3-1",
+            name: "End of Half",
+            items: [
+              { id: "item-1-3-1-1", name: "2min Drill vs Patriots", type: "video" },
+              { id: "item-1-3-1-2", name: "2min Drill vs Bills", type: "video" },
+              { id: "item-1-3-1-3", name: "2min Drill vs Dolphins", type: "video" },
+              { id: "item-1-3-1-4", name: "2min Drill vs Jets", type: "video" },
+              { id: "item-1-3-1-5", name: "2min Drill vs Ravens", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-1-4",
+        name: "Play Action Passes",
+        children: [
+          {
+            id: "catapult-subsubfolder-1-4-1",
+            name: "Deep Shots",
+            items: [
+              { id: "item-1-4-1-1", name: "PA Deep Ball TD", type: "video" },
+              { id: "item-1-4-1-2", name: "PA Seam Route", type: "video" },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
-    id: "scouting",
-    name: "Scouting",
-    dateModified: "Dec 13, 2024",
+    id: "catapult-folder-2",
+    name: "Defensive Game Film",
     children: [
       {
-        id: "scouting-2023-2024",
-        name: "2023-2024",
-        dateModified: "May 15, 2024",
-        children: createCollegeScoutingStructure("2023-2024"),
+        id: "catapult-subfolder-2-1",
+        name: "Blitz Packages",
+        children: [
+          {
+            id: "catapult-subsubfolder-2-1-1",
+            name: "Zone Blitz",
+            items: [
+              { id: "item-2-1-1-1", name: "Zone Blitz Sack", type: "video" },
+              { id: "item-2-1-1-2", name: "Zone Blitz INT", type: "video" },
+              { id: "item-2-1-1-3", name: "Zone Blitz TFL", type: "video" },
+            ],
+          },
+          {
+            id: "catapult-subsubfolder-2-1-2",
+            name: "Man Blitz",
+            items: [
+              { id: "item-2-1-2-1", name: "Man Blitz Pressure", type: "video" },
+              { id: "item-2-1-2-2", name: "Man Blitz Coverage", type: "video" },
+            ],
+          },
+        ],
       },
       {
-        id: "scouting-2024-2025",
-        name: "2024-2025",
-        dateModified: "May 15, 2025",
-        children: createCollegeScoutingStructure("2024-2025"),
+        id: "catapult-subfolder-2-2",
+        name: "Coverage Schemes",
+        children: [
+          {
+            id: "catapult-subsubfolder-2-2-1",
+            name: "Cover 2",
+            items: [
+              { id: "item-2-2-1-1", name: "Cover 2 vs Spread", type: "video" },
+              { id: "item-2-2-1-2", name: "Cover 2 vs Trips", type: "video" },
+              { id: "item-2-2-1-3", name: "Cover 2 Adjustment", type: "video" },
+              { id: "item-2-2-1-4", name: "Cover 2 Success", type: "video" },
+            ],
+          },
+        ],
       },
       {
-        id: "scouting-2025-2026",
-        name: "2025-2026",
-        dateModified: "May 15, 2026",
-        children: createCollegeScoutingStructure("2025-2026"),
+        id: "catapult-subfolder-2-3",
+        name: "Run Defense",
+        children: [
+          {
+            id: "catapult-subsubfolder-2-3-1",
+            name: "Gap Control",
+            items: [
+              { id: "item-2-3-1-1", name: "A Gap Stuff", type: "video" },
+              { id: "item-2-3-1-2", name: "B Gap TFL", type: "video" },
+              { id: "item-2-3-1-3", name: "C Gap Pursuit", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-2-4",
+        name: "Third Down Defense",
+        children: [
+          {
+            id: "catapult-subsubfolder-2-4-1",
+            name: "Nickel Package",
+            items: [
+              { id: "item-2-4-1-1", name: "Nickel Sack", type: "video" },
+              { id: "item-2-4-1-2", name: "Nickel Stop", type: "video" },
+              { id: "item-2-4-1-3", name: "Nickel Coverage", type: "video" },
+              { id: "item-2-4-1-4", name: "Nickel Pressure", type: "video" },
+              { id: "item-2-4-1-5", name: "Nickel Success", type: "video" },
+              { id: "item-2-4-1-6", name: "Nickel Adjustment", type: "video" },
+            ],
+          },
+        ],
       },
     ],
   },
   {
-    id: "practice",
-    name: "Practice",
-    dateModified: "Dec 11, 2024",
-    items: generateLeafItems(2024, "practice"),
+    id: "catapult-folder-3",
+    name: "Special Teams",
+    children: [
+      {
+        id: "catapult-subfolder-3-1",
+        name: "Punt Returns",
+        children: [
+          {
+            id: "catapult-subsubfolder-3-1-1",
+            name: "Return TDs",
+            items: [
+              { id: "item-3-1-1-1", name: "PR TD vs Broncos", type: "video" },
+              { id: "item-3-1-1-2", name: "PR TD vs Chargers", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-3-2",
+        name: "Kickoff Returns",
+        children: [
+          {
+            id: "catapult-subsubfolder-3-2-1",
+            name: "Big Returns",
+            items: [
+              { id: "item-3-2-1-1", name: "KR 50+ yards", type: "video" },
+              { id: "item-3-2-1-2", name: "KR 40+ yards", type: "video" },
+              { id: "item-3-2-1-3", name: "KR 30+ yards", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-3-3",
+        name: "Field Goals",
+        children: [
+          {
+            id: "catapult-subsubfolder-3-3-1",
+            name: "50+ Yards",
+            items: [
+              { id: "item-3-3-1-1", name: "FG 52 yards", type: "video" },
+              { id: "item-3-3-1-2", name: "FG 55 yards", type: "video" },
+              { id: "item-3-3-1-3", name: "FG 51 yards", type: "video" },
+              { id: "item-3-3-1-4", name: "FG 53 yards", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-3-4",
+        name: "Punt Coverage",
+        children: [
+          {
+            id: "catapult-subsubfolder-3-4-1",
+            name: "Inside 20",
+            items: [
+              { id: "item-3-4-1-1", name: "Punt Inside 10", type: "video" },
+              { id: "item-3-4-1-2", name: "Punt Inside 15", type: "video" },
+              { id: "item-3-4-1-3", name: "Punt Inside 5", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-3-5",
+        name: "Blocked Kicks",
+        children: [
+          {
+            id: "catapult-subsubfolder-3-5-1",
+            name: "Blocked FGs",
+            items: [
+              { id: "item-3-5-1-1", name: "Blocked FG vs Steelers", type: "video" },
+              { id: "item-3-5-1-2", name: "Blocked FG vs Browns", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    id: "special-projects",
-    name: "Special Projects",
-    dateModified: "Dec 8, 2024",
-    items: generateLeafItems(2024, "special-projects"),
+    id: "catapult-folder-4",
+    name: "Practice Film",
+    children: [
+      {
+        id: "catapult-subfolder-4-1",
+        name: "Tuesday Practice",
+        children: [
+          {
+            id: "catapult-subsubfolder-4-1-1",
+            name: "Week 1-4",
+            items: [
+              { id: "item-4-1-1-1", name: "Tue Practice 9/3", type: "video" },
+              { id: "item-4-1-1-2", name: "Tue Practice 9/10", type: "video" },
+              { id: "item-4-1-1-3", name: "Tue Practice 9/17", type: "video" },
+              { id: "item-4-1-1-4", name: "Tue Practice 9/24", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-4-2",
+        name: "Wednesday Practice",
+        children: [
+          {
+            id: "catapult-subsubfolder-4-2-1",
+            name: "Week 1-4",
+            items: [
+              { id: "item-4-2-1-1", name: "Wed Practice 9/4", type: "video" },
+              { id: "item-4-2-1-2", name: "Wed Practice 9/11", type: "video" },
+              { id: "item-4-2-1-3", name: "Wed Practice 9/18", type: "video" },
+              { id: "item-4-2-1-4", name: "Wed Practice 9/25", type: "video" },
+              { id: "item-4-2-1-5", name: "Wed Practice 10/2", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-4-3",
+        name: "Thursday Practice",
+        children: [
+          {
+            id: "catapult-subsubfolder-4-3-1",
+            name: "Week 1-4",
+            items: [
+              { id: "item-4-3-1-1", name: "Thu Practice 9/5", type: "video" },
+              { id: "item-4-3-1-2", name: "Thu Practice 9/12", type: "video" },
+              { id: "item-4-3-1-3", name: "Thu Practice 9/19", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-4-4",
+        name: "Friday Walkthrough",
+        children: [
+          {
+            id: "catapult-subsubfolder-4-4-1",
+            name: "Week 1-4",
+            items: [
+              { id: "item-4-4-1-1", name: "Fri Walkthrough 9/6", type: "video" },
+              { id: "item-4-4-1-2", name: "Fri Walkthrough 9/13", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
-    id: "analytics",
-    name: "Performance Analytics",
-    dateModified: "Dec 6, 2024",
-    items: generateLeafItems(2024, "analytics"),
+    id: "catapult-folder-5",
+    name: "Opponent Scouting",
+    children: [
+      {
+        id: "catapult-subfolder-5-1",
+        name: "NFC East",
+        children: [
+          {
+            id: "catapult-subsubfolder-5-1-1",
+            name: "Cowboys Offense",
+            items: [
+              { id: "item-5-1-1-1", name: "DAL Run Game", type: "video" },
+              { id: "item-5-1-1-2", name: "DAL Pass Game", type: "video" },
+              { id: "item-5-1-1-3", name: "DAL Red Zone", type: "video" },
+              { id: "item-5-1-1-4", name: "DAL Third Down", type: "video" },
+              { id: "item-5-1-1-5", name: "DAL Two Minute", type: "video" },
+              { id: "item-5-1-1-6", name: "DAL Tendencies", type: "video" },
+            ],
+          },
+          {
+            id: "catapult-subsubfolder-5-1-2",
+            name: "Eagles Defense",
+            items: [
+              { id: "item-5-1-2-1", name: "PHI Blitz Packages", type: "video" },
+              { id: "item-5-1-2-2", name: "PHI Coverage", type: "video" },
+              { id: "item-5-1-2-3", name: "PHI Run Defense", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-5-2",
+        name: "AFC North",
+        children: [
+          {
+            id: "catapult-subsubfolder-5-2-1",
+            name: "Ravens Offense",
+            items: [
+              { id: "item-5-2-1-1", name: "BAL QB Run Game", type: "video" },
+              { id: "item-5-2-1-2", name: "BAL RPO", type: "video" },
+              { id: "item-5-2-1-3", name: "BAL Play Action", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-5-3",
+        name: "NFC West",
+        children: [
+          {
+            id: "catapult-subsubfolder-5-3-1",
+            name: "49ers Offense",
+            items: [
+              { id: "item-5-3-1-1", name: "SF Outside Zone", type: "video" },
+              { id: "item-5-3-1-2", name: "SF Bootleg", type: "video" },
+              { id: "item-5-3-1-3", name: "SF Screen Game", type: "video" },
+              { id: "item-5-3-1-4", name: "SF Motion", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-5-4",
+        name: "AFC West",
+        children: [
+          {
+            id: "catapult-subsubfolder-5-4-1",
+            name: "Chiefs Offense",
+            items: [
+              { id: "item-5-4-1-1", name: "KC Mahomes Scrambles", type: "video" },
+              { id: "item-5-4-1-2", name: "KC Kelce Routes", type: "video" },
+              { id: "item-5-4-1-3", name: "KC Red Zone", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "catapult-folder-6",
+    name: "Player Development",
+    children: [
+      {
+        id: "catapult-subfolder-6-1",
+        name: "Quarterback Film",
+        children: [
+          {
+            id: "catapult-subsubfolder-6-1-1",
+            name: "Footwork Drills",
+            items: [
+              { id: "item-6-1-1-1", name: "3-Step Drop", type: "video" },
+              { id: "item-6-1-1-2", name: "5-Step Drop", type: "video" },
+              { id: "item-6-1-1-3", name: "7-Step Drop", type: "video" },
+              { id: "item-6-1-1-4", name: "Play Action Footwork", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-6-2",
+        name: "Wide Receiver Film",
+        children: [
+          {
+            id: "catapult-subsubfolder-6-2-1",
+            name: "Route Running",
+            items: [
+              { id: "item-6-2-1-1", name: "Slant Route", type: "video" },
+              { id: "item-6-2-1-2", name: "Out Route", type: "video" },
+              { id: "item-6-2-1-3", name: "Post Route", type: "video" },
+              { id: "item-6-2-1-4", name: "Corner Route", type: "video" },
+              { id: "item-6-2-1-5", name: "Comeback Route", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-6-3",
+        name: "Linebacker Film",
+        children: [
+          {
+            id: "catapult-subsubfolder-6-3-1",
+            name: "Coverage Drops",
+            items: [
+              { id: "item-6-3-1-1", name: "Hook Zone", type: "video" },
+              { id: "item-6-3-1-2", name: "Curl Zone", type: "video" },
+              { id: "item-6-3-1-3", name: "Flat Zone", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-6-4",
+        name: "Defensive Back Film",
+        children: [
+          {
+            id: "catapult-subsubfolder-6-4-1",
+            name: "Man Coverage",
+            items: [
+              { id: "item-6-4-1-1", name: "Press Man", type: "video" },
+              { id: "item-6-4-1-2", name: "Off Man", type: "video" },
+              { id: "item-6-4-1-3", name: "Trail Technique", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "catapult-folder-7",
+    name: "Situational Football",
+    children: [
+      {
+        id: "catapult-subfolder-7-1",
+        name: "Goal Line",
+        children: [
+          {
+            id: "catapult-subsubfolder-7-1-1",
+            name: "Goal Line Offense",
+            items: [
+              { id: "item-7-1-1-1", name: "GL QB Sneak", type: "video" },
+              { id: "item-7-1-1-2", name: "GL Power Run", type: "video" },
+              { id: "item-7-1-1-3", name: "GL Play Action", type: "video" },
+              { id: "item-7-1-1-4", name: "GL Fade Route", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-7-2",
+        name: "Short Yardage",
+        children: [
+          {
+            id: "catapult-subsubfolder-7-2-1",
+            name: "4th & Short",
+            items: [
+              { id: "item-7-2-1-1", name: "4th & 1 Success", type: "video" },
+              { id: "item-7-2-1-2", name: "4th & 2 Conversion", type: "video" },
+              { id: "item-7-2-1-3", name: "4th & Short Stop", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-7-3",
+        name: "Prevent Defense",
+        children: [
+          {
+            id: "catapult-subsubfolder-7-3-1",
+            name: "End of Game",
+            items: [
+              { id: "item-7-3-1-1", name: "Prevent Success", type: "video" },
+              { id: "item-7-3-1-2", name: "Prevent Breakdown", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-7-4",
+        name: "Hail Mary",
+        children: [
+          {
+            id: "catapult-subsubfolder-7-4-1",
+            name: "Hail Mary Attempts",
+            items: [
+              { id: "item-7-4-1-1", name: "Hail Mary TD", type: "video" },
+              { id: "item-7-4-1-2", name: "Hail Mary Defense", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "catapult-folder-8",
+    name: "Coaching Clinics",
+    children: [
+      {
+        id: "catapult-subfolder-8-1",
+        name: "Offensive Schemes",
+        children: [
+          {
+            id: "catapult-subsubfolder-8-1-1",
+            name: "West Coast Offense",
+            items: [
+              { id: "item-8-1-1-1", name: "WCO Principles", type: "video" },
+              { id: "item-8-1-1-2", name: "WCO Timing Routes", type: "video" },
+              { id: "item-8-1-1-3", name: "WCO Protection", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-8-2",
+        name: "Defensive Schemes",
+        children: [
+          {
+            id: "catapult-subsubfolder-8-2-1",
+            name: "3-4 Defense",
+            items: [
+              { id: "item-8-2-1-1", name: "3-4 Base", type: "video" },
+              { id: "item-8-2-1-2", name: "3-4 Blitz", type: "video" },
+              { id: "item-8-2-1-3", name: "3-4 Coverage", type: "video" },
+              { id: "item-8-2-1-4", name: "3-4 Adjustments", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-8-3",
+        name: "Special Teams Schemes",
+        children: [
+          {
+            id: "catapult-subsubfolder-8-3-1",
+            name: "Punt Block",
+            items: [
+              { id: "item-8-3-1-1", name: "Punt Block Setup", type: "video" },
+              { id: "item-8-3-1-2", name: "Punt Block Execution", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-8-4",
+        name: "Strength & Conditioning",
+        children: [
+          {
+            id: "catapult-subsubfolder-8-4-1",
+            name: "Off-Season Program",
+            items: [
+              { id: "item-8-4-1-1", name: "Phase 1 Workouts", type: "video" },
+              { id: "item-8-4-1-2", name: "Phase 2 Workouts", type: "video" },
+              { id: "item-8-4-1-3", name: "Phase 3 Workouts", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "catapult-folder-9",
+    name: "Analytics & Metrics",
+    children: [
+      {
+        id: "catapult-subfolder-9-1",
+        name: "Player Tracking",
+        children: [
+          {
+            id: "catapult-subsubfolder-9-1-1",
+            name: "Speed Metrics",
+            items: [
+              { id: "item-9-1-1-1", name: "Top Speed Analysis", type: "video" },
+              { id: "item-9-1-1-2", name: "Acceleration Data", type: "video" },
+              { id: "item-9-1-1-3", name: "Distance Covered", type: "video" },
+              { id: "item-9-1-1-4", name: "Sprint Count", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-9-2",
+        name: "Formation Analysis",
+        children: [
+          {
+            id: "catapult-subsubfolder-9-2-1",
+            name: "Personnel Groupings",
+            items: [
+              { id: "item-9-2-1-1", name: "11 Personnel", type: "video" },
+              { id: "item-9-2-1-2", name: "12 Personnel", type: "video" },
+              { id: "item-9-2-1-3", name: "21 Personnel", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-9-3",
+        name: "Tendency Reports",
+        children: [
+          {
+            id: "catapult-subsubfolder-9-3-1",
+            name: "Down & Distance",
+            items: [
+              { id: "item-9-3-1-1", name: "1st Down Tendencies", type: "video" },
+              { id: "item-9-3-1-2", name: "2nd Down Tendencies", type: "video" },
+              { id: "item-9-3-1-3", name: "3rd Down Tendencies", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-9-4",
+        name: "Success Rate",
+        children: [
+          {
+            id: "catapult-subsubfolder-9-4-1",
+            name: "Play Type Success",
+            items: [
+              { id: "item-9-4-1-1", name: "Run Success Rate", type: "video" },
+              { id: "item-9-4-1-2", name: "Pass Success Rate", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "catapult-folder-10",
+    name: "Injury Prevention",
+    children: [
+      {
+        id: "catapult-subfolder-10-1",
+        name: "Warm-up Routines",
+        children: [
+          {
+            id: "catapult-subsubfolder-10-1-1",
+            name: "Dynamic Stretching",
+            items: [
+              { id: "item-10-1-1-1", name: "Leg Swings", type: "video" },
+              { id: "item-10-1-1-2", name: "High Knees", type: "video" },
+              { id: "item-10-1-1-3", name: "Butt Kicks", type: "video" },
+              { id: "item-10-1-1-4", name: "Carioca", type: "video" },
+              { id: "item-10-1-1-5", name: "A-Skips", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-10-2",
+        name: "Recovery Protocols",
+        children: [
+          {
+            id: "catapult-subsubfolder-10-2-1",
+            name: "Post-Game Recovery",
+            items: [
+              { id: "item-10-2-1-1", name: "Ice Bath Protocol", type: "video" },
+              { id: "item-10-2-1-2", name: "Compression Therapy", type: "video" },
+              { id: "item-10-2-1-3", name: "Massage Therapy", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-10-3",
+        name: "Mobility Work",
+        children: [
+          {
+            id: "catapult-subsubfolder-10-3-1",
+            name: "Hip Mobility",
+            items: [
+              { id: "item-10-3-1-1", name: "Hip Flexor Stretch", type: "video" },
+              { id: "item-10-3-1-2", name: "90/90 Hip Stretch", type: "video" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "catapult-subfolder-10-4",
+        name: "Load Management",
+        children: [
+          {
+            id: "catapult-subsubfolder-10-4-1",
+            name: "Practice Load",
+            items: [
+              { id: "item-10-4-1-1", name: "Weekly Load Report", type: "video" },
+              { id: "item-10-4-1-2", name: "Individual Load Data", type: "video" },
+              { id: "item-10-4-1-3", name: "Load Recommendations", type: "video" },
+            ],
+          },
+        ],
+      },
+    ],
   },
 ]

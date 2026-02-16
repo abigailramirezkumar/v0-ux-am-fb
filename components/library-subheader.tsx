@@ -1,8 +1,7 @@
 "use client"
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Icon } from "@/components/icon"
-import { useLibraryContext } from "@/lib/library-context"
+import { Icon } from "@/components/icon" // Import Icon component
 
 interface BreadcrumbItem {
   id: string
@@ -13,7 +12,6 @@ interface LibrarySubheaderProps {
   breadcrumbs: BreadcrumbItem[]
   onNavigate: (folderId: string | null) => void
   onCreateFolder: () => void
-  onReorderFolders?: () => void // Keep prop for compatibility but no longer used here
 }
 
 function LibraryIcon({ className }: { className?: string }) {
@@ -31,7 +29,7 @@ function LibraryIcon({ className }: { className?: string }) {
         fill="currentColor"
       />
       <path
-        d="M7 0.249999C7 0.111927 7.11193 -1.24349e-06 7.25 -1.26763e-06L7.75 -1.35505e-06C7.88807 -1.37919e-06 8 0.111927 8 0.249999L8 11.75C8 11.8881 7.88807 12 7.75 12L7.25 12C7.11193 12 7 11.8881 7 11.664L7 0.249999Z"
+        d="M7 0.249999C7 0.111927 7.11193 -1.24349e-06 7.25 -1.26763e-06L7.75 -1.35505e-06C7.88807 -1.37919e-06 8 0.111927 8 0.249999L8 11.75C8 11.8881 7.88807 12 7.75 12L7.25 12C7.11193 12 7 11.8881 7 11.75L7 0.249999Z"
         fill="currentColor"
       />
       <path
@@ -44,11 +42,10 @@ function LibraryIcon({ className }: { className?: string }) {
   )
 }
 
-export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
-  const { openCreatePlaylistModal } = useLibraryContext()
-  
+export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder }: LibrarySubheaderProps) {
   return (
-    <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
+    <div className="flex items-center justify-between w-full py-4 bg-background border-b border-border px-0 pt-0 pb-1">
+      {/* Breadcrumbs */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button
           onClick={() => onNavigate(null)}
@@ -72,9 +69,11 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
           </div>
         ))}
 
+        {/* Trailing slash */}
         <span>/</span>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center gap-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -87,10 +86,19 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
               <Icon name="folder" className="w-4 h-4 mr-2" />
               New Folder
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={openCreatePlaylistModal}>
-              <Icon name="playlist" className="w-4 h-4 mr-2" />
-              New Playlist
-            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Library Settings Button */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="Library settings">
+              <Icon name="settings" className="w-5 h-5 text-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {/* Placeholder for future settings */}
+            <DropdownMenuItem disabled>Settings coming soon</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

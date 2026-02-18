@@ -234,7 +234,7 @@ export default function ExplorePage() {
                     <button
                       onClick={handleToggleFilters}
                       className={cn(
-                        "flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
+                        "relative flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
                         showFilters
                           ? "bg-foreground/90 text-background dark:bg-white/90 dark:text-sidebar"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -242,6 +242,18 @@ export default function ExplorePage() {
                       aria-label={showFilters ? "Hide filters" : "Show filters"}
                     >
                       <FilterToggleIcon className="w-4 h-4" />
+                      {activeFilterCount > 0 && (
+                        <span
+                          className={cn(
+                            "absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none",
+                            showFilters
+                              ? "bg-background text-foreground"
+                              : "bg-foreground text-background"
+                          )}
+                        >
+                          {activeFilterCount}
+                        </span>
+                      )}
                     </button>
 
                     <div className="w-px h-6 bg-border/50 shrink-0" />

@@ -97,21 +97,31 @@ export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [showFilters, setShowFilters] = useState(true)
+  const [filtersTucked, setFiltersTucked] = useState(false)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Expand/collapse the preview panel when previewPlay changes
-  // Mutual exclusion: opening preview closes filters, closing preview reopens filters
+  // Mutual exclusion: opening preview tucks filters, closing preview reopens filters
   useEffect(() => {
     if (previewPlay) {
       // Resize to 50% so grid and preview share space equally
       previewPanelRef.current?.resize(50)
       setShowFilters(false)
+      setFiltersTucked(true)
     } else {
       previewPanelRef.current?.collapse()
       setShowFilters(true)
+      setFiltersTucked(false)
     }
   }, [previewPlay])
+
+  // Pull the filters tab back out – opens filters fully and closes preview
+  const handleUntuckFilters = useCallback(() => {
+    setFiltersTucked(false)
+    setPreviewPlay(null)
+    setShowFilters(true)
+  }, [])
 
   const handleToggleFilters = useCallback(() => {
     setShowFilters((prev) => {
@@ -119,6 +129,7 @@ export default function ExplorePage() {
       // Mutual exclusion: opening filters closes preview
       if (next && previewPlay) {
         setPreviewPlay(null)
+        setFiltersTucked(false)
       }
       return next
     })
@@ -147,7 +158,7 @@ export default function ExplorePage() {
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
-      <div className="flex flex-col h-full w-full bg-sidebar">
+      <div className="flex flex-col h-full w-full bg-sidebar relative">
         <ResizablePanelGroup direction="horizontal" className="flex-1 [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
           {/* Filters - collapsible full height left panel */}
           <ResizablePanel
@@ -285,6 +296,42 @@ export default function ExplorePage() {
             </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
+
+        {/* Tucked filter tab – peeks from left edge when filters are collapsed while preview is open */}
+        <div
+          className={cn(
+            "absolute left-3 top-0 bottom-0 z-30 flex items-center pointer-events-none transition-all duration-300 ease-in-out",
+            filtersTucked ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-[60px]"
+          )}
+        >
+          <button
+            onClick={handleUntuckFilters}
+            className={cn(
+              "pointer-events-auto flex flex-col items-center justify-center gap-1.5",
+              "w-[40px] py-5",
+              "bg-background border border-border",
+              "rounded-lg",
+              "shadow-lg",
+              "hover:bg-muted/60 hover:shadow-xl hover:scale-[1.03]",
+              "transition-all duration-200 ease-in-out",
+              "group cursor-pointer"
+            )}
+            aria-label="Show filters"
+          >
+            {/* Vertical "Filters" text */}
+            <span
+              className="text-[11px] font-semibold text-foreground tracking-wider uppercase"
+              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+            >
+              Filters
+            </span>
+            {/* Right arrow icon */}
+            <Icon
+              name="chevronRight"
+              className="w-3 h-3 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+            />
+          </button>
+        </div>
       </div>
     </WatchProvider>
   )

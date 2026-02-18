@@ -97,21 +97,31 @@ export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [showFilters, setShowFilters] = useState(true)
+  const [filtersTucked, setFiltersTucked] = useState(false)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Expand/collapse the preview panel when previewPlay changes
-  // Mutual exclusion: opening preview closes filters, closing preview reopens filters
+  // Mutual exclusion: opening preview tucks filters, closing preview reopens filters
   useEffect(() => {
     if (previewPlay) {
       // Resize to 50% so grid and preview share space equally
       previewPanelRef.current?.resize(50)
       setShowFilters(false)
+      setFiltersTucked(true)
     } else {
       previewPanelRef.current?.collapse()
       setShowFilters(true)
+      setFiltersTucked(false)
     }
   }, [previewPlay])
+
+  // Pull the filters tab back out – opens filters fully and closes preview
+  const handleUntuckFilters = useCallback(() => {
+    setFiltersTucked(false)
+    setPreviewPlay(null)
+    setShowFilters(true)
+  }, [])
 
   const handleToggleFilters = useCallback(() => {
     setShowFilters((prev) => {
@@ -119,6 +129,7 @@ export default function ExplorePage() {
       // Mutual exclusion: opening filters closes preview
       if (next && previewPlay) {
         setPreviewPlay(null)
+        setFiltersTucked(false)
       }
       return next
     })
@@ -148,6 +159,40 @@ export default function ExplorePage() {
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
+        <div className="flex flex-1 min-h-0">
+          {/* Tucked filter tab – takes real layout space when filters are collapsed while preview is open */}
+          <div
+            className={cn(
+              "shrink-0 flex items-center py-3 transition-all duration-300 ease-in-out overflow-hidden",
+              filtersTucked ? "w-[40px] opacity-100" : "w-0 opacity-0"
+            )}
+          >
+            <button
+              onClick={handleUntuckFilters}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1.5",
+                "w-[40px] h-full min-h-0",
+                "bg-background",
+                "rounded-lg",
+                "hover:bg-muted/60",
+                "transition-all duration-200 ease-in-out",
+                "group cursor-pointer"
+              )}
+              aria-label="Show filters"
+            >
+              <span
+                className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-wider uppercase transition-colors"
+                style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+              >
+                Filters
+              </span>
+              <Icon
+                name="chevronRight"
+                className="w-3 h-3 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+              />
+            </button>
+          </div>
+
         <ResizablePanelGroup direction="horizontal" className="flex-1 [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
           {/* Filters - collapsible full height left panel */}
           <ResizablePanel
@@ -160,7 +205,7 @@ export default function ExplorePage() {
             onCollapse={() => setShowFilters(false)}
             onExpand={() => setShowFilters(true)}
           >
-            <div className="h-full pl-3 py-3">
+            <div className="h-full py-3">
               <FiltersModule
                 filters={filters}
                 rangeFilters={rangeFilters}
@@ -189,7 +234,7 @@ export default function ExplorePage() {
                     <button
                       onClick={handleToggleFilters}
                       className={cn(
-                        "flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
+                        "relative flex items-center justify-center rounded-md transition-colors h-8 w-8 shrink-0",
                         showFilters
                           ? "bg-foreground/90 text-background dark:bg-white/90 dark:text-sidebar"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -197,6 +242,13 @@ export default function ExplorePage() {
                       aria-label={showFilters ? "Hide filters" : "Show filters"}
                     >
                       <FilterToggleIcon className="w-4 h-4" />
+                      {activeFilterCount > 0 && (
+                        <span
+                          className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none bg-primary text-primary-foreground"
+                        >
+                          {activeFilterCount}
+                        </span>
+                      )}
                     </button>
 
                     <div className="w-px h-6 bg-border/50 shrink-0" />
@@ -285,6 +337,7 @@ export default function ExplorePage() {
             </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
       </div>
     </WatchProvider>
   )

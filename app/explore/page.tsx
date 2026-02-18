@@ -172,7 +172,7 @@ export default function ExplorePage() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1.5",
                 "w-[40px] h-full min-h-0",
-                "bg-background border border-border",
+                "bg-background",
                 "rounded-lg",
                 "hover:bg-muted/60",
                 "transition-all duration-200 ease-in-out",

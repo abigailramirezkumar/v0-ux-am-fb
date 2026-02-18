@@ -244,12 +244,7 @@ export default function ExplorePage() {
                       <FilterToggleIcon className="w-4 h-4" />
                       {activeFilterCount > 0 && (
                         <span
-                          className={cn(
-                            "absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none",
-                            showFilters
-                              ? "bg-background text-foreground"
-                              : "bg-foreground text-background"
-                          )}
+                          className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold leading-none bg-primary text-primary-foreground"
                         >
                           {activeFilterCount}
                         </span>

@@ -203,7 +203,7 @@ export function FiltersModule({
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Filters</span>
           {activeFilterCount > 0 && (
-            <span className="px-1.5 py-0.5 text-xs bg-foreground text-background rounded">
+            <span className="px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded">
               {activeFilterCount}
             </span>
           )}

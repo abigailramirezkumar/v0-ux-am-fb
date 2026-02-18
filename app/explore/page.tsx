@@ -163,8 +163,8 @@ export default function ExplorePage() {
           {/* Tucked filter tab – takes real layout space when filters are collapsed while preview is open */}
           <div
             className={cn(
-              "shrink-0 flex items-center py-3 pl-3 transition-all duration-300 ease-in-out overflow-hidden",
-              filtersTucked ? "w-[52px] opacity-100" : "w-0 opacity-0"
+              "shrink-0 flex items-center py-3 transition-all duration-300 ease-in-out overflow-hidden",
+              filtersTucked ? "w-[40px] opacity-100" : "w-0 opacity-0"
             )}
           >
             <button
@@ -205,7 +205,7 @@ export default function ExplorePage() {
             onCollapse={() => setShowFilters(false)}
             onExpand={() => setShowFilters(true)}
           >
-            <div className="h-full pl-3 py-3">
+            <div className="h-full py-3">
               <FiltersModule
                 filters={filters}
                 rangeFilters={rangeFilters}

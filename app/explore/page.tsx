@@ -158,7 +158,41 @@ export default function ExplorePage() {
 
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
-      <div className="flex flex-col h-full w-full bg-sidebar relative">
+      <div className="flex flex-col h-full w-full bg-sidebar">
+        <div className="flex flex-1 min-h-0">
+          {/* Tucked filter tab – takes real layout space when filters are collapsed while preview is open */}
+          <div
+            className={cn(
+              "shrink-0 flex items-center py-3 pl-3 transition-all duration-300 ease-in-out overflow-hidden",
+              filtersTucked ? "w-[52px] opacity-100" : "w-0 opacity-0"
+            )}
+          >
+            <button
+              onClick={handleUntuckFilters}
+              className={cn(
+                "flex flex-col items-center justify-center gap-1.5",
+                "w-[40px] h-full min-h-0",
+                "bg-background border border-border",
+                "rounded-lg",
+                "hover:bg-muted/60",
+                "transition-all duration-200 ease-in-out",
+                "group cursor-pointer"
+              )}
+              aria-label="Show filters"
+            >
+              <span
+                className="text-[11px] font-semibold text-muted-foreground group-hover:text-foreground tracking-wider uppercase transition-colors"
+                style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+              >
+                Filters
+              </span>
+              <Icon
+                name="chevronRight"
+                className="w-3 h-3 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
+              />
+            </button>
+          </div>
+
         <ResizablePanelGroup direction="horizontal" className="flex-1 [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
           {/* Filters - collapsible full height left panel */}
           <ResizablePanel
@@ -296,41 +330,6 @@ export default function ExplorePage() {
             </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
-
-        {/* Tucked filter tab – peeks from left edge when filters are collapsed while preview is open */}
-        <div
-          className={cn(
-            "absolute left-3 top-0 bottom-0 z-30 flex items-center pointer-events-none transition-all duration-300 ease-in-out",
-            filtersTucked ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-[60px]"
-          )}
-        >
-          <button
-            onClick={handleUntuckFilters}
-            className={cn(
-              "pointer-events-auto flex flex-col items-center justify-center gap-1.5",
-              "w-[40px] py-5",
-              "bg-background border border-border",
-              "rounded-lg",
-              "shadow-lg",
-              "hover:bg-muted/60 hover:shadow-xl hover:scale-[1.03]",
-              "transition-all duration-200 ease-in-out",
-              "group cursor-pointer"
-            )}
-            aria-label="Show filters"
-          >
-            {/* Vertical "Filters" text */}
-            <span
-              className="text-[11px] font-semibold text-foreground tracking-wider uppercase"
-              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
-            >
-              Filters
-            </span>
-            {/* Right arrow icon */}
-            <Icon
-              name="chevronRight"
-              className="w-3 h-3 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all"
-            />
-          </button>
         </div>
       </div>
     </WatchProvider>

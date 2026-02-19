@@ -166,23 +166,16 @@ export function Folder({
 
   const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
 
-  // Prevent Radix checkbox from processing pointer events during shift+click
-  const handleRowPointerDown = (e: React.PointerEvent) => {
+  // Capture phase handler intercepts shift+click BEFORE Radix processes it
+  const handleRowClickCapture = (e: React.MouseEvent) => {
     if (e.shiftKey) {
+      e.stopPropagation()
       e.preventDefault()
+      onSelect?.(folder.id, true, flatIndex, true)
     }
   }
 
   const handleRowClick = (e: React.MouseEvent) => {
-    // If shift is held, always do range select regardless of click target
-    if (e.shiftKey) {
-      e.preventDefault()
-      e.stopPropagation()
-      console.log("[v0] Folder shift+click range select", { folderId: folder.id, flatIndex, isSelected })
-      onSelect?.(folder.id, true, flatIndex, true)
-      return
-    }
-
     const target = e.target as HTMLElement
     if (target.closest("button") || target.closest('[role="checkbox"]') || target.closest("input")) {
       return
@@ -576,7 +569,7 @@ export function Folder({
         isDragOver && "bg-accent border border-primary/50",
       )}
       style={{ minWidth: "100%" }}
-      onPointerDown={handleRowPointerDown}
+      onClickCapture={handleRowClickCapture}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

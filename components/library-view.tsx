@@ -369,7 +369,6 @@ export function LibraryView() {
     (fromIndex: number, toIndex: number) => {
       const start = Math.min(fromIndex, toIndex)
       const end = Math.max(fromIndex, toIndex)
-      console.log("[v0] selectRangeByIndices", { fromIndex, toIndex, start, end, flatListLen: visibleFlatListRef.current.length })
       const newSelectedFolders = new Set(selectedFolders)
       const newSelectedItems = new Set(selectedItems)
 
@@ -396,7 +395,6 @@ export function LibraryView() {
   )
 
   const handleSelectFolder = (folderId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => {
-    console.log("[v0] handleSelectFolder", { folderId, selected, flatIndex, shiftKey, lastSelected: lastSelectedIndexRef.current })
     if (shiftKey && lastSelectedIndexRef.current !== null && flatIndex !== undefined) {
       selectRangeByIndices(lastSelectedIndexRef.current, flatIndex)
       lastSelectedIndexRef.current = flatIndex
@@ -432,7 +430,6 @@ export function LibraryView() {
   }
 
   const handleSelectItem = (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => {
-    console.log("[v0] handleSelectItem", { itemId, selected, flatIndex, shiftKey, lastSelected: lastSelectedIndexRef.current })
     if (shiftKey && lastSelectedIndexRef.current !== null && flatIndex !== undefined) {
       selectRangeByIndices(lastSelectedIndexRef.current, flatIndex)
       lastSelectedIndexRef.current = flatIndex

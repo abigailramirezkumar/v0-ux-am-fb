@@ -150,23 +150,16 @@ export function LibraryItem({
     onSelect?.(item.id, checked, flatIndex)
   }
 
-  // Prevent Radix checkbox from processing pointer events during shift+click
-  const handleRowPointerDown = (e: React.PointerEvent) => {
+  // Capture phase handler intercepts shift+click BEFORE Radix processes it
+  const handleRowClickCapture = (e: React.MouseEvent) => {
     if (e.shiftKey) {
+      e.stopPropagation()
       e.preventDefault()
+      onSelect?.(item.id, true, flatIndex, true)
     }
   }
 
   const handleRowClick = (e: React.MouseEvent) => {
-    // If shift is held, always do range select regardless of click target
-    if (e.shiftKey) {
-      e.preventDefault()
-      e.stopPropagation()
-      console.log("[v0] LibraryItem shift+click range select", { itemId: item.id, flatIndex, isSelected })
-      onSelect?.(item.id, true, flatIndex, true)
-      return
-    }
-
     const target = e.target as HTMLElement
     if (target.closest("button") || target.closest('[role="checkbox"]')) {
       return
@@ -398,7 +391,7 @@ export function LibraryItem({
               !isSelected && !isHovered && !isAlternate && "bg-background",
             )}
             style={{ minWidth: "100%" }}
-            onPointerDown={handleRowPointerDown}
+            onClickCapture={handleRowClickCapture}
             onClick={handleRowClick}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(true)}

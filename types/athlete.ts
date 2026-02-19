@@ -33,6 +33,8 @@ export interface AthleteStats {
 // ---------------------------------------------------------------------------
 
 export interface Athlete {
+  /** Unique athlete identifier (e.g. "ath-001") */
+  id?: string
   /** Player full name (unique identifier for now) */
   name: string
   /** Team abbreviation matching sports-data.ts (e.g. "BAL", "KC", "SF") */

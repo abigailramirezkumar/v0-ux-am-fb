@@ -97,6 +97,7 @@ export const RANGE_DEFAULTS = {
   yardsAfterContactRange: { min: 0, max: 100, default: [0, 100] as [number, number] },
   puntReturnRange: { min: 0, max: 100, default: [0, 100] as [number, number] },
   kickoffReturnRange: { min: 0, max: 100, default: [0, 100] as [number, number] },
+  epaRange: { min: -4, max: 5, default: [-4, 5] as [number, number] },
 } as const
 
 // ---- Shared chip sets (reused across multiple filter defs) -----------------
@@ -186,6 +187,77 @@ export const FILTER_SECTIONS: FilterSection[] = [
               ],
             ],
           },
+          { type: "boolean", label: "Two-minute drill" },
+          {
+            type: "range",
+            label: "EPA",
+            rangeCategory: "epaRange",
+            rangeDefault: [-4, 5],
+            rangeMin: -4,
+            rangeMax: 5,
+          },
+        ],
+      },
+    ],
+  },
+
+  // ===================== Formation & Personnel =====================
+  {
+    key: "formation-personnel",
+    title: "Formation & Personnel",
+    subsections: [
+      {
+        filters: [
+          {
+            type: "toggle",
+            label: "Formation",
+            category: "formationName",
+            allValues: ["Trey Left", "Deuce Right", "Empty Strong", "Trips Right", "I-Form Tight"],
+            groups: [
+              [
+                { value: "Trey Left", label: "Trey Left" },
+                { value: "Deuce Right", label: "Deuce Right" },
+                { value: "Empty Strong", label: "Empty Strong" },
+              ],
+              [
+                { value: "Trips Right", label: "Trips Right" },
+                { value: "I-Form Tight", label: "I-Form Tight" },
+              ],
+            ],
+          },
+          {
+            type: "toggle",
+            label: "Personnel (Offense)",
+            category: "personnelO",
+            allValues: ["11", "12", "21", "22", "10", "Empty"],
+            groups: [
+              [
+                { value: "11", label: "11" },
+                { value: "12", label: "12" },
+                { value: "21", label: "21" },
+              ],
+              [
+                { value: "22", label: "22" },
+                { value: "10", label: "10" },
+                { value: "Empty", label: "Empty" },
+              ],
+            ],
+          },
+          {
+            type: "toggle",
+            label: "Personnel (Defense)",
+            category: "personnelD",
+            allValues: ["Base", "Nickel", "Dime", "Goal Line"],
+            groups: [
+              [
+                { value: "Base", label: "Base" },
+                { value: "Nickel", label: "Nickel" },
+                { value: "Dime", label: "Dime" },
+                { value: "Goal Line", label: "Goal Line" },
+              ],
+            ],
+          },
+          { type: "boolean", label: "Shotgun" },
         ],
       },
     ],
@@ -317,6 +389,23 @@ export const FILTER_SECTIONS: FilterSection[] = [
           { type: "boolean", label: "Scramble", count: 17 },
           { type: "boolean", label: "Sack taken", count: 123 },
           { type: "boolean", label: "Throwaway", count: 123 },
+          {
+            type: "toggle",
+            label: "Pass location",
+            category: "passLocation",
+            allValues: ["Left Sideline", "Left Numbers", "Middle", "Right Numbers", "Right Sideline"],
+            groups: [
+              [
+                { value: "Left Sideline", label: "Left Sideline" },
+                { value: "Left Numbers", label: "Left Numbers" },
+                { value: "Middle", label: "Middle" },
+              ],
+              [
+                { value: "Right Numbers", label: "Right Numbers" },
+                { value: "Right Sideline", label: "Right Sideline" },
+              ],
+            ],
+          },
         ],
       },
       {
@@ -440,6 +529,23 @@ export const FILTER_SECTIONS: FilterSection[] = [
                 { value: "RightTackle", label: "Right tackle" },
               ],
               [{ value: "Right", label: "Right end" }],
+            ],
+          },
+          {
+            type: "toggle",
+            label: "Run gap",
+            category: "runGap",
+            allValues: ["A-Gap", "B-Gap", "C-Gap", "D-Gap", "Outside"],
+            groups: [
+              [
+                { value: "A-Gap", label: "A-Gap" },
+                { value: "B-Gap", label: "B-Gap" },
+                { value: "C-Gap", label: "C-Gap" },
+              ],
+              [
+                { value: "D-Gap", label: "D-Gap" },
+                { value: "Outside", label: "Outside" },
+              ],
             ],
           },
         ],

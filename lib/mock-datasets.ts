@@ -15,7 +15,18 @@ export interface PlayData {
   coverage: string
   blitz: string
   game: string
-  // Enhanced fields for filtering
+  
+  // Enhanced Pro Fields
+  epa: number
+  successRate: boolean
+  explosivePlay: boolean
+  formationName: string
+  isShotgun: boolean
+  timeToPass?: number
+  passLocation?: string
+  runGap?: string
+  isTwoMinuteDrill: boolean
+  
   playType: "Pass" | "Run" | "Special Teams"
   passResult?: "Complete" | "Incomplete" | "Sack" | "Interception" | "Throwaway"
   runDirection?: "Left" | "Middle" | "Right"
@@ -25,9 +36,13 @@ export interface PlayData {
   isFirstDown: boolean
   isPenalty: boolean
   penaltyType?: string
-  // Pre-computed numeric fields -- avoids parsing / regex in hot paths
+  
   /** Absolute yard-line number (0-50), parsed once at generation time. */
   yardLineNumeric: number
+  
+  // Players On Field
+  offenseIds: string[]
+  defenseIds: string[]
 }
 
 export interface Dataset {
@@ -62,9 +77,7 @@ export const VIDEO_POOL = [
 
 export function getRandomVideoUrl(excludeUrl?: string | null): string {
   const available = excludeUrl ? VIDEO_POOL.filter((url) => url !== excludeUrl) : VIDEO_POOL
-
   if (available.length === 0) return VIDEO_POOL[0]
-
   const randomIndex = Math.floor(Math.random() * available.length)
   return available[randomIndex]
 }
@@ -80,6 +93,9 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
   const passResults: PlayData["passResult"][] = ["Complete", "Incomplete", "Sack", "Interception", "Throwaway"]
   const runDirections: PlayData["runDirection"][] = ["Left", "Middle", "Right"]
   const penaltyTypes = ["Holding", "False Start", "Offsides", "Pass Interference", "Illegal Formation"]
+  const formations = ["Trey Left", "Deuce Right", "Empty Strong", "Trips Right", "I-Form Tight"]
+  const runGaps = ["A-Gap", "B-Gap", "C-Gap", "D-Gap", "Outside"]
+  const passLocs = ["Left Sideline", "Left Numbers", "Middle", "Right Numbers", "Right Sideline"]
 
   return Array.from({ length: count }).map((_, i) => {
     const gain = Math.floor(random() * 20) - 5
@@ -88,6 +104,11 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
     const distance = Math.floor(random() * 10) + 1
     const isPenalty = random() > 0.9
     const yardLineRaw = Math.floor(random() * 50)
+    const epa = (random() * 8) - 3.5; // range between -3.5 and 4.5
+
+    // Generate pseudo-random athlete IDs for on-field logic
+    const offenseIds = Array.from({length: 11}, () => `ath-${String(Math.floor(random() * 26) + 1).padStart(3, '0')}`);
+    const defenseIds = Array.from({length: 11}, () => `ath-${String(Math.floor(random() * 24) + 27).padStart(3, '0')}`);
 
     return {
       id: `play-${i}`,
@@ -107,6 +128,20 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
       coverage: ["Cov 1", "Cov 2", "Cov 3", "Quarters"][Math.floor(random() * 4)],
       blitz: random() > 0.8 ? "Yes" : "No",
       game: gameName,
+      
+      // Pro Fields
+      epa: parseFloat(epa.toFixed(2)),
+      successRate: epa > 0,
+      explosivePlay: gain > 15,
+      formationName: formations[Math.floor(random() * formations.length)],
+      isShotgun: random() > 0.4,
+      timeToPass: playType === "Pass" ? parseFloat(((random() * 2.5) + 1.5).toFixed(2)) : undefined,
+      passLocation: playType === "Pass" ? passLocs[Math.floor(random() * passLocs.length)] : undefined,
+      runGap: playType === "Run" ? runGaps[Math.floor(random() * runGaps.length)] : undefined,
+      isTwoMinuteDrill: random() > 0.85,
+      offenseIds: [...new Set(offenseIds)],
+      defenseIds: [...new Set(defenseIds)],
+
       // Enhanced fields
       playType,
       passResult: playType === "Pass" ? passResults[Math.floor(random() * passResults.length)] : undefined,
@@ -122,26 +157,10 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
 }
 
 export const MOCK_DATASETS: Dataset[] = [
-  {
-    id: "dataset-a",
-    name: "NFL Highlights",
-    plays: generatePlays(10, "BUF vs LA 01.01.26"),
-  },
-  {
-    id: "dataset-b",
-    name: "Practice Drills",
-    plays: generatePlays(12, "Practice - Wed 10.12"),
-  },
-  {
-    id: "dataset-c",
-    name: "Scrimmage",
-    plays: generatePlays(15, "LSU Spring Scrimmage"),
-  },
-  {
-    id: "dataset-d",
-    name: "Full Game",
-    plays: generatePlays(20, "SF vs PHI 12.03.23"),
-  },
+  { id: "dataset-a", name: "NFL Highlights", plays: generatePlays(10, "BUF vs LA 01.01.26") },
+  { id: "dataset-b", name: "Practice Drills", plays: generatePlays(12, "Practice - Wed 10.12") },
+  { id: "dataset-c", name: "Scrimmage", plays: generatePlays(15, "LSU Spring Scrimmage") },
+  { id: "dataset-d", name: "Full Game", plays: generatePlays(20, "SF vs PHI 12.03.23") },
 ]
 
 export function getDatasetForItem(itemId: string | null): Dataset {
@@ -156,21 +175,13 @@ export function getAllUniqueClips(): Dataset {
 
   MOCK_DATASETS.forEach((dataset) => {
     dataset.plays.forEach((play) => {
-      // Create a unique key combining dataset and play id
       const uniqueKey = `${dataset.id}-${play.id}`
       if (!seenIds.has(uniqueKey)) {
         seenIds.add(uniqueKey)
-        allPlays.push({
-          ...play,
-          id: uniqueKey, // Use unique key as the play id
-        })
+        allPlays.push({ ...play, id: uniqueKey })
       }
     })
   })
 
-  return {
-    id: "all-clips",
-    name: "All Clips",
-    plays: allPlays,
-  }
+  return { id: "all-clips", name: "All Clips", plays: allPlays }
 }

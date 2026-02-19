@@ -24,10 +24,16 @@ export type FilterCategory =
   | "passPressureResult"
   // Passing — receiving
   | "depthOfTarget"
+  | "passLocation"
   // Rushing
   | "gainLoss"
   | "yardsAfterContact"
   | "runDirection"
+  | "runGap"
+  // Formation & Situation
+  | "formationName"
+  | "personnelO"
+  | "personnelD"
   // Special Teams
   | "fieldGoalResult"
   | "patResult"
@@ -64,6 +70,9 @@ export type BooleanFilterCategory =
   | "_filter_run_block"
   | "_filter_allowed_pressure"
   | "_filter_allowed_sack"
+  // New boolean categories from expanded data
+  | "_filter_two-minute_drill"
+  | "_filter_shotgun"
 
 /** Union of every key that can appear in `FilterState`. */
 export type AnyFilterCategory = FilterCategory | BooleanFilterCategory
@@ -77,6 +86,7 @@ export type RangeCategory =
   | "yardsAfterContactRange"
   | "puntReturnRange"
   | "kickoffReturnRange"
+  | "epaRange"
 
 // ---- State types ----------------------------------------------------------
 
@@ -155,7 +165,8 @@ export function hasActiveRange(
 const FILTER_CATEGORIES: ReadonlySet<string> = new Set<FilterCategory>([
   "down", "distanceType", "hash", "playType", "touchdownType",
   "firstDownType", "turnoverType", "passResult", "passPressureResult",
-  "depthOfTarget", "gainLoss", "yardsAfterContact", "runDirection",
+  "depthOfTarget", "passLocation", "gainLoss", "yardsAfterContact", "runDirection",
+  "runGap", "formationName", "personnelO", "personnelD",
   "fieldGoalResult", "patResult", "puntType", "puntReturnYards",
   "kickoffType", "kickoffReturnYards",
 ])
@@ -169,7 +180,7 @@ export function isFilterCategory(key: string): key is FilterCategory {
  */
 const RANGE_CATEGORIES: ReadonlySet<string> = new Set<RangeCategory>([
   "distanceRange", "yardLine", "yardsAfterContactRange",
-  "puntReturnRange", "kickoffReturnRange",
+  "puntReturnRange", "kickoffReturnRange", "epaRange",
 ])
 
 export function isRangeCategory(key: string): key is RangeCategory {

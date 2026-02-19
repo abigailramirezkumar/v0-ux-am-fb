@@ -9,7 +9,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  /* Force rebuild */
+  /* Invalidate stale cache */
 }
 
 export default nextConfig

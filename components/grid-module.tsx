@@ -18,7 +18,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { MoreVertical } from "lucide-react"
+import { EllipsisVertical } from "lucide-react"
 import type { LibraryItemData } from "@/components/library-item"
 import type { PlayData, Dataset } from "@/lib/mock-datasets"
 import type { ClipData } from "@/types/library"
@@ -365,7 +365,7 @@ function SortableHeader({ label, columnKey, activeColumn, activeMode, onSort, cl
             }}
             aria-label={`Column options for ${label}`}
           >
-            <MoreVertical className="w-3.5 h-3.5" />
+            <EllipsisVertical className="w-3.5 h-3.5" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" sideOffset={4}>

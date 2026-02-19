@@ -58,9 +58,10 @@ interface FolderProps {
   folder: FolderData
   level?: number
   index?: number
+  flatIndex?: number
   isFlattened?: boolean
-  onSelect?: (folderId: string, selected: boolean) => void
-  onSelectItem?: (itemId: string, selected: boolean) => void
+  onSelect?: (folderId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
+  onSelectItem?: (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
   onDoubleClick?: (folderId: string) => void
   selectedFolders?: Set<string>
   selectedItems?: Set<string>
@@ -83,6 +84,7 @@ export function Folder({
   folder,
   level = 0,
   index = 0,
+  flatIndex,
   isFlattened = false,
   onSelect,
   onSelectItem,
@@ -159,7 +161,16 @@ export function Folder({
     16 // mr-4 right padding
 
   const handleCheckboxChange = (checked: boolean) => {
-    onSelect?.(folder.id, checked)
+    // Called from Radix checkbox (no mouse event available)
+    onSelect?.(folder.id, checked, flatIndex)
+  }
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      onSelect?.(folder.id, !isSelected, flatIndex, true)
+    }
   }
 
   const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
@@ -172,6 +183,9 @@ export function Folder({
 
     if (e.detail === 2) {
       onDoubleClick?.(folder.id)
+    } else if (e.shiftKey) {
+      // Shift+click on the row itself triggers range select
+      onSelect?.(folder.id, !isSelected, flatIndex, true)
     } else if (hasChildren) {
       onToggleExpand?.(folder.id)
     }
@@ -279,7 +293,7 @@ export function Folder({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            <div className="flex-shrink-0 w-6 flex justify-center">
+            <div className="flex-shrink-0 w-6 flex justify-center" onClick={handleCheckboxClick}>
               {showCheckbox && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 

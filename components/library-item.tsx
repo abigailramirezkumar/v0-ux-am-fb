@@ -46,7 +46,8 @@ interface LibraryItemProps {
   item: LibraryItemData
   level?: number
   index?: number
-  onSelect?: (itemId: string, selected: boolean) => void
+  flatIndex?: number
+  onSelect?: (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
   selectedItems?: Set<string>
   importedItems?: Set<string>
   onUpdateImported?: (id: string, type: "folder" | "item") => void
@@ -116,6 +117,7 @@ export function LibraryItem({
   item,
   level = 0,
   index = 0,
+  flatIndex,
   onSelect,
   selectedItems = new Set(),
   importedItems = new Set(),
@@ -145,7 +147,15 @@ export function LibraryItem({
     16
 
   const handleCheckboxChange = (checked: boolean) => {
-    onSelect?.(item.id, checked)
+    onSelect?.(item.id, checked, flatIndex)
+  }
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      onSelect?.(item.id, !isSelected, flatIndex, true)
+    }
   }
 
   const handleRowClick = (e: React.MouseEvent) => {
@@ -157,6 +167,8 @@ export function LibraryItem({
     // Double-click opens the item in Watch page
     if (e.detail === 2) {
       onOpen?.(item.id)
+    } else if (e.shiftKey) {
+      onSelect?.(item.id, !isSelected, flatIndex, true)
     }
   }
 
@@ -175,7 +187,7 @@ export function LibraryItem({
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
             {/* Checkbox Container (w-6) - Matches Folder */}
-            <div className="flex-shrink-0 w-6 flex justify-center">
+            <div className="flex-shrink-0 w-6 flex justify-center" onClick={handleCheckboxClick}>
               {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 

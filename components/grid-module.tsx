@@ -433,6 +433,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
     updatePlay,
   } = useWatchContext()
   const { openCreatePlaylistModal } = useLibraryContext()
+  const lastSelectedGridIndexRef = useRef<number | null>(null)
 
   // Bridge: if clipsProp is provided, wrap it into a Dataset shape so the
   // rest of the component works unchanged. This decouples GridModule from
@@ -706,11 +707,31 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
                     {rowIndex + 1}
                   </TableCell>
-                  <TableCell className="py-1.5 px-3 border-r border-border/50" onClick={(e) => e.stopPropagation()}>
+                  <TableCell
+                    className="py-1.5 px-3 border-r border-border/50"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const sortedPlays = sortPlays(activeDataset.plays, sortColumn, sortMode)
+                      if (e.shiftKey && lastSelectedGridIndexRef.current !== null) {
+                        const start = Math.min(lastSelectedGridIndexRef.current, rowIndex)
+                        const end = Math.max(lastSelectedGridIndexRef.current, rowIndex)
+                        for (let i = start; i <= end; i++) {
+                          const p = sortedPlays[i]
+                          if (p && !selectedPlayIds.has(p.id)) {
+                            togglePlaySelection(p.id)
+                          }
+                        }
+                        lastSelectedGridIndexRef.current = rowIndex
+                      } else {
+                        togglePlaySelection(play.id)
+                        lastSelectedGridIndexRef.current = rowIndex
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-center">
                       <Checkbox
                         checked={selectedPlayIds.has(play.id)}
-                        onCheckedChange={() => togglePlaySelection(play.id)}
+                        onCheckedChange={() => {}}
                       />
                     </div>
                   </TableCell>

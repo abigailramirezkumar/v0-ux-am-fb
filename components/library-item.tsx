@@ -178,20 +178,6 @@ export function LibraryItem({
     }
   }
 
-  const handleRowClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target.closest("button") || target.closest('[role="checkbox"]')) {
-      return
-    }
-
-    // Double-click opens the item in Watch page
-    if (e.detail === 2) {
-      onOpen?.(item.id)
-    } else if (e.shiftKey) {
-      onSelect?.(item.id, !isSelected, flatIndex, true)
-    }
-  }
-
   const handleDragStart = (e: React.DragEvent) => {
     e.stopPropagation()
     e.dataTransfer.setData("application/json", JSON.stringify({ id: item.id, type: "item" }))

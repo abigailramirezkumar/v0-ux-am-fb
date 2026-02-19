@@ -195,24 +195,6 @@ export function Folder({
     }
   }
 
-  const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
-
-  const handleRowClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    if (target.closest("button") || target.closest('[role="checkbox"]') || target.closest("input")) {
-      return
-    }
-
-    if (e.detail === 2) {
-      onDoubleClick?.(folder.id)
-    } else if (e.shiftKey) {
-      // Shift+click on the row itself triggers range select
-      onSelect?.(folder.id, !isSelected, flatIndex, true)
-    } else if (hasChildren) {
-      onToggleExpand?.(folder.id)
-    }
-  }
-
   const handleRenameStart = () => {
     setIsRenaming(true)
     setRenameName(folder.name)

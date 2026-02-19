@@ -6,10 +6,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
- 
   eslint: {
     ignoreDuringBuilds: true,
   },
+  /* Force cache invalidation */
 }
 
 export default nextConfig

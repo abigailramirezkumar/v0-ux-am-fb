@@ -1377,8 +1377,26 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   }, [play])
 
   const handlePlayerClick = useCallback((playerName: string) => {
-    const athlete = getAthleteByName(playerName)
-    if (athlete) setSelectedAthlete(athlete)
+  const athlete = getAthleteByName(playerName)
+  if (athlete) {
+    setSelectedAthlete(athlete)
+    return
+  }
+  // Fallback for hardcoded roster players (OL / extra DL) not in athletes-data
+  const rosterPlayer = [...OL_PLAYERS, ...EXTRA_DL].find((p) => p.name === playerName)
+  if (rosterPlayer) {
+    const synthetic: Athlete = {
+      name: rosterPlayer.name,
+      team: "DET",
+      position: rosterPlayer.position as Athlete["position"],
+      jersey_number: rosterPlayer.jersey_number,
+      height: "6'3",
+      weight: 305,
+      college: "N/A",
+      stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 },
+    }
+    setSelectedAthlete(synthetic)
+  }
   }, [])
 
   // "Open Clip" -- open as unsaved playlist in watch page

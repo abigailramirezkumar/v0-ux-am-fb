@@ -108,7 +108,7 @@ export function FilterRow({
             className={cn(
               "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors",
               isActive
-                ? "border-foreground bg-foreground"
+                ? "border-blue-600 bg-blue-600"
                 : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
             )}
           >

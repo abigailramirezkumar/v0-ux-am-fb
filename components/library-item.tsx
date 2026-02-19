@@ -150,6 +150,26 @@ export function LibraryItem({
     onSelect?.(item.id, checked, flatIndex)
   }
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    // If shift is held, always do range select regardless of click target
+    if (e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      onSelect?.(item.id, !isSelected, flatIndex, true)
+      return
+    }
+
+    const target = e.target as HTMLElement
+    if (target.closest("button") || target.closest('[role="checkbox"]')) {
+      return
+    }
+
+    // Double-click opens the item in Watch page
+    if (e.detail === 2) {
+      onOpen?.(item.id)
+    }
+  }
+
   const handleCheckboxClick = (e: React.MouseEvent) => {
     if (e.shiftKey) {
       e.preventDefault()
@@ -187,7 +207,7 @@ export function LibraryItem({
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
             {/* Checkbox Container (w-6) - Matches Folder */}
-            <div className="flex-shrink-0 w-6 flex justify-center" onClick={handleCheckboxClick}>
+            <div className="flex-shrink-0 w-6 flex justify-center">
               {!isImported && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 

@@ -161,8 +161,30 @@ export function Folder({
     16 // mr-4 right padding
 
   const handleCheckboxChange = (checked: boolean) => {
-    // Called from Radix checkbox (no mouse event available)
     onSelect?.(folder.id, checked, flatIndex)
+  }
+
+  const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    // If shift is held, always do range select regardless of click target
+    if (e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      onSelect?.(folder.id, !isSelected, flatIndex, true)
+      return
+    }
+
+    const target = e.target as HTMLElement
+    if (target.closest("button") || target.closest('[role="checkbox"]') || target.closest("input")) {
+      return
+    }
+
+    if (e.detail === 2) {
+      onDoubleClick?.(folder.id)
+    } else if (hasChildren) {
+      onToggleExpand?.(folder.id)
+    }
   }
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
@@ -293,7 +315,7 @@ export function Folder({
             {/* Indentation Spacer */}
             <div style={{ width: `${indentMargin}px` }} className="flex-shrink-0 transition-[width] duration-200" />
 
-            <div className="flex-shrink-0 w-6 flex justify-center" onClick={handleCheckboxClick}>
+            <div className="flex-shrink-0 w-6 flex justify-center">
               {showCheckbox && <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />}
             </div>
 

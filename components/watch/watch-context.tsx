@@ -126,7 +126,7 @@ export function WatchProvider({
     reports: false,
   })
 
-  const [reportsPanelSize, setReportsPanelSize] = useState(30)
+  const [reportsPanelSize, setReportsPanelSize] = useState(25)
 
   const toggleModule = (module: "library" | "video" | "grid" | "reports") => {
     setVisibleModules((prev) => {

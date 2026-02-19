@@ -150,12 +150,20 @@ export function LibraryItem({
     onSelect?.(item.id, checked, flatIndex)
   }
 
+  // Prevent Radix checkbox from processing pointer events during shift+click
+  const handleRowPointerDown = (e: React.PointerEvent) => {
+    if (e.shiftKey) {
+      e.preventDefault()
+    }
+  }
+
   const handleRowClick = (e: React.MouseEvent) => {
     // If shift is held, always do range select regardless of click target
     if (e.shiftKey) {
       e.preventDefault()
       e.stopPropagation()
-      onSelect?.(item.id, !isSelected, flatIndex, true)
+      console.log("[v0] LibraryItem shift+click range select", { itemId: item.id, flatIndex, isSelected })
+      onSelect?.(item.id, true, flatIndex, true)
       return
     }
 
@@ -167,14 +175,6 @@ export function LibraryItem({
     // Double-click opens the item in Watch page
     if (e.detail === 2) {
       onOpen?.(item.id)
-    }
-  }
-
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    if (e.shiftKey) {
-      e.preventDefault()
-      e.stopPropagation()
-      onSelect?.(item.id, !isSelected, flatIndex, true)
     }
   }
 
@@ -398,9 +398,10 @@ export function LibraryItem({
               !isSelected && !isHovered && !isAlternate && "bg-background",
             )}
             style={{ minWidth: "100%" }}
+            onPointerDown={handleRowPointerDown}
             onClick={handleRowClick}
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseLeave={() => setIsHovered(true)}
             draggable
             onDragStart={handleDragStart}
           >

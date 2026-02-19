@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { LibraryHeader } from "@/components/library-header"
 import { LibrarySubheader } from "@/components/library-subheader"
@@ -117,6 +117,9 @@ export function LibraryView() {
       }
     }
   }, [activeWatchItemId, folders, scheduleFolders, viewMode, setSelectedItems, setExpandedFolders])
+
+  const lastSelectedIndexRef = useRef<number | null>(null)
+  const visibleFlatListRef = useRef<Array<{ type: "folder" | "item"; data: FolderData | LibraryItemData; level: number }>>([])
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
@@ -362,7 +365,42 @@ export function LibraryView() {
     return { folderIds, itemIds }
   }
 
-  const handleSelectFolder = (folderId: string, selected: boolean) => {
+  const selectRangeByIndices = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      const start = Math.min(fromIndex, toIndex)
+      const end = Math.max(fromIndex, toIndex)
+      const newSelectedFolders = new Set(selectedFolders)
+      const newSelectedItems = new Set(selectedItems)
+
+      for (let i = start; i <= end; i++) {
+        const row = visibleFlatListRef.current[i]
+        if (!row) continue
+        if (row.type === "folder") {
+          const folder = findFolderById(folders, (row.data as FolderData).id)
+          if (folder) {
+            newSelectedFolders.add(folder.id)
+            const { folderIds, itemIds } = collectAllDescendantIds(folder)
+            folderIds.forEach((id) => newSelectedFolders.add(id))
+            itemIds.forEach((id) => newSelectedItems.add(id))
+          }
+        } else {
+          newSelectedItems.add(row.data.id)
+        }
+      }
+
+      setSelectedFolders(newSelectedFolders)
+      setSelectedItems(newSelectedItems)
+    },
+    [selectedFolders, selectedItems, folders, setSelectedFolders, setSelectedItems],
+  )
+
+  const handleSelectFolder = (folderId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => {
+    if (shiftKey && lastSelectedIndexRef.current !== null && flatIndex !== undefined) {
+      selectRangeByIndices(lastSelectedIndexRef.current, flatIndex)
+      lastSelectedIndexRef.current = flatIndex
+      return
+    }
+
     const folder = findFolderById(folders, folderId)
     if (!folder) return
 
@@ -385,9 +423,19 @@ export function LibraryView() {
       itemIds.forEach((id) => newSelectedItems.delete(id))
     }
     setSelectedItems(newSelectedItems)
+
+    if (flatIndex !== undefined) {
+      lastSelectedIndexRef.current = flatIndex
+    }
   }
 
-  const handleSelectItem = (itemId: string, selected: boolean) => {
+  const handleSelectItem = (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => {
+    if (shiftKey && lastSelectedIndexRef.current !== null && flatIndex !== undefined) {
+      selectRangeByIndices(lastSelectedIndexRef.current, flatIndex)
+      lastSelectedIndexRef.current = flatIndex
+      return
+    }
+
     const newSet = new Set(selectedItems)
     if (selected) {
       newSet.add(itemId)
@@ -395,6 +443,10 @@ export function LibraryView() {
       newSet.delete(itemId)
     }
     setSelectedItems(newSet)
+
+    if (flatIndex !== undefined) {
+      lastSelectedIndexRef.current = flatIndex
+    }
   }
 
   const handleToggleExpand = (folderId: string) => {
@@ -733,6 +785,8 @@ export function LibraryView() {
     }
   }
 
+  visibleFlatListRef.current = visibleFlatList
+
   const isDescendantOf = useCallback((nodes: FolderData[], parentId: string, targetId: string): boolean => {
     const findInChildren = (folder: FolderData): boolean => {
       if (folder.id === targetId) return true
@@ -884,6 +938,7 @@ export function LibraryView() {
                       folder={folderData}
                       level={row.level}
                       index={index}
+                      flatIndex={index}
                       isFlattened={true}
                       onSelect={handleSelectFolder}
                       onSelectItem={handleSelectItem}
@@ -916,6 +971,7 @@ export function LibraryView() {
                       }}
                       level={row.level}
                       index={index}
+                      flatIndex={index}
                       onSelect={handleSelectItem}
                       selectedItems={selectedItems}
                       importedItems={importedItems}

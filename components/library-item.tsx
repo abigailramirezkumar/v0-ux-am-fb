@@ -46,7 +46,8 @@ interface LibraryItemProps {
   item: LibraryItemData
   level?: number
   index?: number
-  onSelect?: (itemId: string, selected: boolean) => void
+  flatIndex?: number
+  onSelect?: (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
   selectedItems?: Set<string>
   importedItems?: Set<string>
   onUpdateImported?: (id: string, type: "folder" | "item") => void
@@ -116,6 +117,7 @@ export function LibraryItem({
   item,
   level = 0,
   index = 0,
+  flatIndex,
   onSelect,
   selectedItems = new Set(),
   importedItems = new Set(),
@@ -145,7 +147,16 @@ export function LibraryItem({
     16
 
   const handleCheckboxChange = (checked: boolean) => {
-    onSelect?.(item.id, checked)
+    onSelect?.(item.id, checked, flatIndex)
+  }
+
+  // Capture phase handler intercepts shift+click BEFORE Radix processes it
+  const handleRowClickCapture = (e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      e.stopPropagation()
+      e.preventDefault()
+      onSelect?.(item.id, true, flatIndex, true)
+    }
   }
 
   const handleRowClick = (e: React.MouseEvent) => {
@@ -380,9 +391,10 @@ export function LibraryItem({
               !isSelected && !isHovered && !isAlternate && "bg-background",
             )}
             style={{ minWidth: "100%" }}
+            onClickCapture={handleRowClickCapture}
             onClick={handleRowClick}
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseLeave={() => setIsHovered(true)}
             draggable
             onDragStart={handleDragStart}
           >

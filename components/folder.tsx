@@ -58,9 +58,10 @@ interface FolderProps {
   folder: FolderData
   level?: number
   index?: number
+  flatIndex?: number
   isFlattened?: boolean
-  onSelect?: (folderId: string, selected: boolean) => void
-  onSelectItem?: (itemId: string, selected: boolean) => void
+  onSelect?: (folderId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
+  onSelectItem?: (itemId: string, selected: boolean, flatIndex?: number, shiftKey?: boolean) => void
   onDoubleClick?: (folderId: string) => void
   selectedFolders?: Set<string>
   selectedItems?: Set<string>
@@ -83,6 +84,7 @@ export function Folder({
   folder,
   level = 0,
   index = 0,
+  flatIndex,
   isFlattened = false,
   onSelect,
   onSelectItem,
@@ -159,10 +161,19 @@ export function Folder({
     16 // mr-4 right padding
 
   const handleCheckboxChange = (checked: boolean) => {
-    onSelect?.(folder.id, checked)
+    onSelect?.(folder.id, checked, flatIndex)
   }
 
   const isEmpty = !folder.children?.length && !folder.items?.length && dynamicMediaItems.length === 0
+
+  // Capture phase handler intercepts shift+click BEFORE Radix processes it
+  const handleRowClickCapture = (e: React.MouseEvent) => {
+    if (e.shiftKey) {
+      e.stopPropagation()
+      e.preventDefault()
+      onSelect?.(folder.id, true, flatIndex, true)
+    }
+  }
 
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement
@@ -558,6 +569,7 @@ export function Folder({
         isDragOver && "bg-accent border border-primary/50",
       )}
       style={{ minWidth: "100%" }}
+      onClickCapture={handleRowClickCapture}
       onClick={handleRowClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

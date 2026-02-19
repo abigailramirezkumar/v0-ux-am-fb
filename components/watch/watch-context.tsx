@@ -55,8 +55,13 @@ interface WatchContextType {
     library: boolean
     video: boolean
     grid: boolean
+    reports: boolean
   }
-  toggleModule: (module: "library" | "video" | "grid") => void
+  toggleModule: (module: "library" | "video" | "grid" | "reports") => void
+
+  // Reports panel size (persisted for session)
+  reportsPanelSize: number
+  setReportsPanelSize: (size: number) => void
 }
 
 const WatchContext = createContext<WatchContextType | undefined>(undefined)
@@ -118,14 +123,18 @@ export function WatchProvider({
     library: true,
     video: true,
     grid: true,
+    reports: false,
   })
 
-  const toggleModule = (module: "library" | "video" | "grid") => {
+  const [reportsPanelSize, setReportsPanelSize] = useState(30)
+
+  const toggleModule = (module: "library" | "video" | "grid" | "reports") => {
     setVisibleModules((prev) => {
       const next = { ...prev, [module]: !prev[module] }
-      // Prevent closing all modules -- at least one must stay visible
-      const anyVisible = next.library || next.video || next.grid
-      if (!anyVisible) return prev
+      // Prevent closing all core modules -- at least one must stay visible
+      // (reports is independent and doesn't count toward the minimum)
+      const anyCoreVisible = next.library || next.video || next.grid
+      if (!anyCoreVisible) return prev
       return next
     })
   }
@@ -628,6 +637,8 @@ export function WatchProvider({
         replaceUnsavedTab,
         visibleModules,
         toggleModule,
+        reportsPanelSize,
+        setReportsPanelSize,
       }}
     >
       {children}

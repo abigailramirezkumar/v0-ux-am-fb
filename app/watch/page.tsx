@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { LibraryView } from "@/components/library-view"
 import { GridModule } from "@/components/grid-module"
 import { VideoModule } from "@/components/video-module"
+import { ReportsModule } from "@/components/reports-module"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { WatchToolbar } from "@/components/watch/watch-toolbar"
@@ -11,12 +12,13 @@ import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
 function WatchContent() {
-  const { visibleModules } = useWatchContext()
+  const { visibleModules, reportsPanelSize, setReportsPanelSize } = useWatchContext()
 
   const topPanelRef = useRef<ImperativePanelHandle>(null)
   const libraryPanelRef = useRef<ImperativePanelHandle>(null)
   const videoPanelRef = useRef<ImperativePanelHandle>(null)
   const gridPanelRef = useRef<ImperativePanelHandle>(null)
+  const reportsPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Collapse/expand the top wrapper panel based on whether either child is visible
   const topVisible = visibleModules.library || visibleModules.video
@@ -52,57 +54,95 @@ function WatchContent() {
     }
   }, [visibleModules.grid])
 
+  useEffect(() => {
+    if (visibleModules.reports) {
+      reportsPanelRef.current?.expand()
+    } else {
+      reportsPanelRef.current?.collapse()
+    }
+  }, [visibleModules.reports])
+
   return (
     <div className="flex h-full w-full">
-      {/* Main Resizable Area */}
+      {/* Main Resizable Area — horizontal split: content | reports */}
       <div className="flex-1 min-w-0 bg-sidebar">
         <ResizablePanelGroup
-          direction="vertical"
+          direction="horizontal"
           className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"
         >
-          {/* TOP SECTION: Library + Video */}
+          {/* LEFT: Existing vertical layout (library+video on top, grid on bottom) */}
           <ResizablePanel
-            ref={topPanelRef}
-            defaultSize={60}
-            minSize={20}
-            collapsible
-            collapsedSize={0}
-            id="top-panel"
+            defaultSize={100 - reportsPanelSize}
+            minSize={30}
+            id="main-content-panel"
             order={1}
           >
             <ResizablePanelGroup
-              direction="horizontal"
+              direction="vertical"
               className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"
             >
-              {/* Library Panel - always rendered, collapsible */}
+              {/* TOP SECTION: Library + Video */}
               <ResizablePanel
-                ref={libraryPanelRef}
-                defaultSize={30}
-                minSize={15}
+                ref={topPanelRef}
+                defaultSize={60}
+                minSize={20}
                 collapsible
                 collapsedSize={0}
-                id="library-panel"
+                id="top-panel"
                 order={1}
               >
-                <div className="h-full pr-1 pb-1 overflow-hidden">
-                  <LibraryView />
-                </div>
+                <ResizablePanelGroup
+                  direction="horizontal"
+                  className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"
+                >
+                  {/* Library Panel - always rendered, collapsible */}
+                  <ResizablePanel
+                    ref={libraryPanelRef}
+                    defaultSize={30}
+                    minSize={15}
+                    collapsible
+                    collapsedSize={0}
+                    id="library-panel"
+                    order={1}
+                  >
+                    <div className="h-full pr-1 pb-1 overflow-hidden">
+                      <LibraryView />
+                    </div>
+                  </ResizablePanel>
+
+                  <ResizableHandle className="bg-transparent" />
+
+                  {/* Video Panel - always rendered, collapsible */}
+                  <ResizablePanel
+                    ref={videoPanelRef}
+                    defaultSize={70}
+                    minSize={15}
+                    collapsible
+                    collapsedSize={0}
+                    id="video-panel"
+                    order={2}
+                  >
+                    <div className="h-full pb-1 overflow-hidden">
+                      <VideoModule />
+                    </div>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
               </ResizablePanel>
 
               <ResizableHandle className="bg-transparent" />
 
-              {/* Video Panel - always rendered, collapsible */}
+              {/* BOTTOM SECTION: Grid - always rendered, collapsible */}
               <ResizablePanel
-                ref={videoPanelRef}
-                defaultSize={70}
+                ref={gridPanelRef}
+                defaultSize={40}
                 minSize={15}
                 collapsible
                 collapsedSize={0}
-                id="video-panel"
+                id="grid-panel"
                 order={2}
               >
-                <div className="h-full pb-1 overflow-hidden">
-                  <VideoModule />
+                <div className="h-full overflow-hidden">
+                  <GridModule selectionActions={<AddToPlaylistMenu />} editable />
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
@@ -110,18 +150,21 @@ function WatchContent() {
 
           <ResizableHandle className="bg-transparent" />
 
-          {/* BOTTOM SECTION: Grid - always rendered, collapsible */}
+          {/* RIGHT: Reports panel — collapsible, default closed */}
           <ResizablePanel
-            ref={gridPanelRef}
-            defaultSize={40}
+            ref={reportsPanelRef}
+            defaultSize={reportsPanelSize}
             minSize={15}
             collapsible
             collapsedSize={0}
-            id="grid-panel"
+            onResize={(size) => {
+              if (size > 0) setReportsPanelSize(size)
+            }}
+            id="reports-panel"
             order={2}
           >
-            <div className="h-full overflow-hidden">
-              <GridModule selectionActions={<AddToPlaylistMenu />} editable />
+            <div className="h-full pl-1 overflow-hidden">
+              <ReportsModule />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>

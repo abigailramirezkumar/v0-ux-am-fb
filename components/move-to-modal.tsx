@@ -270,7 +270,7 @@ export function MoveToModal() {
                       onMouseLeave={() => setHoveredFolderId(null)}
                       className={cn(
                         "flex items-center justify-between py-3 text-left w-full border-b border-dashed border-border",
-                        hoveredFolderId === folder.id && "bg-[#dbeafe]",
+                        hoveredFolderId === folder.id && "bg-muted/50",
                       )}
                     >
                       <div className="flex items-center gap-3">
@@ -306,7 +306,7 @@ export function MoveToModal() {
                           onMouseLeave={() => setHoveredFolderId(null)}
                           className={cn(
                             "flex items-center justify-between py-3 text-left w-full border-b border-dashed border-border",
-                            hoveredFolderId === child.id && "bg-[#dbeafe]",
+                            hoveredFolderId === child.id && "bg-muted/50",
                           )}
                         >
                           <div className="flex items-center gap-3">

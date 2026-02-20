@@ -39,6 +39,17 @@ const VideoIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const ReportsIcon = ({ className }: { className?: string }) => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3 2C2.44772 2 2 2.44772 2 3V13.5C2 14.0523 2.44772 14.5 3 14.5H13.5C14.0523 14.5 14.5 14.0523 14.5 13.5V3C14.5 2.44772 14.0523 2 13.5 2H3ZM9 5H7.5V12H9V5ZM6 8H4.5V12H6V8ZM10.5 9.5H12V12H10.5V9.5Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
 const GridIcon = ({ className }: { className?: string }) => (
   <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path
@@ -91,6 +102,12 @@ export function WatchToolbar() {
         onClick={() => toggleModule("video")}
         icon={<VideoIcon className="w-4 h-4" />}
         label="Video"
+      />
+      <ToggleBtn
+        active={visibleModules.reports}
+        onClick={() => toggleModule("reports")}
+        icon={<ReportsIcon className="w-4 h-4" />}
+        label="Reports"
       />
       <ToggleBtn
         active={visibleModules.grid}

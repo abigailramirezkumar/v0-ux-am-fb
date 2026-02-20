@@ -51,6 +51,21 @@ export function getValueForCategory(play: PlayData, category: string): string {
       return play.isPenalty ? "Yes" : "No"
     case "gainLoss":
       return play.gainLoss
+    // New data fields
+    case "formationName":
+      return play.formationName || ""
+    case "personnelO":
+      return play.personnelO || ""
+    case "personnelD":
+      return play.personnelD || ""
+    case "passLocation":
+      return play.passLocation || ""
+    case "runGap":
+      return play.runGap || ""
+    case "isTwoMinuteDrill":
+      return play.isTwoMinuteDrill ? "Yes" : "No"
+    case "isShotgun":
+      return play.isShotgun ? "Yes" : "No"
     default:
       return ""
   }
@@ -75,6 +90,8 @@ export function getNumericValueForRange(
       return play.yards
     case "kickoffReturnRange":
       return play.yards
+    case "epaRange":
+      return play.epa
     default:
       return null
   }

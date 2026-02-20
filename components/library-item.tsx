@@ -394,7 +394,7 @@ export function LibraryItem({
             onClickCapture={handleRowClickCapture}
             onClick={handleRowClick}
             onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             draggable
             onDragStart={handleDragStart}
           >

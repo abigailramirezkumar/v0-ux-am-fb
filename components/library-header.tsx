@@ -38,6 +38,7 @@ export function LibraryHeader({
   const { viewMode, setViewMode, columns, setColumns, layoutMode, setLayoutMode } = useLibraryContext()
   const { density, setDensity } = useDensity()
   const [useDropdown, setUseDropdown] = useState(false)
+  const [isNarrow, setIsNarrow] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const { activeVersion } = useCatapultImportContext()
@@ -81,7 +82,9 @@ export function LibraryHeader({
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setUseDropdown(entry.contentRect.width < 600)
+        const w = entry.contentRect.width
+        setUseDropdown(w < 600)
+        setIsNarrow(w < window.innerWidth * 0.25)
       }
     })
 
@@ -150,18 +153,20 @@ export function LibraryHeader({
             </div>
           )}
 
-          <ToggleGroup
-            type="single"
-            value={layoutMode}
-            onValueChange={(value) => value && setLayoutMode(value as "list" | "grid")}
-          >
-            <ToggleGroupItem value="grid" aria-label="Grid view">
-              <Icon name="viewGrid" className="w-5 h-5" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="list" aria-label="List view">
-              <Icon name="viewList" className="w-5 h-5" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+          {!isNarrow && (
+            <ToggleGroup
+              type="single"
+              value={layoutMode}
+              onValueChange={(value) => value && setLayoutMode(value as "list" | "grid")}
+            >
+              <ToggleGroupItem value="grid" aria-label="Grid view">
+                <Icon name="viewGrid" className="w-5 h-5" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <Icon name="viewList" className="w-5 h-5" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
 
           {/* {showImportButton && activeVersion === "v1" && (
             <Button
@@ -180,6 +185,21 @@ export function LibraryHeader({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {isNarrow && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>View</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuRadioGroup
+                      value={layoutMode}
+                      onValueChange={(value) => setLayoutMode(value as "list" | "grid")}
+                    >
+                      <DropdownMenuRadioItem value="grid">Tile</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="list">List</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
+
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>Show/Hide Columns</DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>

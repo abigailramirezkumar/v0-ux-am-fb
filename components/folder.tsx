@@ -561,8 +561,8 @@ export function Folder({
     <div
       className={cn(
         `flex items-center ${spacing.py} cursor-pointer transition-colors relative`,
-        isSelected && !isHovered && "bg-[#0273e3]",
-        isSelected && isHovered && "bg-[#0273e3]",
+        isSelected && !isHovered && "bg-[#0D2959]",
+        isSelected && isHovered && "bg-[#0D2959]",
         !isSelected && isHovered && "bg-muted",
         !isSelected && !isHovered && isAlternate && "bg-muted/20",
         !isSelected && !isHovered && !isAlternate && "bg-background",
@@ -602,7 +602,7 @@ export function Folder({
         className={cn(
           "sticky right-0 flex items-center justify-center w-12 flex-shrink-0 z-10",
           isSelected || isMenuOpen
-            ? "bg-[#0273e3]"
+            ? "bg-[#0D2959]"
             : isHovered
               ? "bg-muted"
               : "bg-transparent",

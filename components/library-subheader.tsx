@@ -46,7 +46,7 @@ function LibraryIcon({ className }: { className?: string }) {
 }
 
 export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onReorderFolders }: LibrarySubheaderProps) {
-  const { openCreatePlaylistModal } = useLibraryContext()
+  const { openCreatePlaylistModal, viewMode } = useLibraryContext()
   
   return (
     <div className="flex items-center justify-between w-full py-4 bg-background px-0 pt-0 pb-2">
@@ -76,45 +76,47 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
         <span>/</span>
       </div>
 
-      <div className="flex items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="Add content">
-              <Icon name="add" size={16} className="text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onCreateFolder}>
-              <Icon name="folder" className="w-4 h-4 mr-2" />
-              New Folder
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={openCreatePlaylistModal}>
-              <Icon name="playlist" className="w-4 h-4 mr-2" />
-              New Playlist
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="More options">
-              <Ellipsis className="size-4 text-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {onReorderFolders && (
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault()
-                  onReorderFolders()
-                }}
-              >
-                Set Folder Order
+      {viewMode !== "schedule" && (
+        <div className="flex items-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="Add content">
+                <Icon name="add" size={16} className="text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onCreateFolder}>
+                <Icon name="folder" className="w-4 h-4 mr-2" />
+                New Folder
               </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              <DropdownMenuItem onClick={openCreatePlaylistModal}>
+                <Icon name="playlist" className="w-4 h-4 mr-2" />
+                New Playlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="More options">
+                <Ellipsis className="size-4 text-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onReorderFolders && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    onReorderFolders()
+                  }}
+                >
+                  Set Folder Order
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </div>
   )
 }

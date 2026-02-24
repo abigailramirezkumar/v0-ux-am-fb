@@ -2,7 +2,7 @@
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
-import { EllipsisVertical } from "lucide-react"
+import { Ellipsis } from "lucide-react"
 import { useLibraryContext } from "@/lib/library-context"
 
 interface BreadcrumbItem {
@@ -98,7 +98,7 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="More options">
-              <EllipsisVertical className="w-5 h-5 text-foreground" />
+              <Ellipsis className="w-5 h-5 text-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

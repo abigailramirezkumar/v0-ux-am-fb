@@ -76,11 +76,11 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
         <span>/</span>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="Add content">
-              <Icon name="add" className="w-5 h-5 text-foreground" />
+            <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="Add content">
+              <Icon name="add" size={16} className="text-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -97,8 +97,8 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-8 h-8 flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="More options">
-              <Ellipsis className="w-5 h-5 text-foreground" />
+            <button className="size-8 inline-flex items-center justify-center hover:bg-muted rounded-md transition-colors" aria-label="More options">
+              <Ellipsis className="size-4 text-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

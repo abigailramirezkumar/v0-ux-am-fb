@@ -2,6 +2,7 @@
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Icon } from "@/components/icon"
+import { EllipsisVertical } from "lucide-react"
 import { useLibraryContext } from "@/lib/library-context"
 
 interface BreadcrumbItem {
@@ -13,7 +14,7 @@ interface LibrarySubheaderProps {
   breadcrumbs: BreadcrumbItem[]
   onNavigate: (folderId: string | null) => void
   onCreateFolder: () => void
-  onReorderFolders?: () => void // Keep prop for compatibility but no longer used here
+  onReorderFolders?: () => void
 }
 
 function LibraryIcon({ className }: { className?: string }) {
@@ -91,6 +92,26 @@ export function LibrarySubheader({ breadcrumbs, onNavigate, onCreateFolder, onRe
               <Icon name="playlist" className="w-4 h-4 mr-2" />
               New Playlist
             </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 hover:bg-muted rounded-md transition-colors" aria-label="More options">
+              <EllipsisVertical className="w-5 h-5 text-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {onReorderFolders && (
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  onReorderFolders()
+                }}
+              >
+                Set Folder Order
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

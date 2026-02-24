@@ -231,16 +231,7 @@ export function LibraryHeader({
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
 
-              {onReorderFolders && (
-                <DropdownMenuItem
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    onReorderFolders()
-                  }}
-                >
-                  Set Folder Order
-                </DropdownMenuItem>
-              )}
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

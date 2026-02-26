@@ -30,9 +30,9 @@
   --chart-5: #1682be;
   --sidebar: #eff0f0;
   --sidebar-foreground: #36485c;
-  --sidebar-primary: #0273e3;
-  --sidebar-primary-foreground: #fefefe;
-  --sidebar-accent: #e0e1e1;
+  --sidebar-primary: #0D2959;
+    --sidebar-primary-foreground: #fefefe;
+    --sidebar-accent: #e0e1e1;
   --sidebar-accent-foreground: #071c31;
   --sidebar-border: #c4c6c8;
   --sidebar-ring: #0273e3;
@@ -82,9 +82,9 @@
   /* Updated dark mode sidebar colors to match screenshot */
   --sidebar: #1a1f24;
   --sidebar-foreground: #c0c6cd;
-  --sidebar-primary: #0273e3;
-  --sidebar-primary-foreground: #fefefe;
-  --sidebar-accent: #252b31;
+  --sidebar-primary: #0D2959;
+    --sidebar-primary-foreground: #fefefe;
+    --sidebar-accent: #252b31;
   --sidebar-accent-foreground: #fefefe;
   --sidebar-border: #2b3035;
   --sidebar-ring: #0273e3;

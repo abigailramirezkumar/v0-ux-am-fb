@@ -411,11 +411,13 @@ interface GridModuleProps {
   onClearFilters?: () => void
   /** Enable inline cell editing (Watch page only) */
   editable?: boolean
+  /** Callback fired on single-click of a play row (e.g. to open Preview Module on Explore page). */
+  onClickPlay?: (play: PlayData) => void
   /** Callback fired on double-click of a play row (e.g. to open Preview Module). */
   onDoubleClickPlay?: (play: PlayData) => void
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onDoubleClickPlay }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -701,7 +703,13 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                     "cursor-pointer transition-colors border-b border-border/50",
                     isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" : "hover:bg-muted/50",
                   )}
-                  onClick={() => seekToPlay(play)}
+                  onClick={() => {
+                    if (onClickPlay) {
+                      onClickPlay(play)
+                    } else {
+                      seekToPlay(play)
+                    }
+                  }}
                   onDoubleClick={() => onDoubleClickPlay?.(play)}
                 >
                   <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>

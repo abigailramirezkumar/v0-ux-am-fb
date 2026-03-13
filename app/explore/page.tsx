@@ -20,11 +20,14 @@ import type { PlayData } from "@/lib/mock-datasets"
 import { TeamsBrowser } from "@/components/teams-browser"
 import { TeamsFiltersModule, type TeamsFilterState } from "@/components/teams-filters-module"
 import { TeamPreviewModule } from "@/components/team-preview-module"
+import { GamesBrowser } from "@/components/games-browser"
+import { GamesFiltersModule } from "@/components/games-filters-module"
+import { GamePreviewModule } from "@/components/game-preview-module"
+import type { GamesFilterState, Game } from "@/lib/games-data"
 import type { League, Team } from "@/lib/sports-data"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
-  { value: "practice", label: "Practice" },
   { value: "games", label: "Games" },
   { value: "teams", label: "Teams" },
 ] as const
@@ -82,15 +85,6 @@ function PreviewClipsButton() {
   )
 }
 
-function EmptyTabState({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
-      <Icon name="folder" className="w-10 h-10 opacity-40" />
-      <p className="text-sm">{label} content coming soon</p>
-    </div>
-  )
-}
-
 const FilterToggleIcon = ({ className }: { className?: string }) => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path fillRule="evenodd" clipRule="evenodd" d="M2 2.25C2 2.11193 2.11193 2 2.25 2H13.75C13.8881 2 14 2.11193 14 2.25V3.34315C14 4.53662 13.5259 5.68121 12.682 6.52513L10 9.20711V13.75C10 13.8881 9.88807 14 9.75 14H6.25C6.11193 14 6 13.8881 6 13.75V9.20711L3.31802 6.52513C2.47411 5.68121 2 4.53662 2 3.34315V2.25ZM3 3V3.34315C3 4.2714 3.36875 5.16164 4.02513 5.81802L7 8.79289V13H9V8.79289L11.9749 5.81802C12.6313 5.16164 13 4.2714 13 3.34315V3H3Z" fill="currentColor"/>
@@ -101,6 +95,7 @@ export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [previewTeam, setPreviewTeam] = useState<{ team: Team; league: League } | null>(null)
+  const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [showFilters, setShowFilters] = useState(true)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
@@ -109,6 +104,13 @@ export default function ExplorePage() {
   const [teamsFilters, setTeamsFilters] = useState<TeamsFilterState>({
     leagues: new Set(),
     conferences: new Set(),
+  })
+  
+  // Games tab filter state
+  const [gamesFilters, setGamesFilters] = useState<GamesFilterState>({
+    leagues: new Set(),
+    seasons: new Set(),
+    teams: new Set(),
   })
   
   const toggleTeamsLeague = useCallback((league: League) => {
@@ -140,10 +142,40 @@ export default function ExplorePage() {
   }, [])
   
   const teamsFilterCount = teamsFilters.leagues.size + teamsFilters.conferences.size
+  
+  const toggleGamesLeague = useCallback((league: League) => {
+    setGamesFilters((prev) => {
+      const newLeagues = new Set(prev.leagues)
+      if (newLeagues.has(league)) {
+        newLeagues.delete(league)
+      } else {
+        newLeagues.add(league)
+      }
+      return { ...prev, leagues: newLeagues }
+    })
+  }, [])
+  
+  const toggleGamesSeason = useCallback((season: string) => {
+    setGamesFilters((prev) => {
+      const newSeasons = new Set(prev.seasons)
+      if (newSeasons.has(season)) {
+        newSeasons.delete(season)
+      } else {
+        newSeasons.add(season)
+      }
+      return { ...prev, seasons: newSeasons }
+    })
+  }, [])
+  
+  const clearGamesFilters = useCallback(() => {
+    setGamesFilters({ leagues: new Set(), seasons: new Set(), teams: new Set() })
+  }, [])
+  
+  const gamesFilterCount = gamesFilters.leagues.size + gamesFilters.seasons.size + gamesFilters.teams.size
 
-  // Expand/collapse the preview panel when previewPlay or previewTeam changes
+  // Expand/collapse the preview panel when previewPlay, previewTeam, or previewGame changes
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
-  const hasPreview = previewPlay || previewTeam
+  const hasPreview = previewPlay || previewTeam || previewGame
   useEffect(() => {
     if (hasPreview) {
       // Resize to 50% so grid and preview share space equally
@@ -162,6 +194,7 @@ export default function ExplorePage() {
       if (next && hasPreview) {
         setPreviewPlay(null)
         setPreviewTeam(null)
+        setPreviewGame(null)
       }
       return next
     })
@@ -212,6 +245,14 @@ export default function ExplorePage() {
                   onClear={clearTeamsFilters}
                   activeFilterCount={teamsFilterCount}
                 />
+              ) : activeTab === "games" ? (
+                <GamesFiltersModule
+                  filters={gamesFilters}
+                  onToggleLeague={toggleGamesLeague}
+                  onToggleSeason={toggleGamesSeason}
+                  onClear={clearGamesFilters}
+                  activeFilterCount={gamesFilterCount}
+                />
               ) : (
                 <FiltersModule
                   filters={filters}
@@ -250,9 +291,9 @@ export default function ExplorePage() {
                       aria-label={showFilters ? "Hide filters" : "Show filters"}
                     >
                       <FilterToggleIcon className="w-4 h-4" />
-                      {!showFilters && (activeTab === "teams" ? teamsFilterCount : activeFilterCount) > 0 && (
+                      {!showFilters && (activeTab === "teams" ? teamsFilterCount : activeTab === "games" ? gamesFilterCount : activeFilterCount) > 0 && (
                         <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold leading-none bg-blue-600 text-white rounded-full">
-                          {activeTab === "teams" ? teamsFilterCount : activeFilterCount}
+                          {activeTab === "teams" ? teamsFilterCount : activeTab === "games" ? gamesFilterCount : activeFilterCount}
                         </span>
                       )}
                     </button>
@@ -304,13 +345,13 @@ export default function ExplorePage() {
                         </div>
                       )}
                     </div>
-                  ) : activeTab === "practice" ? (
-                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                      <EmptyTabState label="Practice" />
-                    </div>
                   ) : activeTab === "games" ? (
-                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                      <EmptyTabState label="Games" />
+                    <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
+                      <GamesBrowser
+                        filters={gamesFilters}
+                        onSelectGame={(game) => setPreviewGame(game)}
+                        activeGameId={previewGame?.id}
+                      />
                     </div>
                   ) : (
                     <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
@@ -348,6 +389,12 @@ export default function ExplorePage() {
                       team={previewTeam.team}
                       league={previewTeam.league}
                       onClose={() => setPreviewTeam(null)}
+                    />
+                  )}
+                  {previewGame && (
+                    <GamePreviewModule
+                      game={previewGame}
+                      onClose={() => setPreviewGame(null)}
                     />
                   )}
                 </div>

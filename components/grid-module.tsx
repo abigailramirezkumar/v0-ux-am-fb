@@ -662,10 +662,10 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <TableHead className="w-[40px] px-3 border-r border-border/50 bg-muted/30">
                 <div className="flex items-center justify-center">
                   <Checkbox
-                    checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
+                    checked={activeDataset.plays.length > 0 && activeDataset.plays.every(p => selectedPlayIds.has(p.id))}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        selectAllPlays()
+                        selectAllPlays(activeDataset.plays)
                       } else {
                         clearPlaySelection()
                       }

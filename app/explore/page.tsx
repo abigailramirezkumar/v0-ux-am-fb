@@ -25,6 +25,13 @@ import { GamesFiltersModule } from "@/components/games-filters-module"
 import { GamePreviewModule } from "@/components/game-preview-module"
 import type { GamesFilterState, Game } from "@/lib/games-data"
 import type { League, Team } from "@/lib/sports-data"
+import type { BreadcrumbItem } from "@/components/preview-module-shell"
+
+// Type for tracking preview navigation history
+type PreviewNavItem = 
+  | { type: "clip"; play: PlayData; label: string }
+  | { type: "team"; team: Team; league: League; label: string }
+  | { type: "game"; game: Game; label: string }
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -96,6 +103,7 @@ export default function ExplorePage() {
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [previewTeam, setPreviewTeam] = useState<{ team: Team; league: League } | null>(null)
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
+  const [previewNavStack, setPreviewNavStack] = useState<PreviewNavItem[]>([])
   const [showFilters, setShowFilters] = useState(true)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
@@ -178,23 +186,84 @@ export default function ExplorePage() {
   const hasPreview = previewPlay || previewTeam || previewGame
   
   // Unified preview handlers - only one preview can be open at a time
+  // These clear the nav stack (fresh navigation)
   const openClipPreview = useCallback((play: PlayData) => {
     setPreviewTeam(null)
     setPreviewGame(null)
+    setPreviewNavStack([])
     setPreviewPlay(play)
   }, [])
   
   const openTeamPreview = useCallback((team: Team, league: League) => {
     setPreviewPlay(null)
     setPreviewGame(null)
+    setPreviewNavStack([])
     setPreviewTeam({ team, league })
   }, [])
   
   const openGamePreview = useCallback((game: Game) => {
     setPreviewPlay(null)
     setPreviewTeam(null)
+    setPreviewNavStack([])
     setPreviewGame(game)
   }, [])
+  
+  // Drill-down navigation handlers - these push to the nav stack
+  const drillDownToTeam = useCallback((team: Team, league: League, fromLabel: string) => {
+    // Push current preview to stack before navigating
+    if (previewPlay) {
+      setPreviewNavStack(prev => [...prev, { type: "clip", play: previewPlay, label: fromLabel }])
+    } else if (previewTeam) {
+      setPreviewNavStack(prev => [...prev, { type: "team", team: previewTeam.team, league: previewTeam.league, label: fromLabel }])
+    } else if (previewGame) {
+      setPreviewNavStack(prev => [...prev, { type: "game", game: previewGame, label: fromLabel }])
+    }
+    setPreviewPlay(null)
+    setPreviewGame(null)
+    setPreviewTeam({ team, league })
+  }, [previewPlay, previewTeam, previewGame])
+  
+  const drillDownToGame = useCallback((game: Game, fromLabel: string) => {
+    // Push current preview to stack before navigating
+    if (previewPlay) {
+      setPreviewNavStack(prev => [...prev, { type: "clip", play: previewPlay, label: fromLabel }])
+    } else if (previewTeam) {
+      setPreviewNavStack(prev => [...prev, { type: "team", team: previewTeam.team, league: previewTeam.league, label: fromLabel }])
+    } else if (previewGame) {
+      setPreviewNavStack(prev => [...prev, { type: "game", game: previewGame, label: fromLabel }])
+    }
+    setPreviewPlay(null)
+    setPreviewTeam(null)
+    setPreviewGame(game)
+  }, [previewPlay, previewTeam, previewGame])
+  
+  // Navigate back to a specific breadcrumb
+  const navigateToBreadcrumb = useCallback((index: number) => {
+    const target = previewNavStack[index]
+    // Restore the target preview and truncate the stack
+    if (target.type === "clip") {
+      setPreviewTeam(null)
+      setPreviewGame(null)
+      setPreviewPlay(target.play)
+    } else if (target.type === "team") {
+      setPreviewPlay(null)
+      setPreviewGame(null)
+      setPreviewTeam({ team: target.team, league: target.league })
+    } else if (target.type === "game") {
+      setPreviewPlay(null)
+      setPreviewTeam(null)
+      setPreviewGame(target.game)
+    }
+    setPreviewNavStack(previewNavStack.slice(0, index))
+  }, [previewNavStack])
+  
+  // Build breadcrumbs from nav stack
+  const breadcrumbs: BreadcrumbItem[] = useMemo(() => {
+    return previewNavStack.map((item, index) => ({
+      label: item.label,
+      onClick: () => navigateToBreadcrumb(index),
+    }))
+  }, [previewNavStack, navigateToBreadcrumb])
   useEffect(() => {
     if (hasPreview) {
       // Resize to 50% so grid and preview share space equally
@@ -214,6 +283,7 @@ export default function ExplorePage() {
         setPreviewPlay(null)
         setPreviewTeam(null)
         setPreviewGame(null)
+        setPreviewNavStack([])
       }
       return next
     })
@@ -400,20 +470,25 @@ export default function ExplorePage() {
                   {previewPlay && (
                     <PreviewModule
                       play={previewPlay}
-                      onClose={() => setPreviewPlay(null)}
+                      onClose={() => { setPreviewPlay(null); setPreviewNavStack([]) }}
+                      breadcrumbs={breadcrumbs}
                     />
                   )}
                   {previewTeam && (
                     <TeamPreviewModule
                       team={previewTeam.team}
                       league={previewTeam.league}
-                      onClose={() => setPreviewTeam(null)}
+                      onClose={() => { setPreviewTeam(null); setPreviewNavStack([]) }}
+                      breadcrumbs={breadcrumbs}
+                      onNavigateToGame={(game) => drillDownToGame(game, previewTeam.team.name)}
                     />
                   )}
                   {previewGame && (
                     <GamePreviewModule
                       game={previewGame}
-                      onClose={() => setPreviewGame(null)}
+                      onClose={() => { setPreviewGame(null); setPreviewNavStack([]) }}
+                      breadcrumbs={breadcrumbs}
+                      onNavigateToTeam={(team, league) => drillDownToTeam(team, league, `${previewGame.awayTeam.abbreviation} @ ${previewGame.homeTeam.abbreviation}`)}
                     />
                   )}
                 </div>

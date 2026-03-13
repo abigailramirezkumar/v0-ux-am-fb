@@ -4,8 +4,9 @@ import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
-import { PreviewModuleShell } from "@/components/preview-module-shell"
+import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
 import type { Team, League } from "@/lib/sports-data"
+import type { Game } from "@/lib/games-data"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,6 +16,8 @@ interface TeamPreviewModuleProps {
   team: Team
   league: League
   onClose: () => void
+  breadcrumbs?: BreadcrumbItem[]
+  onNavigateToGame?: (game: Game) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -58,28 +61,63 @@ function generateTeamStats(team: Team): TeamStats {
   }
 }
 
-interface RecentGame {
-  opponent: string
+interface RecentGameDisplay {
+  game: Game
   result: "W" | "L"
-  score: string
-  date: string
+  opponentName: string
+  teamScore: number
+  opponentScore: number
+  weekLabel: string
 }
 
-function generateRecentGames(team: Team): RecentGame[] {
+const OPPONENT_TEAMS: Record<string, Team> = {
+  "Ravens": { id: "ravens", name: "Baltimore Ravens", abbreviation: "BAL", logoColor: "#241773" },
+  "Chiefs": { id: "chiefs", name: "Kansas City Chiefs", abbreviation: "KC", logoColor: "#E31837" },
+  "Bills": { id: "bills", name: "Buffalo Bills", abbreviation: "BUF", logoColor: "#00338D" },
+  "49ers": { id: "49ers", name: "San Francisco 49ers", abbreviation: "SF", logoColor: "#AA0000" },
+  "Eagles": { id: "eagles", name: "Philadelphia Eagles", abbreviation: "PHI", logoColor: "#004C54" },
+  "Cowboys": { id: "cowboys", name: "Dallas Cowboys", abbreviation: "DAL", logoColor: "#003594" },
+  "Lions": { id: "lions", name: "Detroit Lions", abbreviation: "DET", logoColor: "#0076B6" },
+  "Dolphins": { id: "dolphins", name: "Miami Dolphins", abbreviation: "MIA", logoColor: "#008E97" },
+}
+
+function generateRecentGames(team: Team): RecentGameDisplay[] {
   const h = hashString(team.id)
-  const opponents = ["Ravens", "Chiefs", "Bills", "49ers", "Eagles", "Cowboys", "Lions", "Dolphins"]
-  const games: RecentGame[] = []
+  const opponentNames = Object.keys(OPPONENT_TEAMS)
+  const games: RecentGameDisplay[] = []
   
   for (let i = 0; i < 5; i++) {
-    const oppIdx = (h + i * 3) % opponents.length
+    const oppIdx = (h + i * 3) % opponentNames.length
+    const opponentName = opponentNames[oppIdx]
+    const opponent = OPPONENT_TEAMS[opponentName]
     const isWin = (h + i) % 3 !== 0
     const teamScore = 14 + ((h + i) % 24)
-    const oppScore = isWin ? teamScore - 3 - (i % 10) : teamScore + 3 + (i % 14)
+    const opponentScore = isWin ? Math.max(teamScore - 3 - (i % 10), 0) : teamScore + 3 + (i % 14)
+    const week = 12 - i
+    
+    // Create a Game object for navigation
+    const gameObj: Game = {
+      id: `${team.id}-${opponent.id}-week${week}`,
+      homeTeam: team,
+      awayTeam: opponent,
+      homeScore: isWin ? teamScore : opponentScore,
+      awayScore: isWin ? opponentScore : teamScore,
+      date: `Nov ${10 + i}, 2024`,
+      venue: `${team.name} Stadium`,
+      league: "NFL",
+      season: "2024",
+      week,
+      clipCount: 45 + (h % 30),
+      isPlayoff: false,
+    }
+    
     games.push({
-      opponent: opponents[oppIdx],
+      game: gameObj,
       result: isWin ? "W" : "L",
-      score: `${Math.max(teamScore, 0)}-${Math.max(oppScore, 0)}`,
-      date: `Week ${12 - i}`,
+      opponentName,
+      teamScore: Math.max(teamScore, 0),
+      opponentScore: Math.max(opponentScore, 0),
+      weekLabel: `Week ${week}`,
     })
   }
   
@@ -126,7 +164,7 @@ function StatCard({ label, value, subtext }: { label: string; value: string | nu
 // Team Preview Module
 // ---------------------------------------------------------------------------
 
-export function TeamPreviewModule({ team, league, onClose }: TeamPreviewModuleProps) {
+export function TeamPreviewModule({ team, league, onClose, breadcrumbs, onNavigateToGame }: TeamPreviewModuleProps) {
   const stats = useMemo(() => generateTeamStats(team), [team])
   const recentGames = useMemo(() => generateRecentGames(team), [team])
   const keyPlayers = useMemo(() => generateKeyPlayers(team), [team])
@@ -157,6 +195,7 @@ export function TeamPreviewModule({ team, league, onClose }: TeamPreviewModulePr
       subtitle={getLeagueLabel(league)}
       onClose={onClose}
       footer={footer}
+      breadcrumbs={breadcrumbs}
     >
       {/* Team Hero */}
       <div className="px-4 pt-4">
@@ -223,27 +262,34 @@ export function TeamPreviewModule({ team, league, onClose }: TeamPreviewModulePr
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recent Games</h3>
             <div className="space-y-1">
-              {recentGames.map((game, idx) => (
-                <div
+              {recentGames.map((recentGame, idx) => (
+                <button
                   key={idx}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors"
+                  onClick={() => onNavigateToGame?.(recentGame.game)}
+                  className={cn(
+                    "flex items-center justify-between w-full py-2 px-3 rounded-lg transition-colors text-left",
+                    onNavigateToGame ? "hover:bg-[#0273e3]/10 cursor-pointer" : "hover:bg-muted/30"
+                  )}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={cn(
                         "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
-                        game.result === "W" ? "bg-green-500/20 text-green-600" : "bg-red-500/20 text-red-600"
+                        recentGame.result === "W" ? "bg-green-500/20 text-green-600" : "bg-red-500/20 text-red-600"
                       )}
                     >
-                      {game.result}
+                      {recentGame.result}
                     </span>
-                    <span className="text-sm text-foreground">vs {game.opponent}</span>
+                    <span className="text-sm text-foreground">vs {recentGame.opponentName}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-foreground">{game.score}</span>
-                    <span className="text-xs text-muted-foreground">{game.date}</span>
+                    <span className="text-sm font-medium text-foreground">{recentGame.teamScore}-{recentGame.opponentScore}</span>
+                    <span className="text-xs text-muted-foreground">{recentGame.weekLabel}</span>
+                    {onNavigateToGame && (
+                      <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
+                    )}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

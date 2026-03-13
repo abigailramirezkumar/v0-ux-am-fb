@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
 import type { ClipData } from "@/types/library"
-import { PreviewModuleShell } from "@/components/preview-module-shell"
+import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1357,9 +1357,10 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 interface PreviewModuleProps {
   play: PlayData
   onClose: () => void
-}
-
-export function PreviewModule({ play, onClose }: PreviewModuleProps) {
+  breadcrumbs?: BreadcrumbItem[]
+  }
+  
+  export function PreviewModule({ play, onClose, breadcrumbs }: PreviewModuleProps) {
   const videoUrl = useMemo(() => getVideoForPlay(play), [play])
   const summary = useMemo(() => generatePlaySummary(play), [play])
   const roster = useMemo(() => assignPlayRoster(play), [play])
@@ -1440,6 +1441,7 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
       subtitle={formatGameLabel(play.game)}
       onClose={onClose}
       footer={footer}
+      breadcrumbs={breadcrumbs}
     >
         {/* Video Player */}
         <div className="px-4 pt-4">

@@ -3,12 +3,15 @@
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
-import { PreviewModuleShell } from "@/components/preview-module-shell"
+import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
 import type { Game } from "@/lib/games-data"
+import type { Team, League } from "@/lib/sports-data"
 
 interface GamePreviewModuleProps {
   game: Game
   onClose: () => void
+  breadcrumbs?: BreadcrumbItem[]
+  onNavigateToTeam?: (team: Team, league: League) => void
 }
 
 // Seeded random for consistent mock data
@@ -22,7 +25,7 @@ function createSeededRandom(seed: number) {
   }
 }
 
-export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
+export function GamePreviewModule({ game, onClose, breadcrumbs, onNavigateToTeam }: GamePreviewModuleProps) {
   const homeWon = game.homeScore > game.awayScore
   const awayWon = game.awayScore > game.homeScore
   
@@ -89,6 +92,7 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
       subtitle={game.date}
       onClose={onClose}
       footer={footer}
+      breadcrumbs={breadcrumbs}
     >
       <div className="p-4 space-y-6">
           {/* Matchup Header */}
@@ -105,11 +109,15 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
             {/* Scoreboard */}
             <div className="flex items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg">
               {/* Away Team */}
-              <div className={cn(
-                "flex flex-col items-center gap-2 flex-1",
-                awayWon && "opacity-100",
-                !awayWon && homeWon && "opacity-60"
-              )}>
+              <button
+                onClick={() => onNavigateToTeam?.(game.awayTeam, game.league as League)}
+                className={cn(
+                  "flex flex-col items-center gap-2 flex-1 rounded-lg p-2 transition-colors",
+                  awayWon && "opacity-100",
+                  !awayWon && homeWon && "opacity-60",
+                  onNavigateToTeam && "hover:bg-[#0273e3]/10 cursor-pointer"
+                )}
+              >
                 <div
                   className="w-14 h-14 rounded-lg flex items-center justify-center text-white text-lg font-bold"
                   style={{ backgroundColor: game.awayTeam.logoColor }}
@@ -124,7 +132,7 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
                 )}>
                   {game.awayScore}
                 </span>
-              </div>
+              </button>
               
               {/* VS */}
               <div className="flex flex-col items-center gap-1">
@@ -132,11 +140,15 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
               </div>
               
               {/* Home Team */}
-              <div className={cn(
-                "flex flex-col items-center gap-2 flex-1",
-                homeWon && "opacity-100",
-                !homeWon && awayWon && "opacity-60"
-              )}>
+              <button
+                onClick={() => onNavigateToTeam?.(game.homeTeam, game.league as League)}
+                className={cn(
+                  "flex flex-col items-center gap-2 flex-1 rounded-lg p-2 transition-colors",
+                  homeWon && "opacity-100",
+                  !homeWon && awayWon && "opacity-60",
+                  onNavigateToTeam && "hover:bg-[#0273e3]/10 cursor-pointer"
+                )}
+              >
                 <div
                   className="w-14 h-14 rounded-lg flex items-center justify-center text-white text-lg font-bold"
                   style={{ backgroundColor: game.homeTeam.logoColor }}
@@ -151,7 +163,7 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
                 )}>
                   {game.homeScore}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
           

@@ -309,7 +309,7 @@ export default function ExplorePage() {
                       <EmptyTabState label="Games" />
                     </div>
                   ) : (
-                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                    <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
                       <TeamsBrowser filters={teamsFilters} />
                     </div>
                   )}

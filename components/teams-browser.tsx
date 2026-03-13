@@ -13,8 +13,9 @@ interface TeamsFilterState {
 }
 
 interface TeamsBrowserProps {
-  onSelectTeam?: (team: Team) => void
+  onSelectTeam?: (team: Team, league: League) => void
   filters?: TeamsFilterState
+  activeTeamId?: string | null
 }
 
 // Get all teams from a conference, including subdivisions
@@ -33,7 +34,7 @@ function getConferenceTeamCount(conference: Conference): number {
   return getTeamsFromConference(conference).length
 }
 
-export function TeamsBrowser({ onSelectTeam, filters }: TeamsBrowserProps) {
+export function TeamsBrowser({ onSelectTeam, filters, activeTeamId }: TeamsBrowserProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [hoveredTeam, setHoveredTeam] = useState<string | null>(null)
 
@@ -109,33 +110,37 @@ export function TeamsBrowser({ onSelectTeam, filters }: TeamsBrowserProps) {
     return filteredData.reduce((sum, d) => sum + d.teamCount, 0)
   }, [filteredData])
 
-  const renderTeamCard = (team: Team) => (
-    <button
-      key={team.id}
-      onClick={() => onSelectTeam?.(team)}
-      onMouseEnter={() => setHoveredTeam(team.id)}
-      onMouseLeave={() => setHoveredTeam(null)}
-      className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card transition-all duration-150",
-        "hover:border-[#0273e3]/50 hover:bg-[#0273e3]/5",
-        hoveredTeam === team.id && "border-[#0273e3]/50 bg-[#0273e3]/5"
-      )}
-    >
-      {/* Team logo placeholder */}
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-        style={{ backgroundColor: team.logoColor }}
+  const renderTeamCard = (team: Team, league: League) => {
+    const isActive = activeTeamId === team.id
+    return (
+      <button
+        key={team.id}
+        onClick={() => onSelectTeam?.(team, league)}
+        onMouseEnter={() => setHoveredTeam(team.id)}
+        onMouseLeave={() => setHoveredTeam(null)}
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card transition-all duration-150",
+          "hover:border-[#0273e3]/50 hover:bg-[#0273e3]/5",
+          isActive && "border-[#0273e3] bg-[#0273e3]/15",
+          hoveredTeam === team.id && !isActive && "border-[#0273e3]/50 bg-[#0273e3]/5"
+        )}
       >
-        {team.abbreviation.slice(0, 3)}
-      </div>
-      <div className="flex flex-col items-start min-w-0">
-        <span className="text-sm font-medium text-foreground truncate w-full text-left">
-          {team.name}
-        </span>
-        <span className="text-xs text-muted-foreground">{team.abbreviation}</span>
-      </div>
-    </button>
-  )
+        {/* Team logo placeholder */}
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+          style={{ backgroundColor: team.logoColor }}
+        >
+          {team.abbreviation.slice(0, 3)}
+        </div>
+        <div className="flex flex-col items-start min-w-0">
+          <span className="text-sm font-medium text-foreground truncate w-full text-left">
+            {team.name}
+          </span>
+          <span className="text-xs text-muted-foreground">{team.abbreviation}</span>
+        </div>
+      </button>
+    )
+  }
 
   const getLeagueLabel = (league: League) => {
     if (league === "NCAA (FBS)") return "College"
@@ -212,14 +217,14 @@ export function TeamsBrowser({ onSelectTeam, filters }: TeamsBrowserProps) {
                                     {division.name}
                                   </h4>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                                    {division.teams.map(renderTeamCard)}
+                                    {division.teams.map((team) => renderTeamCard(team, league))}
                                   </div>
                                 </div>
                               ))}
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 pl-2">
-                              {conference.teams.map(renderTeamCard)}
+                              {conference.teams.map((team) => renderTeamCard(team, league))}
                             </div>
                           )}
                         </AccordionContent>

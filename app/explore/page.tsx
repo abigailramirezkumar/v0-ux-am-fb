@@ -19,7 +19,8 @@ import type { ClipData } from "@/types/library"
 import type { PlayData } from "@/lib/mock-datasets"
 import { TeamsBrowser } from "@/components/teams-browser"
 import { TeamsFiltersModule, type TeamsFilterState } from "@/components/teams-filters-module"
-import type { League } from "@/lib/sports-data"
+import { TeamPreviewModule } from "@/components/team-preview-module"
+import type { League, Team } from "@/lib/sports-data"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -99,6 +100,7 @@ const FilterToggleIcon = ({ className }: { className?: string }) => (
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
+  const [previewTeam, setPreviewTeam] = useState<{ team: Team; league: League } | null>(null)
   const [showFilters, setShowFilters] = useState(true)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
@@ -139,10 +141,11 @@ export default function ExplorePage() {
   
   const teamsFilterCount = teamsFilters.leagues.size + teamsFilters.conferences.size
 
-  // Expand/collapse the preview panel when previewPlay changes
+  // Expand/collapse the preview panel when previewPlay or previewTeam changes
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
+  const hasPreview = previewPlay || previewTeam
   useEffect(() => {
-    if (previewPlay) {
+    if (hasPreview) {
       // Resize to 50% so grid and preview share space equally
       previewPanelRef.current?.resize(50)
       setShowFilters(false)
@@ -150,18 +153,19 @@ export default function ExplorePage() {
       previewPanelRef.current?.collapse()
       setShowFilters(true)
     }
-  }, [previewPlay])
+  }, [hasPreview])
 
   const handleToggleFilters = useCallback(() => {
     setShowFilters((prev) => {
       const next = !prev
       // Mutual exclusion: opening filters closes preview
-      if (next && previewPlay) {
+      if (next && hasPreview) {
         setPreviewPlay(null)
+        setPreviewTeam(null)
       }
       return next
     })
-  }, [previewPlay])
+  }, [hasPreview])
 
   // Sync the imperative panel with the showFilters state (matches watch page pattern)
   useEffect(() => {
@@ -310,7 +314,11 @@ export default function ExplorePage() {
                     </div>
                   ) : (
                     <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
-                      <TeamsBrowser filters={teamsFilters} />
+                      <TeamsBrowser 
+                        filters={teamsFilters} 
+                        onSelectTeam={(team, league) => setPreviewTeam({ team, league })}
+                        activeTeamId={previewTeam?.team.id}
+                      />
                     </div>
                   )}
                 </div>
@@ -333,6 +341,13 @@ export default function ExplorePage() {
                     <PreviewModule
                       play={previewPlay}
                       onClose={() => setPreviewPlay(null)}
+                    />
+                  )}
+                  {previewTeam && (
+                    <TeamPreviewModule
+                      team={previewTeam.team}
+                      league={previewTeam.league}
+                      onClose={() => setPreviewTeam(null)}
                     />
                   )}
                 </div>

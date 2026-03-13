@@ -1,9 +1,9 @@
 "use client"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
+import { PreviewModuleShell } from "@/components/preview-module-shell"
 import type { Game } from "@/lib/games-data"
 
 interface GamePreviewModuleProps {
@@ -69,25 +69,28 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
     </div>
   )
 
-  return (
-    <div className="flex flex-col h-full bg-background rounded-lg border border-border overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <Icon name="video" className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">Game Details</h2>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-md hover:bg-muted transition-colors"
-          aria-label="Close preview"
-        >
-          <Icon name="close" className="w-4 h-4" />
-        </button>
-      </div>
+  const footer = (
+    <>
+      <Button variant="default" className="flex-1 gap-2 bg-[#0273e3] hover:bg-[#0273e3]/90">
+        <Icon name="play" className="w-4 h-4" />
+        View Clips ({game.clipCount})
+      </Button>
+      <Button variant="outline" className="flex-1 gap-2">
+        <Icon name="download" className="w-4 h-4" />
+        Download
+      </Button>
+    </>
+  )
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6">
+  return (
+    <PreviewModuleShell
+      icon="video"
+      title={`${game.awayTeam.abbreviation} @ ${game.homeTeam.abbreviation}`}
+      subtitle={game.date}
+      onClose={onClose}
+      footer={footer}
+    >
+      <div className="p-4 space-y-6">
           {/* Matchup Header */}
           <div className="space-y-4">
             {/* Game info */}
@@ -250,28 +253,7 @@ export function GamePreviewModule({ game, onClose }: GamePreviewModuleProps) {
             </div>
           </div>
 
-          {/* Clips Section */}
-          <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Available Clips
-            </h3>
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0273e3]/10 flex items-center justify-center">
-                  <Icon name="play" className="w-5 h-5 text-[#0273e3]" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{game.clipCount} Clips</p>
-                  <p className="text-xs text-muted-foreground">Ready to review</p>
-                </div>
-              </div>
-              <Button size="sm" className="bg-[#0273e3] hover:bg-[#0273e3]/90">
-                View Clips
-              </Button>
-            </div>
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
+      </div>
+    </PreviewModuleShell>
   )
 }

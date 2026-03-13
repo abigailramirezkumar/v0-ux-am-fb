@@ -2,9 +2,9 @@
 
 import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
+import { PreviewModuleShell } from "@/components/preview-module-shell"
 import type { Team, League } from "@/lib/sports-data"
 
 // ---------------------------------------------------------------------------
@@ -137,49 +137,48 @@ export function TeamPreviewModule({ team, league, onClose }: TeamPreviewModulePr
     return "NFL"
   }
 
+  const footer = (
+    <>
+      <Button variant="default" className="flex-1 gap-2">
+        <Icon name="play" className="w-4 h-4" />
+        View All Clips
+      </Button>
+      <Button variant="outline" className="flex-1 gap-2">
+        <Icon name="folder" className="w-4 h-4" />
+        Team Roster
+      </Button>
+    </>
+  )
+
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg border border-border/50 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
-        <div className="flex items-center gap-3">
-          {/* Team logo */}
+    <PreviewModuleShell
+      icon="users"
+      title={team.name}
+      subtitle={getLeagueLabel(league)}
+      onClose={onClose}
+      footer={footer}
+    >
+      {/* Team Hero */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-lg">
           <div
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
+            className="w-16 h-16 rounded-lg flex items-center justify-center text-white text-lg font-bold shrink-0"
             style={{ backgroundColor: team.logoColor }}
           >
-            {team.abbreviation.slice(0, 3)}
+            {team.abbreviation}
           </div>
           <div className="flex flex-col">
-            <h2 className="text-base font-semibold text-foreground">{team.name}</h2>
-            <span className="text-xs text-muted-foreground">{getLeagueLabel(league)}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-foreground">{stats.wins}</span>
+              <span className="text-xl text-muted-foreground">-</span>
+              <span className="text-3xl font-bold text-foreground">{stats.losses}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">2024 Season Record</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <Icon name="close" className="w-4 h-4" />
-        </Button>
       </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-4 space-y-6">
-          {/* Record Section */}
-          <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Season Record</h3>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">{stats.wins}</span>
-                <span className="text-lg text-muted-foreground">-</span>
-                <span className="text-3xl font-bold text-foreground">{stats.losses}</span>
-              </div>
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#0273e3] rounded-full transition-all"
-                  style={{ width: `${(stats.wins / (stats.wins + stats.losses)) * 100}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
+      <div className="p-4 space-y-6">
           {/* Stats Grid */}
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Team Stats</h3>
@@ -249,19 +248,7 @@ export function TeamPreviewModule({ team, league, onClose }: TeamPreviewModulePr
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
-            <Button variant="default" className="flex-1 gap-2">
-              <Icon name="play" className="w-4 h-4" />
-              View All Clips
-            </Button>
-            <Button variant="outline" className="flex-1 gap-2">
-              <Icon name="folder" className="w-4 h-4" />
-              Team Roster
-            </Button>
-          </div>
         </div>
-      </ScrollArea>
-    </div>
+    </PreviewModuleShell>
   )
 }

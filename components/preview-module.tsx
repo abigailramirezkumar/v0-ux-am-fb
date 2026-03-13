@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
 import type { ClipData } from "@/types/library"
+import { PreviewModuleShell } from "@/components/preview-module-shell"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1419,28 +1420,27 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
     return <AthleteProfileView athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />
   }
 
-  return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
-      {/* Fixed Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-bold truncate">Clip {play.playNumber}</span>
-          <span className="text-muted-foreground text-sm shrink-0">|</span>
-          <span className="text-sm text-muted-foreground truncate">{formatGameLabel(play.game)}</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onClose}
-          className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
-        >
-          <Icon name="close" className="w-4 h-4" />
-        </Button>
-      </div>
+  const footer = (
+    <>
+      <AddToPlaylistButton play={play} />
+      <Button
+        variant="outline"
+        className="flex-1 font-semibold"
+        onClick={handleViewFullGame}
+      >
+        View Full Game
+      </Button>
+    </>
+  )
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-20">
+  return (
+    <PreviewModuleShell
+      icon="play"
+      title={`Clip ${play.playNumber}`}
+      subtitle={formatGameLabel(play.game)}
+      onClose={onClose}
+      footer={footer}
+    >
         {/* Video Player */}
         <div className="px-4 pt-4">
           <PreviewVideoPlayer
@@ -1508,20 +1508,7 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
         ) : (
           <TagsAndNotesTab playId={play.id} />
         )}
-      </div>
-
-      {/* Fixed Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
-        <AddToPlaylistButton play={play} />
-        <Button
-          variant="outline"
-          className="flex-1 font-semibold"
-          onClick={handleViewFullGame}
-        >
-          View Full Game
-        </Button>
-      </div>
-    </div>
+    </PreviewModuleShell>
   )
 }
 

@@ -411,11 +411,15 @@ interface GridModuleProps {
   onClearFilters?: () => void
   /** Enable inline cell editing (Watch page only) */
   editable?: boolean
+  /** Callback fired on single-click of a play row (e.g. to open Preview Module on Explore page). */
+  onClickPlay?: (play: PlayData) => void
   /** Callback fired on double-click of a play row (e.g. to open Preview Module). */
   onDoubleClickPlay?: (play: PlayData) => void
+  /** ID of the play currently being previewed (for active state styling). */
+  activePlayId?: string | null
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onDoubleClickPlay }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay, activePlayId }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -658,10 +662,10 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <TableHead className="w-[40px] px-3 border-r border-border/50 bg-muted/30">
                 <div className="flex items-center justify-center">
                   <Checkbox
-                    checked={activeDataset.plays.length > 0 && selectedPlayIds.size === activeDataset.plays.length}
+                    checked={activeDataset.plays.length > 0 && activeDataset.plays.every(p => selectedPlayIds.has(p.id))}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        selectAllPlays()
+                        selectAllPlays(activeDataset.plays)
                       } else {
                         clearPlaySelection()
                       }
@@ -699,9 +703,17 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   key={play.id}
                   className={cn(
                     "cursor-pointer transition-colors border-b border-border/50",
-                    isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" : "hover:bg-muted/50",
+                    isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" 
+                      : activePlayId === play.id ? "bg-[#0273e3]/15 hover:bg-[#0273e3]/20" 
+                      : "hover:bg-muted/50",
                   )}
-                  onClick={() => seekToPlay(play)}
+                  onClick={() => {
+                    if (onClickPlay) {
+                      onClickPlay(play)
+                    } else {
+                      seekToPlay(play)
+                    }
+                  }}
                   onDoubleClick={() => onDoubleClickPlay?.(play)}
                 >
                   <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>

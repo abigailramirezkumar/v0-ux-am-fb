@@ -236,6 +236,7 @@ export default function ExplorePage() {
                         dataset={filteredDataset}
                         onClearFilters={clearFilters}
                         onClickPlay={(play) => setPreviewPlay(play)}
+                        activePlayId={previewPlay?.id}
                       />
                       {/* Subtle overlay while deferred filter computation catches up */}
                       {isFiltering && (

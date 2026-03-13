@@ -415,9 +415,11 @@ interface GridModuleProps {
   onClickPlay?: (play: PlayData) => void
   /** Callback fired on double-click of a play row (e.g. to open Preview Module). */
   onDoubleClickPlay?: (play: PlayData) => void
+  /** ID of the play currently being previewed (for active state styling). */
+  activePlayId?: string | null
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay, activePlayId }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -701,7 +703,9 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   key={play.id}
                   className={cn(
                     "cursor-pointer transition-colors border-b border-border/50",
-                    isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" : "hover:bg-muted/50",
+                    isPlaying ? "bg-[#0273e3] hover:bg-[#0273e3] text-white" 
+                      : activePlayId === play.id ? "bg-[#0273e3]/15 hover:bg-[#0273e3]/20" 
+                      : "hover:bg-muted/50",
                   )}
                   onClick={() => {
                     if (onClickPlay) {

@@ -14,6 +14,7 @@ import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
 import type { ClipData } from "@/types/library"
 import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
+import type { Team, League } from "@/lib/sports-data"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -672,45 +673,103 @@ const TEAM_FULL_NAMES: Record<string, string> = {
   CLE: "Cleveland Browns", NYG: "New York Giants", PIT: "Pittsburgh Steelers",
   DEN: "Denver Broncos", IND: "Indianapolis Colts", NE: "New England Patriots",
   TB: "Tampa Bay Buccaneers",
+  }
+
+// Team data lookup for navigation
+const TEAM_DATA: Record<string, { name: string; logoColor: string }> = {
+  BAL: { name: "Baltimore Ravens", logoColor: "#241773" },
+  BUF: { name: "Buffalo Bills", logoColor: "#00338D" },
+  KC: { name: "Kansas City Chiefs", logoColor: "#E31837" },
+  DET: { name: "Detroit Lions", logoColor: "#0076B6" },
+  CIN: { name: "Cincinnati Bengals", logoColor: "#FB4F14" },
+  HOU: { name: "Houston Texans", logoColor: "#03202F" },
+  SF: { name: "San Francisco 49ers", logoColor: "#AA0000" },
+  PHI: { name: "Philadelphia Eagles", logoColor: "#004C54" },
+  MIN: { name: "Minnesota Vikings", logoColor: "#4F2683" },
+  MIA: { name: "Miami Dolphins", logoColor: "#008E97" },
+  DAL: { name: "Dallas Cowboys", logoColor: "#003594" },
+  LAR: { name: "Los Angeles Rams", logoColor: "#003594" },
+  NYJ: { name: "New York Jets", logoColor: "#125740" },
+  ATL: { name: "Atlanta Falcons", logoColor: "#A71930" },
+  LV: { name: "Las Vegas Raiders", logoColor: "#000000" },
+  CLE: { name: "Cleveland Browns", logoColor: "#311D00" },
+  NYG: { name: "New York Giants", logoColor: "#0B2265" },
+  PIT: { name: "Pittsburgh Steelers", logoColor: "#FFB612" },
+  DEN: { name: "Denver Broncos", logoColor: "#FB4F14" },
+  IND: { name: "Indianapolis Colts", logoColor: "#002C5F" },
+  NE: { name: "New England Patriots", logoColor: "#002244" },
+  TB: { name: "Tampa Bay Buccaneers", logoColor: "#D50A0A" },
 }
 
-function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () => void }) {
+function getTeamFromAbbreviation(abbr: string): Team | null {
+  const data = TEAM_DATA[abbr]
+  if (!data) return null
+  return {
+    id: abbr.toLowerCase(),
+    name: data.name,
+    abbreviation: abbr,
+    logoColor: data.logoColor,
+  }
+}
+
+interface AthleteProfileViewProps {
+  athlete: Athlete
+  onBack: () => void
+  breadcrumbs?: BreadcrumbItem[]
+  onNavigateToTeam?: (team: Team, league: League) => void
+}
+  
+function AthleteProfileView({ athlete, onBack, breadcrumbs, onNavigateToTeam }: AthleteProfileViewProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  const teamObj = getTeamFromAbbreviation(athlete.team)
+
+  const handleTeamClick = () => {
+    if (teamObj && onNavigateToTeam) {
+      onNavigateToTeam(teamObj, "NFL")
+    }
+  }
+
+  // Build breadcrumbs with back navigation
+  const fullBreadcrumbs: BreadcrumbItem[] = [
+    ...(breadcrumbs || []),
+    { label: "Clip", onClick: onBack },
+  ]
 
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
-      {/* Header with back button */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 shrink-0">
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Back to clip"
-        >
-          <Icon name="chevronLeft" className="w-4 h-4" />
-        </button>
-        <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Avatar + Name + Team/Position */}
-        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
-            {athlete.name.split(" ").map((n) => n[0]).join("")}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+    <PreviewModuleShell
+      icon="users"
+      title={athlete.name}
+      subtitle={`${athlete.position} #${athlete.jersey_number}`}
+      onClose={onBack}
+      breadcrumbs={fullBreadcrumbs}
+    >
+      {/* Avatar + Name + Team/Position */}
+      <div className="px-5 pt-6 pb-4 flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
+          {athlete.name.split(" ").map((n) => n[0]).join("")}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+            {teamObj && onNavigateToTeam ? (
+              <button
+                onClick={handleTeamClick}
+                className="text-[#0273e3] font-medium hover:underline transition-colors"
+              >
+                {teamName}
+              </button>
+            ) : (
               <span className="text-primary font-medium">{teamName}</span>
-              <span className="text-border">{"·"}</span>
-              <span>{athlete.position}</span>
-              <span className="text-border">{"·"}</span>
-              <span>#{athlete.jersey_number}</span>
-            </div>
+            )}
+            <span className="text-border">{"·"}</span>
+            <span>{athlete.position}</span>
+            <span className="text-border">{"·"}</span>
+            <span>#{athlete.jersey_number}</span>
           </div>
         </div>
+      </div>
 
         {/* Profile tabs */}
         <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
@@ -739,7 +798,13 @@ function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () 
               <IdentityRow label="Position" value={athlete.position} />
               <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
               <IdentityRow label="College" value={athlete.college} />
-              <IdentityRow label="Team" value={teamName} isLast />
+              <IdentityRow 
+                label="Team" 
+                value={teamName} 
+                isLast 
+                isClickable={!!(teamObj && onNavigateToTeam)}
+                onClick={handleTeamClick}
+              />
             </div>
 
             {/* Key Stats */}
@@ -773,16 +838,30 @@ function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () 
             {profileTab} content coming soon.
           </div>
         )}
-      </div>
-    </div>
+    </PreviewModuleShell>
   )
 }
 
-function IdentityRow({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
+function IdentityRow({ label, value, isLast, isClickable, onClick }: { 
+  label: string
+  value: string
+  isLast?: boolean
+  isClickable?: boolean
+  onClick?: () => void
+}) {
   return (
     <div className={cn("flex items-center justify-between py-3", !isLast && "border-b border-dotted border-border")}>
       <span className="text-sm font-bold text-foreground">{label}</span>
-      <span className="text-sm text-muted-foreground">{value}</span>
+      {isClickable && onClick ? (
+        <button
+          onClick={onClick}
+          className="text-sm text-[#0273e3] hover:underline transition-colors"
+        >
+          {value}
+        </button>
+      ) : (
+        <span className="text-sm text-muted-foreground">{value}</span>
+      )}
     </div>
   )
 }
@@ -1358,9 +1437,10 @@ interface PreviewModuleProps {
   play: PlayData
   onClose: () => void
   breadcrumbs?: BreadcrumbItem[]
+  onNavigateToTeam?: (team: Team, league: League) => void
   }
   
-  export function PreviewModule({ play, onClose, breadcrumbs }: PreviewModuleProps) {
+  export function PreviewModule({ play, onClose, breadcrumbs, onNavigateToTeam }: PreviewModuleProps) {
   const videoUrl = useMemo(() => getVideoForPlay(play), [play])
   const summary = useMemo(() => generatePlaySummary(play), [play])
   const roster = useMemo(() => assignPlayRoster(play), [play])
@@ -1418,7 +1498,14 @@ interface PreviewModuleProps {
 
   // If an athlete is selected, show their profile instead of the clip view
   if (selectedAthlete) {
-    return <AthleteProfileView athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />
+    return (
+      <AthleteProfileView 
+        athlete={selectedAthlete} 
+        onBack={() => setSelectedAthlete(null)}
+        breadcrumbs={breadcrumbs}
+        onNavigateToTeam={onNavigateToTeam}
+      />
+    )
   }
 
   const footer = (

@@ -472,6 +472,7 @@ export default function ExplorePage() {
                       play={previewPlay}
                       onClose={() => { setPreviewPlay(null); setPreviewNavStack([]) }}
                       breadcrumbs={breadcrumbs}
+                      onNavigateToTeam={(team, league) => drillDownToTeam(team, league, `Clip ${previewPlay.playNumber}`)}
                     />
                   )}
                   {previewTeam && (

@@ -176,6 +176,25 @@ export default function ExplorePage() {
   // Expand/collapse the preview panel when previewPlay, previewTeam, or previewGame changes
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   const hasPreview = previewPlay || previewTeam || previewGame
+  
+  // Unified preview handlers - only one preview can be open at a time
+  const openClipPreview = useCallback((play: PlayData) => {
+    setPreviewTeam(null)
+    setPreviewGame(null)
+    setPreviewPlay(play)
+  }, [])
+  
+  const openTeamPreview = useCallback((team: Team, league: League) => {
+    setPreviewPlay(null)
+    setPreviewGame(null)
+    setPreviewTeam({ team, league })
+  }, [])
+  
+  const openGamePreview = useCallback((game: Game) => {
+    setPreviewPlay(null)
+    setPreviewTeam(null)
+    setPreviewGame(game)
+  }, [])
   useEffect(() => {
     if (hasPreview) {
       // Resize to 50% so grid and preview share space equally
@@ -329,7 +348,7 @@ export default function ExplorePage() {
                         }
                         dataset={filteredDataset}
                         onClearFilters={clearFilters}
-                        onClickPlay={(play) => setPreviewPlay(play)}
+                        onClickPlay={openClipPreview}
                         activePlayId={previewPlay?.id}
                       />
                       {/* Subtle overlay while deferred filter computation catches up */}
@@ -349,7 +368,7 @@ export default function ExplorePage() {
                     <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
                       <GamesBrowser
                         filters={gamesFilters}
-                        onSelectGame={(game) => setPreviewGame(game)}
+                        onSelectGame={openGamePreview}
                         activeGameId={previewGame?.id}
                       />
                     </div>
@@ -357,7 +376,7 @@ export default function ExplorePage() {
                     <div className="flex-1 min-h-0 bg-background rounded-b-lg overflow-hidden">
                       <TeamsBrowser 
                         filters={teamsFilters} 
-                        onSelectTeam={(team, league) => setPreviewTeam({ team, league })}
+                        onSelectTeam={openTeamPreview}
                         activeTeamId={previewTeam?.team.id}
                       />
                     </div>

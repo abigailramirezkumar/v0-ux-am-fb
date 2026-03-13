@@ -15,6 +15,7 @@ import type { Athlete } from "@/types/athlete"
 import type { ClipData } from "@/types/library"
 import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
 import type { Team, League } from "@/lib/sports-data"
+import { getTeamByAbbreviation } from "@/lib/team-utils"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -675,43 +676,6 @@ const TEAM_FULL_NAMES: Record<string, string> = {
   TB: "Tampa Bay Buccaneers",
   }
 
-// Team data lookup for navigation
-const TEAM_DATA: Record<string, { name: string; logoColor: string }> = {
-  BAL: { name: "Baltimore Ravens", logoColor: "#241773" },
-  BUF: { name: "Buffalo Bills", logoColor: "#00338D" },
-  KC: { name: "Kansas City Chiefs", logoColor: "#E31837" },
-  DET: { name: "Detroit Lions", logoColor: "#0076B6" },
-  CIN: { name: "Cincinnati Bengals", logoColor: "#FB4F14" },
-  HOU: { name: "Houston Texans", logoColor: "#03202F" },
-  SF: { name: "San Francisco 49ers", logoColor: "#AA0000" },
-  PHI: { name: "Philadelphia Eagles", logoColor: "#004C54" },
-  MIN: { name: "Minnesota Vikings", logoColor: "#4F2683" },
-  MIA: { name: "Miami Dolphins", logoColor: "#008E97" },
-  DAL: { name: "Dallas Cowboys", logoColor: "#003594" },
-  LAR: { name: "Los Angeles Rams", logoColor: "#003594" },
-  NYJ: { name: "New York Jets", logoColor: "#125740" },
-  ATL: { name: "Atlanta Falcons", logoColor: "#A71930" },
-  LV: { name: "Las Vegas Raiders", logoColor: "#000000" },
-  CLE: { name: "Cleveland Browns", logoColor: "#311D00" },
-  NYG: { name: "New York Giants", logoColor: "#0B2265" },
-  PIT: { name: "Pittsburgh Steelers", logoColor: "#FFB612" },
-  DEN: { name: "Denver Broncos", logoColor: "#FB4F14" },
-  IND: { name: "Indianapolis Colts", logoColor: "#002C5F" },
-  NE: { name: "New England Patriots", logoColor: "#002244" },
-  TB: { name: "Tampa Bay Buccaneers", logoColor: "#D50A0A" },
-}
-
-function getTeamFromAbbreviation(abbr: string): Team | null {
-  const data = TEAM_DATA[abbr]
-  if (!data) return null
-  return {
-    id: abbr.toLowerCase(),
-    name: data.name,
-    abbreviation: abbr,
-    logoColor: data.logoColor,
-  }
-}
-
 interface AthleteProfileViewProps {
   athlete: Athlete
   onBack: () => void
@@ -722,12 +686,14 @@ interface AthleteProfileViewProps {
 function AthleteProfileView({ athlete, onBack, breadcrumbs, onNavigateToTeam }: AthleteProfileViewProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
-  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
-  const teamObj = getTeamFromAbbreviation(athlete.team)
+  const teamData = getTeamByAbbreviation(athlete.team)
+  const teamObj = teamData?.team || null
+  const teamLeague = teamData?.league || "NFL"
+  const teamName = teamObj?.name || TEAM_FULL_NAMES[athlete.team] || athlete.team
 
   const handleTeamClick = () => {
     if (teamObj && onNavigateToTeam) {
-      onNavigateToTeam(teamObj, "NFL")
+      onNavigateToTeam(teamObj, teamLeague)
     }
   }
 

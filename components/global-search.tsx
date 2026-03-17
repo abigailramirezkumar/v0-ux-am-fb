@@ -30,8 +30,8 @@ export function GlobalSearch() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className="relative w-full">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <div className="relative w-full flex items-center">
+          <div className="absolute left-3 pointer-events-none flex items-center justify-center">
             <Icon name="search" className="w-4 h-4 text-muted-foreground" />
           </div>
           <input

@@ -13,6 +13,9 @@ import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
 import type { ClipData } from "@/types/library"
+import { PreviewModuleShell, type BreadcrumbItem } from "@/components/preview-module-shell"
+import { AthletePreviewModule } from "@/components/athlete-preview-module"
+import type { Team, League } from "@/lib/sports-data"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -671,120 +674,7 @@ const TEAM_FULL_NAMES: Record<string, string> = {
   CLE: "Cleveland Browns", NYG: "New York Giants", PIT: "Pittsburgh Steelers",
   DEN: "Denver Broncos", IND: "Indianapolis Colts", NE: "New England Patriots",
   TB: "Tampa Bay Buccaneers",
-}
-
-function AthleteProfileView({ athlete, onBack }: { athlete: Athlete; onBack: () => void }) {
-  const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
-  const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
-  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
-
-  return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
-      {/* Header with back button */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 shrink-0">
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-          aria-label="Back to clip"
-        >
-          <Icon name="chevronLeft" className="w-4 h-4" />
-        </button>
-        <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
-      </div>
-
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Avatar + Name + Team/Position */}
-        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
-            {athlete.name.split(" ").map((n) => n[0]).join("")}
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
-              <span className="text-primary font-medium">{teamName}</span>
-              <span className="text-border">{"·"}</span>
-              <span>{athlete.position}</span>
-              <span className="text-border">{"·"}</span>
-              <span>#{athlete.jersey_number}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Profile tabs */}
-        <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
-          {PROFILE_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setProfileTab(tab)}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
-                profileTab === tab
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {profileTab === "Overview" ? (
-          <div className="px-5 pb-6">
-            {/* Identity section */}
-            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
-            <div className="flex flex-col">
-              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-              <IdentityRow label="Position" value={athlete.position} />
-              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-              <IdentityRow label="College" value={athlete.college} />
-              <IdentityRow label="Team" value={teamName} isLast />
-            </div>
-
-            {/* Key Stats */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
-                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
-                  2025/26
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {keyStats.map((stat) => (
-                  <div key={stat.label} className="rounded-lg border border-border p-3">
-                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
-                      {stat.secondary && (
-                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
-                      )}
-                    </div>
-                    {stat.note && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            {profileTab} content coming soon.
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function IdentityRow({ label, value, isLast }: { label: string; value: string; isLast?: boolean }) {
-  return (
-    <div className={cn("flex items-center justify-between py-3", !isLast && "border-b border-dotted border-border")}>
-      <span className="text-sm font-bold text-foreground">{label}</span>
-      <span className="text-sm text-muted-foreground">{value}</span>
-    </div>
-  )
-}
+  }
 
 // ---------------------------------------------------------------------------
 // Convert PlayData to ClipData
@@ -1356,9 +1246,11 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 interface PreviewModuleProps {
   play: PlayData
   onClose: () => void
-}
-
-export function PreviewModule({ play, onClose }: PreviewModuleProps) {
+  breadcrumbs?: BreadcrumbItem[]
+  onNavigateToTeam?: (team: Team, league: League) => void
+  }
+  
+  export function PreviewModule({ play, onClose, breadcrumbs, onNavigateToTeam }: PreviewModuleProps) {
   const videoUrl = useMemo(() => getVideoForPlay(play), [play])
   const summary = useMemo(() => generatePlaySummary(play), [play])
   const roster = useMemo(() => assignPlayRoster(play), [play])
@@ -1415,32 +1307,45 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
   }, [setWatchItem, router])
 
   // If an athlete is selected, show their profile instead of the clip view
+  // Build breadcrumbs that include a link back to the clip
+  const athleteBreadcrumbs: BreadcrumbItem[] = [
+    ...(breadcrumbs || []),
+    { label: `Clip ${play.playNumber}`, onClick: () => setSelectedAthlete(null) },
+  ]
+
   if (selectedAthlete) {
-    return <AthleteProfileView athlete={selectedAthlete} onBack={() => setSelectedAthlete(null)} />
+    return (
+      <AthletePreviewModule 
+        athlete={selectedAthlete} 
+        onClose={() => setSelectedAthlete(null)}
+        breadcrumbs={athleteBreadcrumbs}
+        onNavigateToTeam={onNavigateToTeam}
+      />
+    )
   }
 
-  return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
-      {/* Fixed Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-bold truncate">Clip {play.playNumber}</span>
-          <span className="text-muted-foreground text-sm shrink-0">|</span>
-          <span className="text-sm text-muted-foreground truncate">{formatGameLabel(play.game)}</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onClose}
-          className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
-        >
-          <Icon name="close" className="w-4 h-4" />
-        </Button>
-      </div>
+  const footer = (
+    <>
+      <AddToPlaylistButton play={play} />
+      <Button
+        variant="outline"
+        className="flex-1 font-semibold"
+        onClick={handleViewFullGame}
+      >
+        View Full Game
+      </Button>
+    </>
+  )
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-20">
+  return (
+    <PreviewModuleShell
+      icon="play"
+      title={`Clip ${play.playNumber}`}
+      subtitle={formatGameLabel(play.game)}
+      onClose={onClose}
+      footer={footer}
+      breadcrumbs={breadcrumbs}
+    >
         {/* Video Player */}
         <div className="px-4 pt-4">
           <PreviewVideoPlayer
@@ -1508,20 +1413,7 @@ export function PreviewModule({ play, onClose }: PreviewModuleProps) {
         ) : (
           <TagsAndNotesTab playId={play.id} />
         )}
-      </div>
-
-      {/* Fixed Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
-        <AddToPlaylistButton play={play} />
-        <Button
-          variant="outline"
-          className="flex-1 font-semibold"
-          onClick={handleViewFullGame}
-        >
-          View Full Game
-        </Button>
-      </div>
-    </div>
+    </PreviewModuleShell>
   )
 }
 

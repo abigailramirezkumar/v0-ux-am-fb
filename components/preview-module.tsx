@@ -1948,12 +1948,14 @@ interface AthletePreviewProps {
   athlete: Athlete & { id?: string }
   onClose: () => void
   hideHeader?: boolean
+  onNavigateToTeam?: (team: Team) => void
 }
 
-function AthletePreview({ athlete, onClose, hideHeader }: AthletePreviewProps) {
+function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: AthletePreviewProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  const athleteTeam = useMemo(() => findTeamById(athlete.team), [athlete.team])
   const router = useRouter()
 
   // Generate athlete slug for the full profile link
@@ -1991,7 +1993,16 @@ function AthletePreview({ athlete, onClose, hideHeader }: AthletePreviewProps) {
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
-              <span className="text-primary font-medium">{teamName}</span>
+              {athleteTeam && onNavigateToTeam ? (
+                <button
+                  onClick={() => onNavigateToTeam(athleteTeam)}
+                  className="text-primary font-medium hover:underline cursor-pointer"
+                >
+                  {teamName}
+                </button>
+              ) : (
+                <span className="text-primary font-medium">{teamName}</span>
+              )}
               <span className="text-border">{"·"}</span>
               <span>{athlete.position}</span>
               <span className="text-border">{"·"}</span>
@@ -2119,7 +2130,7 @@ export function PreviewModule({
 }: PreviewModuleProps) {
   // If athlete is provided, render AthletePreview
   if (athlete) {
-    return <AthletePreview athlete={athlete} onClose={onClose} hideHeader={hideHeader} />
+    return <AthletePreview athlete={athlete} onClose={onClose} hideHeader={hideHeader} onNavigateToTeam={onNavigateToTeam} />
   }
 
   // If team is provided, render TeamPreview

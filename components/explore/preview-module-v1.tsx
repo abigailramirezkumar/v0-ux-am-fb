@@ -404,6 +404,7 @@ export function PreviewModuleV1({
           <PreviewModule
             athlete={currentPreview.data as Athlete & { id?: string }}
             onClose={() => {}} // Handled by our header
+            onNavigateToTeam={handleNavigateToTeam}
             hideHeader
           />
         )

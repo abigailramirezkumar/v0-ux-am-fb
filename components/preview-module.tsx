@@ -1926,6 +1926,120 @@ function TeamPreview({ team, onClose }: TeamPreviewProps) {
 }
 
 // ---------------------------------------------------------------------------
+// AthletePreview (Athlete Profile in Preview Module - standalone)
+// ---------------------------------------------------------------------------
+
+interface AthletePreviewProps {
+  athlete: Athlete & { id?: string }
+  onClose: () => void
+}
+
+function AthletePreview({ athlete, onClose }: AthletePreviewProps) {
+  const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
+  const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
+  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+
+  return (
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
+      {/* Header with close button */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
+        <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onClose}
+          className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+        >
+          <Icon name="close" className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Avatar + Name + Team/Position */}
+        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
+            {athlete.name.split(" ").map((n) => n[0]).join("")}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+              <span className="text-primary font-medium">{teamName}</span>
+              <span className="text-border">{"·"}</span>
+              <span>{athlete.position}</span>
+              <span className="text-border">{"·"}</span>
+              <span>#{athlete.jersey_number}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile tabs */}
+        <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
+          {PROFILE_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setProfileTab(tab)}
+              className={cn(
+                "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
+                profileTab === tab
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {profileTab === "Overview" ? (
+          <div className="px-5 pb-6">
+            {/* Identity section */}
+            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
+            <div className="flex flex-col">
+              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+              <IdentityRow label="Position" value={athlete.position} />
+              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+              <IdentityRow label="College" value={athlete.college} />
+              <IdentityRow label="Team" value={teamName} isLast />
+            </div>
+
+            {/* Key Stats */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
+                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
+                  2025/26
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {keyStats.map((stat) => (
+                  <div key={stat.label} className="rounded-lg border border-border p-3">
+                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
+                      {stat.secondary && (
+                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
+                      )}
+                    </div>
+                    {stat.note && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {profileTab} content coming soon.
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // PreviewModule
 // ---------------------------------------------------------------------------
 
@@ -1933,10 +2047,16 @@ interface PreviewModuleProps {
   play?: PlayData
   game?: Game
   team?: Team
+  athlete?: Athlete & { id?: string }
   onClose: () => void
 }
 
-export function PreviewModule({ play, game, team, onClose }: PreviewModuleProps) {
+export function PreviewModule({ play, game, team, athlete, onClose }: PreviewModuleProps) {
+  // If athlete is provided, render AthletePreview
+  if (athlete) {
+    return <AthletePreview athlete={athlete} onClose={onClose} />
+  }
+
   // If team is provided, render TeamPreview
   if (team) {
     return <TeamPreview team={team} onClose={onClose} />

@@ -222,3 +222,6 @@ export {
   getAthleteIdsForTeam,
   validateAthletesForGame,
 }
+
+// Re-export for convenience
+export { findTeamById as getTeamById }

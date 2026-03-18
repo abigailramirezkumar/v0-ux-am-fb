@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useMemo } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
+import { GamesFiltersModule } from "@/components/games-filters-module"
+import { GamesModule } from "@/components/games-module"
 import { PreviewModule } from "@/components/preview-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
@@ -17,6 +19,7 @@ import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import type { ClipData } from "@/types/library"
 import type { PlayData } from "@/lib/mock-datasets"
+import type { GameLeague } from "@/types/game"
 import { useExploreContext } from "@/lib/explore-context"
 
 const exploreTabs = [
@@ -95,6 +98,28 @@ export default function ExplorePage() {
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
+  // Games tab filter state
+  const [selectedLeagues, setSelectedLeagues] = useState<GameLeague[]>([])
+  const [selectedSeason, setSelectedSeason] = useState<string | null>(null)
+
+  // Toggle a league in the selection
+  const handleLeagueToggle = (league: GameLeague) => {
+    setSelectedLeagues((prev) =>
+      prev.includes(league)
+        ? prev.filter((l) => l !== league)
+        : [...prev, league]
+    )
+  }
+
+  // Clear games filters
+  const clearGamesFilters = () => {
+    setSelectedLeagues([])
+    setSelectedSeason(null)
+  }
+
+  // Calculate games filter count
+  const gamesFilterCount = selectedLeagues.length + (selectedSeason ? 1 : 0)
+
   // Expand/collapse the preview panel when previewPlay changes
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   useEffect(() => {
@@ -127,8 +152,9 @@ export default function ExplorePage() {
 
   // Sync active filter count to context for header badge
   useEffect(() => {
-    setActiveFilterCount(activeFilterCount)
-  }, [activeFilterCount, setActiveFilterCount])
+    const count = activeTab === "games" ? gamesFilterCount : activeFilterCount
+    setActiveFilterCount(count)
+  }, [activeFilterCount, gamesFilterCount, activeTab, setActiveFilterCount])
 
   // Memoize the filtered dataset so children only re-render when filteredPlays changes
   const filteredDataset = useMemo(
@@ -152,18 +178,28 @@ export default function ExplorePage() {
             onExpand={() => setShowFilters(true)}
           >
             <div className="h-full pl-3 py-3">
-              <FiltersModule
-                filters={filters}
-                rangeFilters={rangeFilters}
-                onToggle={toggleFilter}
-                onToggleAll={toggleAllInCategory}
-                onRangeChange={setRangeFilter}
-                onClear={clearFilters}
-                uniqueGames={uniqueGames}
-                activeFilterCount={activeFilterCount}
-                totalCount={allClipsDataset.plays.length}
-                filteredCount={filteredPlays.length}
-              />
+              {activeTab === "games" ? (
+                <GamesFiltersModule
+                  selectedLeagues={selectedLeagues}
+                  selectedSeason={selectedSeason}
+                  onLeagueToggle={handleLeagueToggle}
+                  onSeasonChange={setSelectedSeason}
+                  onClear={clearGamesFilters}
+                />
+              ) : (
+                <FiltersModule
+                  filters={filters}
+                  rangeFilters={rangeFilters}
+                  onToggle={toggleFilter}
+                  onToggleAll={toggleAllInCategory}
+                  onRangeChange={setRangeFilter}
+                  onClear={clearFilters}
+                  uniqueGames={uniqueGames}
+                  activeFilterCount={activeFilterCount}
+                  totalCount={allClipsDataset.plays.length}
+                  filteredCount={filteredPlays.length}
+                />
+              )}
             </div>
           </ResizablePanel>
           <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
@@ -223,7 +259,12 @@ export default function ExplorePage() {
                     </div>
                   ) : activeTab === "games" ? (
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                      <EmptyTabState label="Games" />
+                      <GamesModule
+                        selectedLeagues={selectedLeagues}
+                        selectedSeason={selectedSeason}
+                        onLeagueToggle={handleLeagueToggle}
+                        onSeasonChange={setSelectedSeason}
+                      />
                     </div>
                   ) : (
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">

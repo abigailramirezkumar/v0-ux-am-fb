@@ -25,6 +25,7 @@ import type { Game, GameLeague } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import { useExploreContext } from "@/lib/explore-context"
+import { nameToSlug } from "@/lib/athletes-data"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -95,12 +96,17 @@ function EmptyTabState({ label }: { label: string }) {
 }
 
 /**
- * V2 - New Contexts
+ * V2 - Navigate to Full Profiles
  * 
- * This version starts from the current explore page state and will be customized
- * to implement a new context-based navigation pattern.
+ * In this version, clicking on entities in the preview module navigates to their 
+ * full profile pages instead of showing nested previews:
+ * - Clicking an athlete -> navigates to /athletes/[athleteId]
+ * - Clicking a team -> navigates to /teams/[teamId]  
+ * - Clicking a clip from a game -> opens watch experience with clip as unsaved playlist
  */
 export function ExploreV2() {
+  const router = useRouter()
+  const { setPendingPreviewClips } = useLibraryContext()
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
@@ -170,6 +176,49 @@ export function ExploreV2() {
     setPreviewGame(null)
     setPreviewTeam(null)
     setPreviewAthlete(null)
+  }
+
+  // V2 Navigation Handlers - Navigate to full profile pages instead of nested previews
+  const handleNavigateToAthletePage = (athlete: Athlete & { id?: string }) => {
+    const slug = nameToSlug(athlete.name)
+    router.push(`/athletes/${slug}`)
+  }
+
+  const handleNavigateToTeamPage = (team: Team) => {
+    router.push(`/teams/${team.id}`)
+  }
+
+  const handleNavigateToClipWatch = (play: PlayData) => {
+    // Convert play to clip and open in watch experience as unsaved playlist
+    const clip: ClipData = {
+      id: play.id,
+      playNumber: play.playNumber,
+      odk: play.odk,
+      quarter: play.quarter,
+      down: play.down,
+      distance: play.distance,
+      yardLine: play.yardLine,
+      hash: play.hash,
+      yards: play.yards,
+      result: play.result,
+      gainLoss: play.gainLoss,
+      defFront: play.defFront,
+      defStr: play.defStr,
+      coverage: play.coverage,
+      blitz: play.blitz,
+      game: play.game,
+      playType: play.playType,
+      passResult: play.passResult,
+      runDirection: play.runDirection,
+      personnelO: play.personnelO,
+      personnelD: play.personnelD,
+      isTouchdown: play.isTouchdown,
+      isFirstDown: play.isFirstDown,
+      isPenalty: play.isPenalty,
+      penaltyType: play.penaltyType,
+    }
+    setPendingPreviewClips([clip])
+    router.push("/watch")
   }
 
   useEffect(() => {
@@ -355,6 +404,10 @@ export function ExploreV2() {
                       team={previewTeam || undefined}
                       athlete={previewAthlete || undefined}
                       onClose={handleClosePreview}
+                      // V2: Navigate to full profile pages instead of nested previews
+                      onNavigateToAthlete={handleNavigateToAthletePage}
+                      onNavigateToTeam={handleNavigateToTeamPage}
+                      onNavigateToClip={handleNavigateToClipWatch}
                     />
                   )}
                 </div>

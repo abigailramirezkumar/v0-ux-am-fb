@@ -12,6 +12,12 @@
 export type GameStatus = "scheduled" | "in-progress" | "final" | "postponed" | "cancelled"
 
 // ---------------------------------------------------------------------------
+// League Type
+// ---------------------------------------------------------------------------
+
+export type GameLeague = "NFL" | "College" | "HighSchool"
+
+// ---------------------------------------------------------------------------
 // Weather conditions for outdoor games
 // ---------------------------------------------------------------------------
 
@@ -55,6 +61,9 @@ export interface GameScore {
 export interface Game {
   /** Unique game identifier */
   id: string
+
+  /** League this game belongs to */
+  league: GameLeague
 
   /** Reference to home team (matches Team.id from sports-data.ts) */
   homeTeamId: string

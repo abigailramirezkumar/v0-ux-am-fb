@@ -159,8 +159,17 @@ const formations = ["Trey Left", "Deuce Right", "Empty Strong", "Trips Right", "
 const coverages = ["Cover 1", "Cover 2", "Cover 3 Match", "Quarters", "Cover 0"]
 const passLocs = ["Left Sideline", "Left Numbers", "Middle", "Right Numbers", "Right Sideline"] as const
 
-// Use real game IDs from mock-games.ts (first 8 completed games)
-const gameIds = mockGames.filter(g => g.status === "final").slice(0, 8).map(g => g.id)
+// Use real game IDs from mock-games.ts - get completed games from each league
+const nflGameIds = mockGames.filter(g => g.status === "final" && g.league === "NFL").map(g => g.id)
+const collegeGameIds = mockGames.filter(g => g.status === "final" && g.league === "College").map(g => g.id)
+const hsGameIds = mockGames.filter(g => g.status === "final" && g.league === "HighSchool").map(g => g.id)
+
+// Combine game IDs with distribution: ~30 NFL, ~25 College, ~20 HS
+const allGameIds = [
+  ...nflGameIds.slice(0, 8),
+  ...collegeGameIds.slice(0, 15),
+  ...hsGameIds.slice(0, 15)
+]
 
 /**
  * Get athlete IDs for a game's teams, selecting a random subset for the clip
@@ -208,16 +217,16 @@ function getMockOnFieldIds(gameId: string) {
   return { offenseIds: [...new Set(offenseIds)], defenseIds: [...new Set(defenseIds)] };
 }
 
-export const mockClips: Clip[] = Array.from({ length: 50 }).map((_, i) => {
+export const mockClips: Clip[] = Array.from({ length: 75 }).map((_, i) => {
   const isPass = Math.random() > 0.45;
   const isRun = !isPass && Math.random() > 0.2;
   const isSpecial = !isPass && !isRun;
   const gain = isPass ? randomInt(-7, 35) : isRun ? randomInt(-3, 20) : 0;
   const epa = randomFloat(-3.5, 4.5);
   
-  // Assign clip to a real game (distribute across available games)
-  const gameIndex = i % gameIds.length;
-  const gameId = gameIds[gameIndex] || "game-001";
+  // Assign clip to a real game (distribute across available games from all leagues)
+  const gameIndex = i % allGameIds.length;
+  const gameId = allGameIds[gameIndex] || "game-001";
   const game = getGameById(gameId);
   
   // Get athletes for this clip from the game's teams

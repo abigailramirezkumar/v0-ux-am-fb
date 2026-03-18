@@ -164,11 +164,11 @@ const nflGameIds = mockGames.filter(g => g.status === "final" && g.league === "N
 const collegeGameIds = mockGames.filter(g => g.status === "final" && g.league === "College").map(g => g.id)
 const hsGameIds = mockGames.filter(g => g.status === "final" && g.league === "HighSchool").map(g => g.id)
 
-// Combine game IDs with distribution: ~30 NFL, ~25 College, ~20 HS
+// Combine all game IDs from each league (10 NFL, 10 College, 10 HS)
 const allGameIds = [
-  ...nflGameIds.slice(0, 8),
-  ...collegeGameIds.slice(0, 15),
-  ...hsGameIds.slice(0, 15)
+  ...nflGameIds,
+  ...collegeGameIds,
+  ...hsGameIds
 ]
 
 /**

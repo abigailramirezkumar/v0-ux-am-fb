@@ -216,7 +216,7 @@ export function HudlSidebar({ children }: HudlSidebarProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-64">
                   <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Select Version</div>
-                  {(["v1", "v2", "v3"] as ExploreVersion[]).map((version) => (
+                  {(["v1", "v2"] as ExploreVersion[]).map((version) => (
                     <DropdownMenuItem
                       key={version}
                       onClick={() => exploreContext.setExploreVersion(version)}

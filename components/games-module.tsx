@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-
 import { mockGames, mockClips, findTeamById as getTeamById } from "@/lib/games-context"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -326,7 +325,7 @@ export function GamesModule({
 
       {/* Games List */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="p-4 space-y-6">
+        <div className="pl-4 pr-0 py-4 space-y-6">
           {organizedGames.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <p className="text-sm">No games found</p>

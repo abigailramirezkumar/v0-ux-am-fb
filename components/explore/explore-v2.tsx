@@ -221,6 +221,40 @@ export function ExploreV2() {
     router.push("/watch")
   }
 
+  const handleNavigateToGameWatch = (game: Game) => {
+    // Get all clips for this game and open in watch experience
+    const gameClips = allClipsDataset.plays.filter(play => play.gameId === game.id)
+    const clips: ClipData[] = gameClips.map(play => ({
+      id: play.id,
+      playNumber: play.playNumber,
+      odk: play.odk,
+      quarter: play.quarter,
+      down: play.down,
+      distance: play.distance,
+      yardLine: play.yardLine,
+      hash: play.hash,
+      yards: play.yards,
+      result: play.result,
+      gainLoss: play.gainLoss,
+      defFront: play.defFront,
+      defStr: play.defStr,
+      coverage: play.coverage,
+      blitz: play.blitz,
+      game: play.game,
+      playType: play.playType,
+      passResult: play.passResult,
+      runDirection: play.runDirection,
+      personnelO: play.personnelO,
+      personnelD: play.personnelD,
+      isTouchdown: play.isTouchdown,
+      isFirstDown: play.isFirstDown,
+      isPenalty: play.isPenalty,
+      penaltyType: play.penaltyType,
+    }))
+    setPendingPreviewClips(clips)
+    router.push("/watch")
+  }
+
   useEffect(() => {
     if (showFilters) {
       filterPanelRef.current?.expand()
@@ -407,6 +441,7 @@ export function ExploreV2() {
                       // V2: Navigate to full profile pages instead of nested previews
                       onNavigateToAthlete={handleNavigateToAthletePage}
                       onNavigateToTeam={handleNavigateToTeamPage}
+                      onNavigateToGame={handleNavigateToGameWatch}
                       onNavigateToClip={handleNavigateToClipWatch}
                     />
                   )}

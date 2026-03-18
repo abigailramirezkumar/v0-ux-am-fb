@@ -1383,79 +1383,12 @@ interface GamePreviewProps {
   game: Game
   onClose: () => void
   onNavigateToTeam?: (team: Team) => void
+  onNavigateToGame?: (game: Game) => void
   onNavigateToClip?: (play: PlayData) => void
   hideHeader?: boolean
   }
   
-/** Convert a Clip to a PlayData structure for navigation */
-function clipToPlayData(clip: import("@/lib/mock-clips").Clip): PlayData {
-  // Determine play type from clip data
-  let playType: PlayData["playType"] = "Pass"
-  if (clip.passing?.sack || clip.passing?.scramble) {
-    playType = "Pass"
-  } else if (clip.rushing) {
-    playType = "Run"
-  }
-  
-  // Determine pass result
-  let passResult: PlayData["passResult"] | undefined
-  if (clip.passing) {
-    if (clip.passing.sack) passResult = "Sack"
-    else if (clip.passing.throwaway) passResult = "Throwaway"
-    else if (clip.playResult?.turnover === "Interception") passResult = "Interception"
-    else if (clip.passing.result === "Complete") passResult = "Complete"
-    else if (clip.passing.result === "Incomplete") passResult = "Incomplete"
-  }
-  
-  // Calculate yards from passing or rushing
-  const passingYards = clip.passing?.airYards ? (clip.passing.airYards + (clip.passing.yac || 0)) : 0
-  const rushingYards = clip.rushing?.yac || 0
-  const yards = playType === "Pass" ? passingYards : rushingYards
-  
-  return {
-    id: clip.id,
-    playNumber: parseInt(clip.id.split("-").pop() || "1", 10),
-    odk: "O",
-    quarter: clip.quarter,
-    down: clip.down,
-    distance: clip.distance,
-    yardLine: `OWN ${clip.yardLine}`,
-    hash: clip.hash === "Left" ? "L" : clip.hash === "Right" ? "R" : "M",
-    yards,
-    result: clip.playResult?.touchdown ? "Touchdown" : clip.playResult?.firstDown ? "First Down" : "Play",
-    gainLoss: yards >= 0 ? "Gn" : "Ls",
-    defFront: clip.defense?.front || "Base",
-    defStr: "Even",
-    coverage: clip.defense?.coverageScheme || "Cover 3",
-    blitz: clip.defense?.isBlitz ? (clip.defense.blitzType || "Yes") : "None",
-    game: clip.matchup,
-    gameId: clip.gameId,
-    athleteIds: clip.athleteIds,
-    epa: clip.analytics.epa,
-    successRate: clip.analytics.successRate,
-    explosivePlay: clip.analytics.explosivePlay,
-    formationName: clip.formation?.name || "Unknown",
-    isShotgun: clip.formation?.isShotgun || false,
-    timeToPass: clip.passing?.timeToPass,
-    passLocation: clip.passing?.passLocation,
-    runGap: clip.rushing?.runGap,
-    isTwoMinuteDrill: clip.isTwoMinuteDrill,
-    playType,
-    passResult,
-    runDirection: clip.rushing?.direction?.includes("Left") ? "Left" : clip.rushing?.direction?.includes("Right") ? "Right" : "Middle",
-    personnelO: (clip.formation?.personnelO?.slice(0, 2) || "11") as PlayData["personnelO"],
-    personnelD: (clip.formation?.personnelD?.split(" ")[0] || "Base") as PlayData["personnelD"],
-    isTouchdown: !!clip.playResult?.touchdown,
-    isFirstDown: !!clip.playResult?.firstDown,
-    isPenalty: !!clip.playResult?.penalty,
-    penaltyType: clip.playResult?.penalty,
-    yardLineNumeric: clip.yardLine,
-    offenseIds: clip.onField?.offenseIds || clip.athleteIds.slice(0, 11),
-    defenseIds: clip.onField?.defenseIds || clip.athleteIds.slice(11),
-  }
-}
-
-function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToClip, hideHeader }: GamePreviewProps) {
+function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader }: GamePreviewProps) {
   const router = useRouter()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
@@ -1476,10 +1409,14 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToClip, hideHe
     })
   }, [game.date])
 
-  // Handle View Full Game action
+// Handle View Full Game action - uses onNavigateToGame callback if provided
   const handleViewFullGame = useCallback(() => {
+  if (onNavigateToGame) {
+    onNavigateToGame(game)
+  } else {
     router.push("/watch")
-  }, [router])
+  }
+  }, [router, onNavigateToGame, game])
 
   // Handle Download action
   const handleDownload = useCallback(() => {
@@ -2239,7 +2176,7 @@ export function PreviewModule({
 
 // If game is provided, render GamePreview
   if (game) {
-  return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
+  return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} onNavigateToGame={onNavigateToGame} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
   }
 
   // Otherwise render the clip preview (need a play)

@@ -1361,9 +1361,10 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 interface GamePreviewProps {
   game: Game
   onClose: () => void
+  onNavigateToTeam?: (team: Team) => void
 }
 
-function GamePreview({ game, onClose }: GamePreviewProps) {
+function GamePreview({ game, onClose, onNavigateToTeam }: GamePreviewProps) {
   const router = useRouter()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
@@ -1429,7 +1430,10 @@ function GamePreview({ game, onClose }: GamePreviewProps) {
             {/* Teams & Score */}
             <div className="flex items-center justify-between gap-4">
               {/* Away Team */}
-              <div className="flex-1 flex flex-col items-center gap-2">
+              <div 
+                className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => awayTeam && onNavigateToTeam?.(awayTeam)}
+              >
                 <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
                   style={{ backgroundColor: awayTeam?.logoColor || "#666" }}
@@ -1460,7 +1464,10 @@ function GamePreview({ game, onClose }: GamePreviewProps) {
               </div>
 
               {/* Home Team */}
-              <div className="flex-1 flex flex-col items-center gap-2">
+              <div 
+                className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => homeTeam && onNavigateToTeam?.(homeTeam)}
+              >
                 <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
                   style={{ backgroundColor: homeTeam?.logoColor || "#666" }}
@@ -1656,6 +1663,7 @@ function GamePreview({ game, onClose }: GamePreviewProps) {
 interface TeamPreviewProps {
   team: Team
   onClose: () => void
+  onNavigateToAthlete?: (athlete: Athlete & { id?: string }) => void
 }
 
 /** Generate deterministic mock team stats based on team ID */
@@ -1675,7 +1683,7 @@ function generateTeamStats(teamId: string) {
   }
 }
 
-function TeamPreview({ team, onClose }: TeamPreviewProps) {
+function TeamPreview({ team, onClose, onNavigateToAthlete }: TeamPreviewProps) {
   const router = useRouter()
 
   // Get team stats (deterministic mock data)
@@ -1843,6 +1851,7 @@ function TeamPreview({ team, onClose }: TeamPreviewProps) {
                 <div
                   key={player.id || idx}
                   className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => onNavigateToAthlete?.(player)}
                 >
                   <div className="w-9 h-9 rounded-full bg-primary/80 flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
                     {player.jersey_number}
@@ -2078,9 +2087,24 @@ interface PreviewModuleProps {
   team?: Team
   athlete?: Athlete & { id?: string }
   onClose: () => void
+  // Navigation callbacks for breadcrumb support
+  onNavigateToTeam?: (team: Team) => void
+  onNavigateToAthlete?: (athlete: Athlete & { id?: string }) => void
+  onNavigateToGame?: (game: Game) => void
+  onNavigateToClip?: (play: PlayData) => void
 }
 
-export function PreviewModule({ play, game, team, athlete, onClose }: PreviewModuleProps) {
+export function PreviewModule({ 
+  play, 
+  game, 
+  team, 
+  athlete, 
+  onClose,
+  onNavigateToTeam,
+  onNavigateToAthlete,
+  onNavigateToGame,
+  onNavigateToClip,
+}: PreviewModuleProps) {
   // If athlete is provided, render AthletePreview
   if (athlete) {
     return <AthletePreview athlete={athlete} onClose={onClose} />
@@ -2088,12 +2112,12 @@ export function PreviewModule({ play, game, team, athlete, onClose }: PreviewMod
 
   // If team is provided, render TeamPreview
   if (team) {
-    return <TeamPreview team={team} onClose={onClose} />
+    return <TeamPreview team={team} onClose={onClose} onNavigateToAthlete={onNavigateToAthlete} />
   }
 
   // If game is provided, render GamePreview
   if (game) {
-    return <GamePreview game={game} onClose={onClose} />
+    return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} />
   }
 
   // Otherwise render the clip preview (need a play)
@@ -2121,13 +2145,19 @@ export function PreviewModule({ play, game, team, athlete, onClose }: PreviewMod
   const handlePlayerClick = useCallback((playerName: string) => {
   const athlete = getAthleteByName(playerName)
   if (athlete) {
+    // If breadcrumb navigation is available, use it instead of internal state
+    if (onNavigateToAthlete) {
+      onNavigateToAthlete(athlete)
+      return
+    }
     setSelectedAthlete(athlete)
     return
   }
   // Fallback for hardcoded roster players (OL / extra DL) not in athletes-data
   const rosterPlayer = [...OL_PLAYERS, ...EXTRA_DL].find((p) => p.name === playerName)
   if (rosterPlayer) {
-    const synthetic: Athlete = {
+    const synthetic: Athlete & { id: string } = {
+      id: `synthetic-${rosterPlayer.name.toLowerCase().replace(/\s+/g, "-")}`,
       name: rosterPlayer.name,
       team: "DET",
       position: rosterPlayer.position as Athlete["position"],
@@ -2137,9 +2167,13 @@ export function PreviewModule({ play, game, team, athlete, onClose }: PreviewMod
       college: "N/A",
       stats: { passing_yards: 0, passing_tds: 0, rushing_yards: 0, rushing_tds: 0, receiving_yards: 0, receiving_tds: 0, tackles: 0, sacks: 0 },
     }
+    if (onNavigateToAthlete) {
+      onNavigateToAthlete(synthetic)
+      return
+    }
     setSelectedAthlete(synthetic)
   }
-  }, [])
+  }, [onNavigateToAthlete])
 
   // "Open Clip" -- open as unsaved playlist in watch page
   const handleOpenClip = useCallback(() => {

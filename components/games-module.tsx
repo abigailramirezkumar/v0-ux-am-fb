@@ -161,7 +161,7 @@ function GameTile({ game }: { game: Game }) {
 // ---------------------------------------------------------------------------
 function LeagueSection({ league, games }: { league: GameLeague; games: Game[] }) {
   const leagueLabel = league === "HighSchool" ? "High School" : league
-  
+
   return (
     <div className="space-y-2">
       <h4 className="text-sm font-medium text-muted-foreground">
@@ -312,7 +312,11 @@ export function GamesModule({
                       league={leagueGroup.league}
                       games={leagueGroup.games}
                     />
-))}
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

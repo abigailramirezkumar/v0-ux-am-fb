@@ -6,7 +6,7 @@ export type ExploreVersion = "v1" | "v2" | "v3"
 
 export const EXPLORE_VERSION_LABELS: Record<ExploreVersion, string> = {
   v1: "V1 - Preview Module Breadcrumbs",
-  v2: "V2 - New Contexts",
+  v2: "V2 - Navigate to Full Profiles",
   v3: "V3 - Everything is a module",
 }
 

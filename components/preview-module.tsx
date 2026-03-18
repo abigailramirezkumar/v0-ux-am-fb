@@ -1383,17 +1383,19 @@ interface GamePreviewProps {
   game: Game
   onClose: () => void
   onNavigateToTeam?: (team: Team) => void
+  onNavigateToGame?: (game: Game) => void
+  onNavigateToClip?: (play: PlayData) => void
   hideHeader?: boolean
-}
-
-function GamePreview({ game, onClose, onNavigateToTeam, hideHeader }: GamePreviewProps) {
+  }
+  
+function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader }: GamePreviewProps) {
   const router = useRouter()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
-
+  
   // Get clips for this game
   const gameClips = useMemo(() => {
-    return mockClips.filter((clip) => clip.gameId === game.id)
+  return mockClips.filter((clip) => clip.gameId === game.id)
   }, [game.id])
 
   // Format game date
@@ -1407,10 +1409,14 @@ function GamePreview({ game, onClose, onNavigateToTeam, hideHeader }: GamePrevie
     })
   }, [game.date])
 
-  // Handle View Full Game action
+// Handle View Full Game action - uses onNavigateToGame callback if provided
   const handleViewFullGame = useCallback(() => {
+  if (onNavigateToGame) {
+    onNavigateToGame(game)
+  } else {
     router.push("/watch")
-  }, [router])
+  }
+  }, [router, onNavigateToGame, game])
 
   // Handle Download action
   const handleDownload = useCallback(() => {
@@ -1635,6 +1641,7 @@ function GamePreview({ game, onClose, onNavigateToTeam, hideHeader }: GamePrevie
                 <div
                   key={clip.id}
                   className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => onNavigateToClip?.(clipToPlayData(clip))}
                 >
                   <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
                     <Icon name="play" className="w-4 h-4 text-primary" />
@@ -2167,9 +2174,9 @@ export function PreviewModule({
     return <TeamPreview team={team} onClose={onClose} onNavigateToAthlete={onNavigateToAthlete} onNavigateToGame={onNavigateToGame} hideHeader={hideHeader} />
   }
 
-  // If game is provided, render GamePreview
+// If game is provided, render GamePreview
   if (game) {
-    return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} hideHeader={hideHeader} />
+  return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} onNavigateToGame={onNavigateToGame} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
   }
 
   // Otherwise render the clip preview (need a play)

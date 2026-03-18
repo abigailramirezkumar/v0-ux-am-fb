@@ -1938,9 +1938,18 @@ function AthletePreview({ athlete, onClose }: AthletePreviewProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  const router = useRouter()
+
+  // Generate athlete slug for the full profile link
+  const athleteSlug = athlete.name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim()
 
   return (
-    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
       {/* Header with close button */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
         <span className="text-sm font-semibold text-foreground truncate">Player Profile</span>
@@ -1955,7 +1964,7 @@ function AthletePreview({ athlete, onClose }: AthletePreviewProps) {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-20">
         {/* Avatar + Name + Team/Position */}
         <div className="px-5 pt-6 pb-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
@@ -2034,6 +2043,26 @@ function AthletePreview({ athlete, onClose }: AthletePreviewProps) {
             {profileTab} content coming soon.
           </div>
         )}
+      </div>
+
+      {/* Fixed Footer */}
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+        <Button
+          variant="outline"
+          className="flex-1 font-semibold"
+          onClick={() => {
+            // Placeholder for viewing athlete highlights
+            console.log("View highlights:", athlete.name)
+          }}
+        >
+          View Highlights
+        </Button>
+        <Button
+          className="flex-1 font-semibold"
+          onClick={() => router.push(`/athletes/${athleteSlug}`)}
+        >
+          View Full Profile
+        </Button>
       </div>
     </div>
   )

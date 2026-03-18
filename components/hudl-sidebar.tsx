@@ -11,6 +11,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { useCatapultImportContext } from "@/lib/catapult-import-context"
 import { useExploreContextOptional, EXPLORE_VERSION_LABELS, type ExploreVersion } from "@/lib/explore-context"
+import { cn } from "@/lib/utils"
 import {
   Sidebar,
   SidebarContent,

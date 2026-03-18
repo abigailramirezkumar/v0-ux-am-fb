@@ -689,6 +689,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <SortableHeader label="Def Str" columnKey="defStr" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
               <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
               <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
+              <SortableHeader label="League" columnKey="league" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
               <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-foreground bg-muted/30">
                 Game
               </TableHead>
@@ -792,6 +793,17 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   </TableCell>
                   <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="blitz" value={play.blitz} onCommit={updatePlay} isPlaying={isPlaying} /> : play.blitz}
+                  </TableCell>
+                  <TableCell className="py-1.5 border-r border-border/50 text-xs">
+                    <span className={cn(
+                      "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                      play.league === "NFL" && "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+                      play.league === "College" && "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+                      play.league === "HighSchool" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+                      !play.league && "bg-muted text-muted-foreground"
+                    )}>
+                      {play.league === "HighSchool" ? "HS" : play.league || "NFL"}
+                    </span>
                   </TableCell>
                   <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>
                 </TableRow>

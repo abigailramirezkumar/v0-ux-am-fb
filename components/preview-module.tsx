@@ -1855,7 +1855,7 @@ function TeamPreview({ team, onClose }: TeamPreviewProps) {
                     <span className="text-sm font-semibold text-foreground">
                       {player.statValue} {player.statLabel}
                     </span>
-                    <Icon name="chevron-right" className="w-4 h-4 text-muted-foreground" />
+                    <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </div>
               ))}
@@ -1893,7 +1893,7 @@ function TeamPreview({ team, onClose }: TeamPreviewProps) {
                       {game.teamScore}-{game.opponentScore}
                     </span>
                     <span className="text-xs text-muted-foreground">Week {game.week}</span>
-                    <Icon name="chevron-right" className="w-4 h-4 text-muted-foreground" />
+                    <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </div>
               ))}

@@ -332,7 +332,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     </p>
                     <p className="text-xs text-muted-foreground">{athlete.league}</p>
                   </div>
-                  <Icon name="chevron-right" className="w-4 h-4 text-muted-foreground" />
+                  <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
                 </Link>
               </section>
             )}

@@ -243,7 +243,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                                 <span className="text-sm font-semibold text-foreground tabular-nums">
                                   {statValue} <span className="text-xs text-muted-foreground">{statLabel}</span>
                                 </span>
-                                <Icon name="chevron-right" className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                             </Link>
                           )

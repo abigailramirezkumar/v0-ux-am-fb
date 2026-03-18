@@ -227,7 +227,7 @@ export default function ExplorePage() {
             <ResizablePanelGroup direction="horizontal" className="h-full [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
               {/* Main content area */}
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main" order={1}>
-                <div className={cn("h-full flex flex-col py-3", !previewPlay && "pr-3")}>
+                <div className={cn("h-full flex flex-col py-3", !previewPlay && !previewGame && "pr-3")}>
                   {/* Explore Tabs */}
                   <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
                     {exploreTabs.map((tab) => (

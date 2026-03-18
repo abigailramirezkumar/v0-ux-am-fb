@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+
 import { mockGames, mockClips, findTeamById as getTeamById } from "@/lib/games-context"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -16,6 +17,8 @@ interface GamesModuleProps {
   selectedSeason: string | null
   onLeagueToggle: (league: GameLeague) => void
   onSeasonChange: (season: string | null) => void
+  onClickGame?: (game: Game) => void
+  activeGameId?: string
 }
 
 interface GamesBySeasonAndLeague {
@@ -74,7 +77,15 @@ function TeamBadge({ teamId, className }: { teamId: string; className?: string }
 // ---------------------------------------------------------------------------
 // Game Tile Component
 // ---------------------------------------------------------------------------
-function GameTile({ game }: { game: Game }) {
+function GameTile({ 
+  game, 
+  onClick, 
+  isActive 
+}: { 
+  game: Game
+  onClick?: () => void
+  isActive?: boolean 
+}) {
   const homeTeam = getTeamById(game.homeTeamId)
   const awayTeam = getTeamById(game.awayTeamId)
   const clipCount = getClipCountForGame(game.id)
@@ -87,7 +98,13 @@ function GameTile({ game }: { game: Game }) {
   const awayWins = game.score && game.score.away > game.score.home
 
   return (
-    <div className="flex items-center bg-muted/30 hover:bg-muted/50 transition-colors rounded-lg px-4 py-3 cursor-pointer border border-border/50">
+    <div 
+      className={cn(
+        "flex items-center bg-muted/30 hover:bg-muted/50 transition-colors rounded-lg px-4 py-3 cursor-pointer border",
+        isActive ? "border-primary ring-1 ring-primary" : "border-border/50"
+      )}
+      onClick={onClick}
+    >
       {/* Left: Date and Week */}
       <div className="w-[72px] shrink-0 text-left pr-3">
         <div className="text-xs text-muted-foreground">{formatDate(game.date)}</div>
@@ -160,7 +177,17 @@ function GameTile({ game }: { game: Game }) {
 // League Section Component
 // ---------------------------------------------------------------------------
 
-function LeagueSection({ league, games }: { league: GameLeague; games: Game[] }) {
+function LeagueSection({ 
+  league, 
+  games,
+  onClickGame,
+  activeGameId,
+}: { 
+  league: GameLeague
+  games: Game[]
+  onClickGame?: (game: Game) => void
+  activeGameId?: string
+}) {
   const leagueLabel = league === "HighSchool" ? "High School" : league
 
   return (
@@ -170,7 +197,12 @@ function LeagueSection({ league, games }: { league: GameLeague; games: Game[] })
       </h4>
       <div className="space-y-2">
         {games.map((game) => (
-          <GameTile key={game.id} game={game} />
+          <GameTile 
+            key={game.id} 
+            game={game} 
+            onClick={() => onClickGame?.(game)}
+            isActive={game.id === activeGameId}
+          />
         ))}
       </div>
     </div>
@@ -185,6 +217,8 @@ export function GamesModule({
   selectedSeason,
   onLeagueToggle,
   onSeasonChange,
+  onClickGame,
+  activeGameId,
 }: GamesModuleProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -312,6 +346,8 @@ export function GamesModule({
                       key={`${seasonGroup.season}-${leagueGroup.league}`}
                       league={leagueGroup.league}
                       games={leagueGroup.games}
+                      onClickGame={onClickGame}
+                      activeGameId={activeGameId}
                     />
                   ))}
                 </div>

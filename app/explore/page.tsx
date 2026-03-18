@@ -20,7 +20,7 @@ import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import type { ClipData } from "@/types/library"
 import type { PlayData } from "@/lib/mock-datasets"
-import type { GameLeague } from "@/types/game"
+import type { Game, GameLeague } from "@/types/game"
 import { useExploreContext } from "@/lib/explore-context"
 
 const exploreTabs = [
@@ -95,6 +95,7 @@ function EmptyTabState({ label }: { label: string }) {
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
+  const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const { showFilters, setShowFilters, setActiveFilterCount } = useExploreContext()
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
@@ -121,10 +122,10 @@ export default function ExplorePage() {
   // Calculate games filter count
   const gamesFilterCount = selectedLeagues.length + (selectedSeason ? 1 : 0)
 
-  // Expand/collapse the preview panel when previewPlay changes
+  // Expand/collapse the preview panel when previewPlay or previewGame changes
   // Mutual exclusion: opening preview closes filters, closing preview reopens filters
   useEffect(() => {
-    if (previewPlay) {
+    if (previewPlay || previewGame) {
       // Resize to 50% so grid and preview share space equally
       previewPanelRef.current?.resize(50)
       setShowFilters(false)
@@ -132,7 +133,23 @@ export default function ExplorePage() {
       previewPanelRef.current?.collapse()
       setShowFilters(true)
     }
-  }, [previewPlay])
+  }, [previewPlay, previewGame])
+
+  // When clicking a game, close any open clip preview and vice versa
+  const handleGameClick = (game: Game) => {
+    setPreviewPlay(null)
+    setPreviewGame(game)
+  }
+
+  const handleClipClick = (play: PlayData) => {
+    setPreviewGame(null)
+    setPreviewPlay(play)
+  }
+
+  const handleClosePreview = () => {
+    setPreviewPlay(null)
+    setPreviewGame(null)
+  }
 
   
 
@@ -242,7 +259,7 @@ export default function ExplorePage() {
                         }
                         dataset={filteredDataset}
                         onClearFilters={clearFilters}
-                        onClickPlay={(play) => setPreviewPlay(play)}
+                        onClickPlay={handleClipClick}
                         activePlayId={previewPlay?.id}
                       />
                       {/* Subtle overlay while deferred filter computation catches up */}
@@ -265,6 +282,8 @@ export default function ExplorePage() {
                         selectedSeason={selectedSeason}
                         onLeagueToggle={handleLeagueToggle}
                         onSeasonChange={setSelectedSeason}
+                        onClickGame={handleGameClick}
+                        activeGameId={previewGame?.id}
                       />
                     </div>
                   ) : activeTab === "teams" ? (
@@ -295,10 +314,11 @@ export default function ExplorePage() {
                 order={2}
               >
                 <div className="h-full pr-3 py-3 pl-0">
-                  {previewPlay && (
+                  {(previewPlay || previewGame) && (
                     <PreviewModule
-                      play={previewPlay}
-                      onClose={() => setPreviewPlay(null)}
+                      play={previewPlay || undefined}
+                      game={previewGame || undefined}
+                      onClose={handleClosePreview}
                     />
                   )}
                 </div>

@@ -159,6 +159,7 @@ function GameTile({ game }: { game: Game }) {
 // ---------------------------------------------------------------------------
 // League Section Component
 // ---------------------------------------------------------------------------
+
 function LeagueSection({ league, games }: { league: GameLeague; games: Game[] }) {
   const leagueLabel = league === "HighSchool" ? "High School" : league
 

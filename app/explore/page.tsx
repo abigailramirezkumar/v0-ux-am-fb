@@ -6,6 +6,7 @@ import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
 import { GamesFiltersModule } from "@/components/games-filters-module"
 import { GamesModule } from "@/components/games-module"
+import { TeamsModule } from "@/components/teams-module"
 import { PreviewModule } from "@/components/preview-module"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
@@ -152,7 +153,7 @@ export default function ExplorePage() {
 
   // Sync active filter count to context for header badge
   useEffect(() => {
-    const count = activeTab === "games" ? gamesFilterCount : activeFilterCount
+    const count = (activeTab === "games" || activeTab === "teams") ? gamesFilterCount : activeFilterCount
     setActiveFilterCount(count)
   }, [activeFilterCount, gamesFilterCount, activeTab, setActiveFilterCount])
 
@@ -178,7 +179,7 @@ export default function ExplorePage() {
             onExpand={() => setShowFilters(true)}
           >
             <div className="h-full pl-3 py-3">
-              {activeTab === "games" ? (
+              {activeTab === "games" || activeTab === "teams" ? (
                 <GamesFiltersModule
                   selectedLeagues={selectedLeagues}
                   selectedSeason={selectedSeason}
@@ -266,9 +267,16 @@ export default function ExplorePage() {
                         onSeasonChange={setSelectedSeason}
                       />
                     </div>
+                  ) : activeTab === "teams" ? (
+                    <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
+                      <TeamsModule
+                        selectedLeagues={selectedLeagues}
+                        selectedSeason={selectedSeason}
+                      />
+                    </div>
                   ) : (
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
-                      <EmptyTabState label="Teams" />
+                      <EmptyTabState label="Content" />
                     </div>
                   )}
                 </div>

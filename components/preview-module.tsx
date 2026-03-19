@@ -721,12 +721,12 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
               {athleteTeam && onNavigateToTeam ? (
                 <button
                   onClick={() => onNavigateToTeam(athleteTeam)}
-                  className="text-primary font-medium hover:underline cursor-pointer"
+                  className="text-foreground underline cursor-pointer"
                 >
                   {teamName}
                 </button>
               ) : (
-                <span className="text-primary font-medium">{teamName}</span>
+                <span>{teamName}</span>
               )}
               <span className="text-border">{"·"}</span>
               <span>{athlete.position}</span>
@@ -2089,12 +2089,12 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
               {athleteTeam && onNavigateToTeam ? (
                 <button
                   onClick={() => onNavigateToTeam(athleteTeam)}
-                  className="text-primary font-medium hover:underline cursor-pointer"
+                  className="text-foreground underline cursor-pointer"
                 >
                   {teamName}
                 </button>
               ) : (
-                <span className="text-primary font-medium">{teamName}</span>
+                <span>{teamName}</span>
               )}
               <span className="text-border">{"·"}</span>
               <span>{athlete.position}</span>

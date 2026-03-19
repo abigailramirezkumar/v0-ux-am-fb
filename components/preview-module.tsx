@@ -702,7 +702,7 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        {/* Avatar + Name + Team/Position */}
+        {/* Avatar + Name + Team/Position - matching Figma design */}
         <div className="px-5 pt-6 pb-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
             {athlete.name.split(" ").map((n) => n[0]).join("")}
@@ -710,6 +710,14 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+              {athleteTeam && (
+                <div
+                  className="w-4 h-4 rounded flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+                  style={{ backgroundColor: athleteTeam.logoColor }}
+                >
+                  {athleteTeam.abbreviation.slice(0, 2)}
+                </div>
+              )}
               {athleteTeam && onNavigateToTeam ? (
                 <button
                   onClick={() => onNavigateToTeam(athleteTeam)}
@@ -1819,22 +1827,28 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Team Identity Card */}
-        <div className="px-4 pt-4">
-          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
-            <div className="flex items-center gap-4">
+        {/* Team Identity Card - matching Athlete pattern */}
+        <div className="px-5 pt-6 pb-4 flex items-center gap-4">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0"
+            style={{ backgroundColor: team.logoColor }}
+          >
+            {team.abbreviation}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-bold text-foreground leading-tight truncate">{team.name}</h2>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
               <div
-                className="w-16 h-16 rounded-lg flex items-center justify-center text-white text-xl font-bold shrink-0"
-                style={{ backgroundColor: team.logoColor }}
+                className="w-4 h-4 rounded flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+                style={{ backgroundColor: "#1a365d" }}
               >
-                {team.abbreviation}
+                {team.id.startsWith("hs-") ? "HS" : team.id.length > 3 ? "NC" : "NFL"}
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-foreground">{team.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {stats.record.wins}-{stats.record.losses} Record
-                </p>
-              </div>
+              <span className="text-primary font-medium hover:underline cursor-pointer">
+                {team.id.startsWith("hs-") ? "High School" : team.id.length > 3 ? "NCAA" : "NFL"}
+              </span>
+              <span className="text-border">{"·"}</span>
+              <span>{stats.record.wins}-{stats.record.losses} Record</span>
             </div>
           </div>
         </div>
@@ -2018,7 +2032,7 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Avatar + Name + Team/Position */}
+        {/* Avatar + Name + Team/Position - matching Figma design */}
         <div className="px-5 pt-6 pb-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-muted-foreground shrink-0">
             {athlete.name.split(" ").map((n) => n[0]).join("")}
@@ -2026,6 +2040,14 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-foreground leading-tight truncate">{athlete.name}</h2>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5 flex-wrap">
+              {athleteTeam && (
+                <div
+                  className="w-4 h-4 rounded flex items-center justify-center text-white text-[8px] font-bold shrink-0"
+                  style={{ backgroundColor: athleteTeam.logoColor }}
+                >
+                  {athleteTeam.abbreviation.slice(0, 2)}
+                </div>
+              )}
               {athleteTeam && onNavigateToTeam ? (
                 <button
                   onClick={() => onNavigateToTeam(athleteTeam)}

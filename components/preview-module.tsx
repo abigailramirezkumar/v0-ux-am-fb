@@ -1405,8 +1405,32 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
   
   // Get clips for this game
   const gameClips = useMemo(() => {
-  return mockClips.filter((clip) => clip.gameId === game.id)
+    return mockClips.filter((clip) => clip.gameId === game.id)
   }, [game.id])
+
+  // Video preview setup - use first clip's video or a default
+  const videoUrl = useMemo(() => {
+    if (gameClips.length > 0 && gameClips[0].thumbnailUrl) {
+      return gameClips[0].thumbnailUrl
+    }
+    const h = hashString(game.id)
+    return VIDEO_POOL[h % VIDEO_POOL.length]
+  }, [game.id, gameClips])
+
+  // Source type for the video badge
+  const sourceType: SourceType = useMemo(() => {
+    const h = hashString(game.id)
+    const types: SourceType[] = ["broadcast", "endzone", "all22"]
+    return types[h % types.length]
+  }, [game.id])
+
+  // Score display for video overlay
+  const videoScore = useMemo(() => {
+    if (game.score) {
+      return `${game.score.away} - ${game.score.home}`
+    }
+    return null
+  }, [game.score])
 
   // Format game date
   const formattedDate = useMemo(() => {
@@ -1419,13 +1443,18 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
     })
   }, [game.date])
 
-// Handle View Full Game action - uses onNavigateToGame callback if provided
-  const handleViewFullGame = useCallback(() => {
-  if (onNavigateToGame) {
-    onNavigateToGame(game)
-  } else {
+  // Handle "Open Game" action from video player
+  const handleOpenGame = useCallback(() => {
     router.push("/watch")
-  }
+  }, [router])
+
+  // Handle View Full Game action - uses onNavigateToGame callback if provided
+  const handleViewFullGame = useCallback(() => {
+    if (onNavigateToGame) {
+      onNavigateToGame(game)
+    } else {
+      router.push("/watch")
+    }
   }, [router, onNavigateToGame, game])
 
   // Handle Download action
@@ -1464,6 +1493,16 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-20">
+        {/* Video Preview */}
+        <div className="px-4 pt-4">
+          <PreviewVideoPlayer
+            videoUrl={videoUrl}
+            sourceType={sourceType}
+            score={videoScore}
+            onOpenClip={handleOpenGame}
+          />
+        </div>
+
         {/* Game Card */}
         <div className="px-4 pt-4">
           <div className="bg-muted/30 rounded-lg p-4 border border-border/50">

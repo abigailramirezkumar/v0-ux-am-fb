@@ -756,44 +756,178 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
 
         {profileTab === "Overview" ? (
           <div className="px-5 pb-6">
-            {/* Identity section */}
-            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
-            <div className="flex flex-col">
-              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-              <IdentityRow label="Position" value={athlete.position} />
-              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-              <IdentityRow label="College" value={athlete.college} />
-              <IdentityRow 
-                label="Team" 
-                value={teamName} 
-                isLast 
-                onClick={athleteTeam && onNavigateToTeam ? () => onNavigateToTeam(athleteTeam) : undefined}
-              />
-            </div>
-
-            {/* Key Stats */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
-                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
-                  2025/26
-                </span>
+            {/* Two-column layout: Identity (left) + Key Stats (right) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Identity section */}
+              <div>
+                <h3 className="text-base font-bold text-foreground mb-4">Identity</h3>
+                <div className="flex flex-col">
+                  <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+                  <IdentityRow label="Position" value={athlete.position} />
+                  <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+                  <IdentityRow label="College" value={athlete.college} />
+                  <IdentityRow 
+                    label="Team" 
+                    value={teamName} 
+                    isLast 
+                    onClick={athleteTeam && onNavigateToTeam ? () => onNavigateToTeam(athleteTeam) : undefined}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {keyStats.map((stat) => (
-                  <div key={stat.label} className="rounded-lg border border-border p-3">
-                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
-                      {stat.secondary && (
-                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
+
+              {/* Key Stats */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-foreground">Key Stats</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>2025/26</span>
+                    <Icon name="chevronDown" className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {keyStats.slice(0, 6).map((stat) => (
+                    <div key={stat.label} className="rounded-lg border border-border p-3">
+                      <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold text-primary">{stat.value}</span>
+                        {stat.secondary && (
+                          <span className="text-[10px] text-muted-foreground">{stat.secondary}</span>
+                        )}
+                      </div>
+                      {stat.note && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{stat.note}</p>
                       )}
                     </div>
-                    {stat.note && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
-                    )}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Athlete Highlights Section */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-foreground">Athlete Highlights</h3>
+                <button className="px-2.5 py-1 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                  View All
+                </button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {ATHLETE_HIGHLIGHTS.map((highlight) => (
+                  <div key={highlight.id} className="flex-shrink-0 w-36">
+                    <div className="aspect-video rounded-lg bg-primary/20 mb-2 overflow-hidden relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/60 flex items-center justify-center">
+                        <Icon name="play" className="w-6 h-6 text-white/80" />
+                      </div>
+                    </div>
+                    <p className="text-xs font-medium text-foreground truncate">{highlight.title}</p>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                      <span className="text-orange-500">{"🔥"}</span>
+                      <span>{highlight.reactions}</span>
+                      <span>{"·"}</span>
+                      <span>{highlight.views} views</span>
+                    </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Playlists Section */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-foreground">Playlists</h3>
+                <button className="px-2.5 py-1 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                  Create Playlist
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {ATHLETE_PLAYLISTS.slice(0, 6).map((playlist) => (
+                  <button
+                    key={playlist.id}
+                    className="flex items-center gap-2 p-2.5 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Icon name="play" className="w-3 h-3 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{playlist.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{playlist.clips} clips</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Games Section */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-bold text-foreground">Recent Games</h3>
+                <button className="px-2.5 py-1 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                  View All
+                </button>
+              </div>
+              <div className="space-y-2">
+                {ATHLETE_RECENT_GAMES.slice(0, 3).map((game) => (
+                  <div key={game.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-border">
+                    <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors shrink-0">
+                      <Icon name="play" className="w-3 h-3 text-muted-foreground" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">{game.date}</span>
+                        <span className="text-border">{"·"}</span>
+                        <span className="text-xs text-foreground truncate">{game.competition}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">vs</span>
+                        <span className="text-xs font-medium text-foreground">{game.opponent}</span>
+                        <span className={cn("text-xs font-medium", game.result === "W" ? "text-green-500" : "text-red-500")}>
+                          {game.result} {game.score}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-medium text-primary">{game.yards} yds</p>
+                      <p className="text-[10px] text-muted-foreground">{game.tds} TD</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Teams Section */}
+            <div className="mt-6">
+              <h3 className="text-base font-bold text-foreground mb-3">Teams</h3>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                {athleteTeam ? (
+                  <>
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ backgroundColor: athleteTeam.logoColor }}
+                    >
+                      {athleteTeam.abbreviation}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{athleteTeam.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {athlete.position} {"·"} #{athlete.jersey_number}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">2023 - Present</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs font-bold shrink-0">
+                      {athlete.team.slice(0, 2)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{teamName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {athlete.position} {"·"} #{athlete.jersey_number}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">2023 - Present</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -806,6 +940,29 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
     </div>
   )
 }
+
+// Mock data for Athlete Profile sections
+const ATHLETE_HIGHLIGHTS = [
+  { id: "1", title: "Game-winning TD vs Ravens", reactions: 24, views: 1200 },
+  { id: "2", title: "Career-high 180 yards", reactions: 18, views: 890 },
+  { id: "3", title: "Incredible one-handed catch", reactions: 45, views: 2100 },
+  { id: "4", title: "Breakaway 65-yard run", reactions: 32, views: 1500 },
+]
+
+const ATHLETE_PLAYLISTS = [
+  { id: "1", name: "Automatic Video Report", clips: 192 },
+  { id: "2", name: "Best Actions", clips: 156 },
+  { id: "3", name: "Touchdowns", clips: 48 },
+  { id: "4", name: "Big Plays", clips: 87 },
+  { id: "5", name: "Red Zone", clips: 64 },
+  { id: "6", name: "Third Down", clips: 112 },
+]
+
+const ATHLETE_RECENT_GAMES = [
+  { id: "1", date: "Jan 12", competition: "Divisional Round", opponent: "Ravens", result: "W", score: "31-24", yards: 156, tds: 2 },
+  { id: "2", date: "Jan 05", competition: "Wild Card", opponent: "Steelers", result: "W", score: "28-14", yards: 180, tds: 1 },
+  { id: "3", date: "Dec 29", competition: "Week 17", opponent: "Browns", result: "W", score: "35-21", yards: 142, tds: 2 },
+]
 
 function IdentityRow({ label, value, isLast, onClick }: { label: string; value: string; isLast?: boolean; onClick?: () => void }) {
   return (
@@ -1574,52 +1731,52 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
 
         {/* Game Info */}
         <div className="px-4 pt-5 pb-3">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Game Details</h4>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Date</span>
-              <span className="text-foreground">{formattedDate}</span>
+          <h4 className="text-base font-bold text-foreground mb-4">Game Details</h4>
+          <div className="space-y-0">
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Date</span>
+              <span className="text-sm text-muted-foreground">{formattedDate}</span>
             </div>
             {game.kickoffTime && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Kickoff</span>
-                <span className="text-foreground">{game.kickoffTime}</span>
+              <div className="flex justify-between py-3 border-b border-dotted border-border">
+                <span className="text-sm font-medium text-foreground">Kickoff</span>
+                <span className="text-sm text-muted-foreground">{game.kickoffTime}</span>
               </div>
             )}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Venue</span>
-              <span className="text-foreground">{game.venue}</span>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Venue</span>
+              <span className="text-sm text-muted-foreground">{game.venue}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Location</span>
-              <span className="text-foreground">{game.city}</span>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Location</span>
+              <span className="text-sm text-muted-foreground">{game.city}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Season</span>
-              <span className="text-foreground">{game.season}</span>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Season</span>
+              <span className="text-sm text-muted-foreground">{game.season}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">League</span>
-              <span className="text-foreground">
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">League</span>
+              <span className="text-sm text-muted-foreground">
                 {game.league === "HighSchool" ? "High School" : game.league}
               </span>
             </div>
             {game.broadcast && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Broadcast</span>
-                <span className="text-foreground">{game.broadcast.network}</span>
+              <div className="flex justify-between py-3 border-b border-dotted border-border">
+                <span className="text-sm font-medium text-foreground">Broadcast</span>
+                <span className="text-sm text-muted-foreground">{game.broadcast.network}</span>
               </div>
             )}
             {game.attendance && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Attendance</span>
-                <span className="text-foreground">{game.attendance.toLocaleString()}</span>
+              <div className="flex justify-between py-3 border-b border-dotted border-border">
+                <span className="text-sm font-medium text-foreground">Attendance</span>
+                <span className="text-sm text-muted-foreground">{game.attendance.toLocaleString()}</span>
               </div>
             )}
             {game.weather && game.weather.condition !== "dome" && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Weather</span>
-                <span className="text-foreground capitalize">
+              <div className="flex justify-between py-3">
+                <span className="text-sm font-medium text-foreground">Weather</span>
+                <span className="text-sm text-muted-foreground capitalize">
                   {game.weather.temperature}°F, {game.weather.condition}
                 </span>
               </div>

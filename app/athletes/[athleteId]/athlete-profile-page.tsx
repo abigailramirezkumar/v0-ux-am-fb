@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
@@ -46,6 +46,38 @@ const TEAM_FULL_NAMES: Record<string, string> = {
 }
 
 const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
+
+// Mock data for Athlete Highlights
+const MOCK_HIGHLIGHTS = [
+  { id: "1", title: "Game-winning TD vs Ravens", reactions: 24, views: 1200, date: "Jan 12 2025" },
+  { id: "2", title: "Career-high 180 yards", reactions: 18, views: 890, date: "Jan 05 2025" },
+  { id: "3", title: "Incredible one-handed catch", reactions: 45, views: 2100, date: "Dec 29 2024" },
+  { id: "4", title: "Breakaway 65-yard run", reactions: 32, views: 1500, date: "Dec 22 2024" },
+  { id: "5", title: "Clutch 4th quarter drive", reactions: 12, views: 650, date: "Dec 15 2024" },
+]
+
+// Mock data for Playlists
+const MOCK_PLAYLISTS = [
+  { id: "1", name: "Automatic Video Report", clips: 192 },
+  { id: "2", name: "Best Actions", clips: 156 },
+  { id: "3", name: "Touchdowns", clips: 48 },
+  { id: "4", name: "Big Plays", clips: 87 },
+  { id: "5", name: "Red Zone", clips: 64 },
+  { id: "6", name: "Third Down", clips: 112 },
+  { id: "7", name: "Two-Minute Drill", clips: 34 },
+  { id: "8", name: "Goal Line", clips: 28 },
+  { id: "9", name: "Play Action", clips: 76 },
+  { id: "10", name: "Screen Plays", clips: 45 },
+]
+
+// Mock data for Recent Games
+const MOCK_RECENT_GAMES = [
+  { id: "1", date: "Jan 12, 2025", competition: "Divisional Round", opponent: "Ravens", result: "W", score: "31-24", yards: 156, tds: 2, tackles: 0 },
+  { id: "2", date: "Jan 05, 2025", competition: "Wild Card", opponent: "Steelers", result: "W", score: "28-14", yards: 180, tds: 1, tackles: 0 },
+  { id: "3", date: "Dec 29, 2024", competition: "Week 17", opponent: "Browns", result: "W", score: "35-21", yards: 142, tds: 2, tackles: 0 },
+  { id: "4", date: "Dec 22, 2024", competition: "Week 16", opponent: "Bengals", result: "L", score: "24-27", yards: 98, tds: 1, tackles: 0 },
+  { id: "5", date: "Dec 15, 2024", competition: "Week 15", opponent: "Chiefs", result: "L", score: "17-31", yards: 67, tds: 0, tackles: 0 },
+]
 
 /** Return position-relevant stats for an athlete */
 function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string; secondary?: string; note?: string }[] {
@@ -187,45 +219,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Profile Info */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Profile Card */}
-            <section className="bg-card rounded-xl border border-border p-6">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl font-bold text-muted-foreground shrink-0">
-                  {athlete.name.split(" ").map((n) => n[0]).join("")}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{athlete.name}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    {teamInfo ? (
-                      <Link 
-                        href={`/teams/${teamInfo.id}`}
-                        className="text-lg text-primary font-medium hover:underline"
-                      >
-                        {teamName}
-                      </Link>
-                    ) : (
-                      <span className="text-lg text-primary font-medium">{teamName}</span>
-                    )}
-                    <span className="text-muted-foreground">#{athlete.jersey_number}</span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                      {athlete.position}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                      {athlete.league}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Profile Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        <div className="space-y-6">
+          {/* Profile Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {PROFILE_TABS.map((tab) => (
                 <button
                   key={tab}
@@ -245,42 +242,199 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
             {/* Tab Content */}
             {profileTab === "Overview" ? (
               <div className="space-y-8">
-                {/* Identity Section */}
-                <section className="bg-card rounded-xl border border-border p-6">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Identity</h3>
-                  <div className="space-y-0">
-                    <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-                    <IdentityRow label="Position" value={athlete.position} />
-                    <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-                    <IdentityRow label="College" value={athlete.college} />
-                    <IdentityRow label="Team" value={teamName} />
-                    <IdentityRow label="League" value={athlete.league} isLast />
+                {/* Two-column layout: Identity (left) + Key Stats (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Identity Section */}
+                  <section>
+                    <h3 className="text-base font-bold text-foreground mb-4">Identity</h3>
+                    <div className="space-y-0">
+                      <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+                      <IdentityRow label="Position" value={athlete.position} />
+                      <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+                      <IdentityRow label="College" value={athlete.college} />
+                      <IdentityRow label="Team" value={teamName} />
+                      <IdentityRow label="League" value={athlete.league} isLast />
+                    </div>
+                  </section>
+
+                  {/* Key Stats Section */}
+                  <section>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-foreground">Key Stats</h3>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>2025/26</span>
+                        <Icon name="chevronDown" className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {keyStats.slice(0, 6).map((stat) => (
+                        <div key={stat.label} className="rounded-lg border border-border p-3">
+                          <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold text-primary">{stat.value}</span>
+                            {stat.secondary && (
+                              <span className="text-[10px] text-muted-foreground">{stat.secondary}</span>
+                            )}
+                          </div>
+                          {stat.note && (
+                            <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{stat.note}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+
+                {/* Athlete Highlights Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-foreground">Athlete Highlights</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {MOCK_HIGHLIGHTS.map((highlight) => (
+                      <div key={highlight.id} className="flex-shrink-0 w-44">
+                        <div className="aspect-video rounded-lg bg-primary/20 mb-2 overflow-hidden relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/60 flex items-center justify-center">
+                            <Icon name="play" className="w-8 h-8 text-white/80" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-0.5">
+                            <span className="text-orange-500">{"🔥"}</span>
+                            {highlight.reactions}
+                          </span>
+                          <span>{"·"}</span>
+                          <span>{highlight.views} views</span>
+                          <span>{"·"}</span>
+                          <span>{highlight.date}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </section>
 
-                {/* Key Stats Section */}
+                {/* Playlists Section */}
                 <section>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-foreground">Key Statistics</h3>
-                    <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-3 py-1">
-                      2025/26
-                    </span>
+                    <h3 className="text-base font-bold text-foreground">Playlists</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      Create Playlist
+                    </button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {keyStats.map((stat) => (
-                      <div key={stat.label} className="bg-card rounded-xl border border-border p-4">
-                        <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-extrabold text-foreground">{stat.value}</span>
-                          {stat.secondary && (
-                            <span className="text-sm text-muted-foreground">{stat.secondary}</span>
-                          )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {MOCK_PLAYLISTS.map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Icon name="play" className="w-4 h-4 text-muted-foreground" />
                         </div>
-                        {stat.note && (
-                          <p className="text-xs text-muted-foreground mt-1">{stat.note}</p>
-                        )}
-                      </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{playlist.name}</p>
+                          <p className="text-xs text-muted-foreground">{playlist.clips} clips</p>
+                        </div>
+                      </button>
                     ))}
+                  </div>
+                </section>
+
+                {/* Recent Games Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-foreground">Recent Games</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/30 border-b border-border">
+                            <th className="w-10 px-3 py-2"></th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Competition</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Opponent</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Score</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Yds</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">TDs</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Tkl</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {MOCK_RECENT_GAMES.map((game, idx) => (
+                            <tr key={game.id} className={cn("border-b border-border", idx % 2 === 0 && "bg-muted/10")}>
+                              <td className="px-3 py-2">
+                                <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+                                  <Icon name="play" className="w-3 h-3 text-muted-foreground" />
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 text-foreground whitespace-nowrap">{game.date}</td>
+                              <td className="px-3 py-2 text-foreground">{game.competition}</td>
+                              <td className="px-3 py-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">vs</span>
+                                  <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[8px] font-bold text-muted-foreground">
+                                    {game.opponent.slice(0, 2)}
+                                  </div>
+                                  <span className="text-foreground">{game.opponent}</span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className={cn("font-medium", game.result === "W" ? "text-green-500" : "text-red-500")}>
+                                  {game.result} {game.score}
+                                </span>
+                              </td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.yards}</td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tds}</td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tackles}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Teams Section */}
+                <section>
+                  <h3 className="text-base font-bold text-foreground mb-4">Teams</h3>
+                  <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+                    {teamInfo ? (
+                      <>
+                        <div
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
+                          style={{ backgroundColor: teamInfo.logoColor }}
+                        >
+                          {teamInfo.abbreviation}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{teamInfo.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {athlete.position} {"·"} #{athlete.jersey_number}
+                          </p>
+                          <p className="text-xs text-muted-foreground">2023 - Present</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold shrink-0">
+                          {athlete.team.slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{teamName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {athlete.position} {"·"} #{athlete.jersey_number}
+                          </p>
+                          <p className="text-xs text-muted-foreground">2023 - Present</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </section>
               </div>
@@ -289,77 +443,6 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 <p className="text-muted-foreground">{profileTab} content coming soon.</p>
               </div>
             )}
-          </div>
-
-          {/* Right Column - Quick Actions & Related */}
-          <div className="space-y-8">
-            {/* Quick Actions */}
-            <section className="bg-card rounded-xl border border-border p-5">
-              <h3 className="text-lg font-bold text-foreground mb-4">Quick Actions</h3>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="play" className="w-4 h-4 mr-2" />
-                  Watch Highlights
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="folder" className="w-4 h-4 mr-2" />
-                  View Game Film
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="download" className="w-4 h-4 mr-2" />
-                  Export Report
-                </Button>
-              </div>
-            </section>
-
-            {/* Team Link */}
-            {teamInfo && (
-              <section className="bg-card rounded-xl border border-border p-5">
-                <h3 className="text-lg font-bold text-foreground mb-4">Team</h3>
-                <Link
-                  href={`/teams/${teamInfo.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
-                >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                    style={{ backgroundColor: teamInfo.logoColor }}
-                  >
-                    {teamInfo.abbreviation}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                      {teamInfo.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{athlete.league}</p>
-                  </div>
-                  <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              </section>
-            )}
-
-            {/* Career Summary */}
-            <section className="bg-card rounded-xl border border-border p-5">
-              <h3 className="text-lg font-bold text-foreground mb-4">Career Summary</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Experience</span>
-                  <span className="font-medium text-foreground">
-                    {athlete.classYear || athlete.grade || `${2 + (hashString(athlete.name) % 8)} Years`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Draft</span>
-                  <span className="font-medium text-foreground">
-                    {athlete.league === "NFL" ? `Round ${1 + (hashString(athlete.name) % 4)}` : "N/A"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">College</span>
-                  <span className="font-medium text-foreground">{athlete.college}</span>
-                </div>
-              </div>
-            </section>
-          </div>
         </div>
       </main>
     </div>

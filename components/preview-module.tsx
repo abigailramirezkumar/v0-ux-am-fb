@@ -756,44 +756,50 @@ function AthleteProfileView({ athlete, onBack, onNavigateToTeam }: { athlete: At
 
         {profileTab === "Overview" ? (
           <div className="px-5 pb-6">
-            {/* Identity section */}
-            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
-            <div className="flex flex-col">
-              <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-              <IdentityRow label="Position" value={athlete.position} />
-              <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-              <IdentityRow label="College" value={athlete.college} />
-              <IdentityRow 
-                label="Team" 
-                value={teamName} 
-                isLast 
-                onClick={athleteTeam && onNavigateToTeam ? () => onNavigateToTeam(athleteTeam) : undefined}
-              />
-            </div>
-
-            {/* Key Stats */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground">Key Stats</h3>
-                <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-2.5 py-1">
-                  2025/26
-                </span>
+            {/* Two-column layout: Identity (left) + Key Stats (right) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Identity section */}
+              <div>
+                <h3 className="text-base font-bold text-foreground mb-4">Identity</h3>
+                <div className="flex flex-col">
+                  <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+                  <IdentityRow label="Position" value={athlete.position} />
+                  <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+                  <IdentityRow label="College" value={athlete.college} />
+                  <IdentityRow 
+                    label="Team" 
+                    value={teamName} 
+                    isLast 
+                    onClick={athleteTeam && onNavigateToTeam ? () => onNavigateToTeam(athleteTeam) : undefined}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {keyStats.map((stat) => (
-                  <div key={stat.label} className="rounded-lg border border-border p-3">
-                    <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-extrabold text-foreground italic">{stat.value}</span>
-                      {stat.secondary && (
-                        <span className="text-xs text-muted-foreground">{stat.secondary}</span>
+
+              {/* Key Stats */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-bold text-foreground">Key Stats</h3>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>2025/26</span>
+                    <Icon name="chevronDown" className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {keyStats.slice(0, 6).map((stat) => (
+                    <div key={stat.label} className="rounded-lg border border-border p-3">
+                      <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold text-primary">{stat.value}</span>
+                        {stat.secondary && (
+                          <span className="text-[10px] text-muted-foreground">{stat.secondary}</span>
+                        )}
+                      </div>
+                      {stat.note && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{stat.note}</p>
                       )}
                     </div>
-                    {stat.note && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{stat.note}</p>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

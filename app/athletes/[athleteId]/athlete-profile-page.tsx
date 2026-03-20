@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
@@ -187,45 +187,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Profile Info */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Profile Card */}
-            <section className="bg-card rounded-xl border border-border p-6">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-3xl font-bold text-muted-foreground shrink-0">
-                  {athlete.name.split(" ").map((n) => n[0]).join("")}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{athlete.name}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    {teamInfo ? (
-                      <Link 
-                        href={`/teams/${teamInfo.id}`}
-                        className="text-lg text-primary font-medium hover:underline"
-                      >
-                        {teamName}
-                      </Link>
-                    ) : (
-                      <span className="text-lg text-primary font-medium">{teamName}</span>
-                    )}
-                    <span className="text-muted-foreground">#{athlete.jersey_number}</span>
-                  </div>
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                      {athlete.position}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                      {athlete.league}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Profile Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        <div className="space-y-6">
+          {/* Profile Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {PROFILE_TABS.map((tab) => (
                 <button
                   key={tab}
@@ -245,121 +210,54 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
             {/* Tab Content */}
             {profileTab === "Overview" ? (
               <div className="space-y-8">
-                {/* Identity Section */}
-                <section className="bg-card rounded-xl border border-border p-6">
-                  <h3 className="text-lg font-bold text-foreground mb-4">Identity</h3>
-                  <div className="space-y-0">
-                    <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-                    <IdentityRow label="Position" value={athlete.position} />
-                    <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-                    <IdentityRow label="College" value={athlete.college} />
-                    <IdentityRow label="Team" value={teamName} />
-                    <IdentityRow label="League" value={athlete.league} isLast />
-                  </div>
-                </section>
+                {/* Two-column layout: Identity (left) + Key Stats (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Identity Section */}
+                  <section>
+                    <h3 className="text-base font-bold text-foreground mb-4">Identity</h3>
+                    <div className="space-y-0">
+                      <IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
+                      <IdentityRow label="Position" value={athlete.position} />
+                      <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
+                      <IdentityRow label="College" value={athlete.college} />
+                      <IdentityRow label="Team" value={teamName} />
+                      <IdentityRow label="League" value={athlete.league} isLast />
+                    </div>
+                  </section>
 
-                {/* Key Stats Section */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-foreground">Key Statistics</h3>
-                    <span className="text-xs font-semibold text-muted-foreground border border-border rounded-full px-3 py-1">
-                      2025/26
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {keyStats.map((stat) => (
-                      <div key={stat.label} className="bg-card rounded-xl border border-border p-4">
-                        <p className="text-xs font-bold text-primary mb-1">{stat.label}</p>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-extrabold text-foreground">{stat.value}</span>
-                          {stat.secondary && (
-                            <span className="text-sm text-muted-foreground">{stat.secondary}</span>
+                  {/* Key Stats Section */}
+                  <section>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-foreground">Key Stats</h3>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>2025/26</span>
+                        <Icon name="chevronDown" className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {keyStats.slice(0, 6).map((stat) => (
+                        <div key={stat.label} className="rounded-lg border border-border p-3">
+                          <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold text-primary">{stat.value}</span>
+                            {stat.secondary && (
+                              <span className="text-[10px] text-muted-foreground">{stat.secondary}</span>
+                            )}
+                          </div>
+                          {stat.note && (
+                            <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{stat.note}</p>
                           )}
                         </div>
-                        {stat.note && (
-                          <p className="text-xs text-muted-foreground mt-1">{stat.note}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                      ))}
+                    </div>
+                  </section>
+                </div>
               </div>
             ) : (
               <div className="bg-card rounded-xl border border-border p-12 text-center">
                 <p className="text-muted-foreground">{profileTab} content coming soon.</p>
               </div>
             )}
-          </div>
-
-          {/* Right Column - Quick Actions & Related */}
-          <div className="space-y-8">
-            {/* Quick Actions */}
-            <section className="bg-card rounded-xl border border-border p-5">
-              <h3 className="text-lg font-bold text-foreground mb-4">Quick Actions</h3>
-              <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="play" className="w-4 h-4 mr-2" />
-                  Watch Highlights
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="folder" className="w-4 h-4 mr-2" />
-                  View Game Film
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="download" className="w-4 h-4 mr-2" />
-                  Export Report
-                </Button>
-              </div>
-            </section>
-
-            {/* Team Link */}
-            {teamInfo && (
-              <section className="bg-card rounded-xl border border-border p-5">
-                <h3 className="text-lg font-bold text-foreground mb-4">Team</h3>
-                <Link
-                  href={`/teams/${teamInfo.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
-                >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                    style={{ backgroundColor: teamInfo.logoColor }}
-                  >
-                    {teamInfo.abbreviation}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                      {teamInfo.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{athlete.league}</p>
-                  </div>
-                  <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground" />
-                </Link>
-              </section>
-            )}
-
-            {/* Career Summary */}
-            <section className="bg-card rounded-xl border border-border p-5">
-              <h3 className="text-lg font-bold text-foreground mb-4">Career Summary</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Experience</span>
-                  <span className="font-medium text-foreground">
-                    {athlete.classYear || athlete.grade || `${2 + (hashString(athlete.name) % 8)} Years`}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Draft</span>
-                  <span className="font-medium text-foreground">
-                    {athlete.league === "NFL" ? `Round ${1 + (hashString(athlete.name) % 4)}` : "N/A"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">College</span>
-                  <span className="font-medium text-foreground">{athlete.college}</span>
-                </div>
-              </div>
-            </section>
-          </div>
         </div>
       </main>
     </div>

@@ -197,8 +197,18 @@ export function PreviewModuleV1({
     return null
   })
 
-  // Reset navigation when the root item changes from parent
-  const rootItemKey = useMemo(() => {
+  // Track what item was passed from parent to detect changes
+  const [lastParentItem, setLastParentItem] = useState<string | null>(() => {
+    if (game) return `game-${game.id}`
+    if (team) return `team-${team.id}`
+    if (athlete) return `athlete-${athlete.id || athlete.name}`
+    if (play) return `clip-${play.id}`
+    return null
+  })
+
+  // When parent passes a new item (clicked from list view), add it to navigation history
+  // instead of resetting the history
+  const currentParentKey = useMemo(() => {
     if (game) return `game-${game.id}`
     if (team) return `team-${team.id}`
     if (athlete) return `athlete-${athlete.id || athlete.name}`
@@ -206,26 +216,46 @@ export function PreviewModuleV1({
     return null
   }, [game, team, athlete, play])
 
-  // When root item changes, reset stacks and set current preview
+  // Handle when parent passes a new entity - add to history instead of resetting
   useMemo(() => {
+    // Skip if this is the same item or if there's no current preview yet
+    if (currentParentKey === lastParentItem) return
+    
+    // Determine the new item from props
+    let newType: PreviewItemType | null = null
+    let newData: PlayData | Game | Team | (Athlete & { id?: string }) | null = null
+    
     if (game) {
-      setCurrentPreview({ type: "game", data: game })
-      setBackStack([])
-      setForwardStack([])
+      newType = "game"
+      newData = game
     } else if (team) {
-      setCurrentPreview({ type: "team", data: team })
-      setBackStack([])
-      setForwardStack([])
+      newType = "team"
+      newData = team
     } else if (athlete) {
-      setCurrentPreview({ type: "athlete", data: athlete })
-      setBackStack([])
-      setForwardStack([])
+      newType = "athlete"
+      newData = athlete
     } else if (play) {
-      setCurrentPreview({ type: "clip", data: play })
-      setBackStack([])
-      setForwardStack([])
+      newType = "clip"
+      newData = play
     }
-  }, [rootItemKey])
+    
+    if (newType && newData) {
+      // If we have a current preview, push it to back stack before showing new item
+      if (currentPreview && lastParentItem) {
+        const currentItem: BreadcrumbItem = {
+          type: currentPreview.type,
+          label: getBreadcrumbLabel({ type: currentPreview.type, label: "", data: currentPreview.data }),
+          data: currentPreview.data
+        }
+        setBackStack(prev => [...prev, currentItem])
+        // Clear forward stack when navigating to new item from list
+        setForwardStack([])
+      }
+      
+      setCurrentPreview({ type: newType, data: newData })
+      setLastParentItem(currentParentKey)
+    }
+  }, [currentParentKey])
 
   // Navigate to a new item (drill down) - clears forward stack
   const navigateTo = useCallback((type: PreviewItemType, data: PlayData | Game | Team | (Athlete & { id?: string }), label: string) => {

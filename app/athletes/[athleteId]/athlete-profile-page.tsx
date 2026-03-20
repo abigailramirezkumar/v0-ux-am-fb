@@ -47,6 +47,38 @@ const TEAM_FULL_NAMES: Record<string, string> = {
 
 const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
 
+// Mock data for Athlete Highlights
+const MOCK_HIGHLIGHTS = [
+  { id: "1", title: "Game-winning TD vs Ravens", reactions: 24, views: 1200, date: "Jan 12 2025" },
+  { id: "2", title: "Career-high 180 yards", reactions: 18, views: 890, date: "Jan 05 2025" },
+  { id: "3", title: "Incredible one-handed catch", reactions: 45, views: 2100, date: "Dec 29 2024" },
+  { id: "4", title: "Breakaway 65-yard run", reactions: 32, views: 1500, date: "Dec 22 2024" },
+  { id: "5", title: "Clutch 4th quarter drive", reactions: 12, views: 650, date: "Dec 15 2024" },
+]
+
+// Mock data for Playlists
+const MOCK_PLAYLISTS = [
+  { id: "1", name: "Automatic Video Report", clips: 192 },
+  { id: "2", name: "Best Actions", clips: 156 },
+  { id: "3", name: "Touchdowns", clips: 48 },
+  { id: "4", name: "Big Plays", clips: 87 },
+  { id: "5", name: "Red Zone", clips: 64 },
+  { id: "6", name: "Third Down", clips: 112 },
+  { id: "7", name: "Two-Minute Drill", clips: 34 },
+  { id: "8", name: "Goal Line", clips: 28 },
+  { id: "9", name: "Play Action", clips: 76 },
+  { id: "10", name: "Screen Plays", clips: 45 },
+]
+
+// Mock data for Recent Games
+const MOCK_RECENT_GAMES = [
+  { id: "1", date: "Jan 12, 2025", competition: "Divisional Round", opponent: "Ravens", result: "W", score: "31-24", yards: 156, tds: 2, tackles: 0 },
+  { id: "2", date: "Jan 05, 2025", competition: "Wild Card", opponent: "Steelers", result: "W", score: "28-14", yards: 180, tds: 1, tackles: 0 },
+  { id: "3", date: "Dec 29, 2024", competition: "Week 17", opponent: "Browns", result: "W", score: "35-21", yards: 142, tds: 2, tackles: 0 },
+  { id: "4", date: "Dec 22, 2024", competition: "Week 16", opponent: "Bengals", result: "L", score: "24-27", yards: 98, tds: 1, tackles: 0 },
+  { id: "5", date: "Dec 15, 2024", competition: "Week 15", opponent: "Chiefs", result: "L", score: "17-31", yards: 67, tds: 0, tackles: 0 },
+]
+
 /** Return position-relevant stats for an athlete */
 function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string; secondary?: string; note?: string }[] {
   const s = athlete.stats
@@ -252,6 +284,159 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     </div>
                   </section>
                 </div>
+
+                {/* Athlete Highlights Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-foreground">Athlete Highlights</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {MOCK_HIGHLIGHTS.map((highlight) => (
+                      <div key={highlight.id} className="flex-shrink-0 w-44">
+                        <div className="aspect-video rounded-lg bg-primary/20 mb-2 overflow-hidden relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/60 flex items-center justify-center">
+                            <Icon name="play" className="w-8 h-8 text-white/80" />
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-0.5">
+                            <span className="text-orange-500">{"🔥"}</span>
+                            {highlight.reactions}
+                          </span>
+                          <span>{"·"}</span>
+                          <span>{highlight.views} views</span>
+                          <span>{"·"}</span>
+                          <span>{highlight.date}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Playlists Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-foreground">Playlists</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      Create Playlist
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {MOCK_PLAYLISTS.map((playlist) => (
+                      <button
+                        key={playlist.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Icon name="play" className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{playlist.name}</p>
+                          <p className="text-xs text-muted-foreground">{playlist.clips} clips</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Recent Games Section */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold text-foreground">Recent Games</h3>
+                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted/30 border-b border-border">
+                            <th className="w-10 px-3 py-2"></th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Competition</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Opponent</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Score</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Yds</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">TDs</th>
+                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Tkl</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {MOCK_RECENT_GAMES.map((game, idx) => (
+                            <tr key={game.id} className={cn("border-b border-border", idx % 2 === 0 && "bg-muted/10")}>
+                              <td className="px-3 py-2">
+                                <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+                                  <Icon name="play" className="w-3 h-3 text-muted-foreground" />
+                                </button>
+                              </td>
+                              <td className="px-3 py-2 text-foreground whitespace-nowrap">{game.date}</td>
+                              <td className="px-3 py-2 text-foreground">{game.competition}</td>
+                              <td className="px-3 py-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">vs</span>
+                                  <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[8px] font-bold text-muted-foreground">
+                                    {game.opponent.slice(0, 2)}
+                                  </div>
+                                  <span className="text-foreground">{game.opponent}</span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className={cn("font-medium", game.result === "W" ? "text-green-500" : "text-red-500")}>
+                                  {game.result} {game.score}
+                                </span>
+                              </td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.yards}</td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tds}</td>
+                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tackles}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Teams Section */}
+                <section>
+                  <h3 className="text-base font-bold text-foreground mb-4">Teams</h3>
+                  <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
+                    {teamInfo ? (
+                      <>
+                        <div
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
+                          style={{ backgroundColor: teamInfo.logoColor }}
+                        >
+                          {teamInfo.abbreviation}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{teamInfo.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {athlete.position} {"·"} #{athlete.jersey_number}
+                          </p>
+                          <p className="text-xs text-muted-foreground">2023 - Present</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold shrink-0">
+                          {athlete.team.slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{teamName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {athlete.position} {"·"} #{athlete.jersey_number}
+                          </p>
+                          <p className="text-xs text-muted-foreground">2023 - Present</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </section>
               </div>
             ) : (
               <div className="bg-card rounded-xl border border-border p-12 text-center">

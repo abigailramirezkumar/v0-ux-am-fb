@@ -574,7 +574,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                   {topPlayers.map((player, idx) => (
                     <Link
                       key={player.id || idx}
-                      href={`/athletes/${nameToSlug(player.name)}?from=${breadcrumbFrom}&team=${team.id}`}
+                      href={`/athletes/${nameToSlug(player.name)}?from=team-${team.id}&team=${team.id}`}
                       className="rounded-lg border border-border p-4 hover:bg-muted/30 transition-colors"
                     >
                       <p className="text-xs font-semibold text-primary mb-1">{player.statLabel}</p>

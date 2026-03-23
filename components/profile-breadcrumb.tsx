@@ -28,16 +28,19 @@ export function buildBreadcrumbUrl(
 }
 
 /**
- * ProfileBreadcrumb - Hierarchical breadcrumb navigation for profile pages
+ * ProfileBreadcrumb - Purely navigational breadcrumb for profile pages
  * 
  * Styled to match the library subheader breadcrumbs:
  * - Explore icon on the left
  * - Items separated by " / "
  * - Muted text for intermediate items, semibold for current
  * 
- * Enforces hierarchy: Explore/Search > Team > Athlete
- * - Team profiles: Always show "Explore > Team"
- * - Athlete profiles: Always show "Explore > Team > Athlete" (team is required)
+ * Shows navigation path based on how user arrived:
+ * - From search: Search > Athlete/Team
+ * - From explore: Explore > Athlete/Team
+ * - From team profile: Explore/Search > Team > Athlete
+ * 
+ * Team is only shown in breadcrumbs when drilling down FROM a team profile.
  */
 export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: ProfileBreadcrumbProps) {
   const searchParams = useSearchParams()
@@ -46,6 +49,8 @@ export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: Profil
 
   // Get the root source info based on the 'from' parameter
   const isFromSearch = fromParam === "search"
+  // Check if navigating from a team profile (format: "team-{teamId}")
+  const isFromTeam = fromParam?.startsWith("team-")
   const rootHref = "/explore"
   const fromValue = fromParam || "explore"
 
@@ -90,14 +95,15 @@ export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: Profil
     )
   }
 
-  // Athlete profile: Search/Explore > Team > Athlete (current)
-  // Team is always shown in the hierarchy
-  const teamHref = teamInfo ? buildBreadcrumbUrl(`/teams/${teamInfo.id}`, fromValue) : rootHref
+  // Athlete profile: Show team in breadcrumbs ONLY when coming from a team profile
+  // This makes breadcrumbs purely navigational - showing where you came from
+  const showTeamInBreadcrumb = isFromTeam && teamInfo
+  const teamHref = teamInfo ? buildBreadcrumbUrl(`/teams/${teamInfo.id}`, isFromSearch ? "search" : "explore") : rootHref
 
   return (
     <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
       {RootIcon}
-      {teamInfo && (
+      {showTeamInBreadcrumb && (
         <>
           <span>/</span>
           <Link

@@ -213,10 +213,8 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   
   // Build team options from athlete's team history
   const teamOptions = useMemo(() => {
-    console.log("[v0] Building team options, teamHistory:", athlete.teamHistory)
     if (!athlete.teamHistory || athlete.teamHistory.length === 0) {
       // Fallback to current team only
-      console.log("[v0] No team history, using current team:", athlete.team)
       return [{
         value: athlete.team,
         label: TEAM_FULL_NAMES[athlete.team] || athlete.team,
@@ -224,21 +222,15 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       }]
     }
     
-    const options = athlete.teamHistory.map(entry => ({
+    return athlete.teamHistory.map(entry => ({
       value: entry.team,
       label: TEAM_FULL_NAMES[entry.team] || entry.team,
       group: TEAM_TYPE_LABELS[entry.type] || entry.type,
     }))
-    console.log("[v0] Team options:", options)
-    return options
   }, [athlete.teamHistory, athlete.team])
   
   // Get all available seasons for this athlete
-  const allSeasons = useMemo(() => {
-    const seasons = getAllSeasonsForAthlete(athlete)
-    console.log("[v0] All seasons for athlete:", seasons)
-    return seasons
-  }, [athlete])
+  const allSeasons = useMemo(() => getAllSeasonsForAthlete(athlete), [athlete])
   
   // State for selected teams - initialize based on URL param
   const [selectedTeams, setSelectedTeams] = useState<string[]>(() => {

@@ -4,7 +4,7 @@ import { useMemo, useState, Suspense } from "react"
 import Link from "next/link"
 
 import { Icon } from "@/components/icon"
-import { ProfileBreadcrumb, useBreadcrumbContext } from "@/components/profile-breadcrumb"
+import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
@@ -184,8 +184,8 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
   
-  // Get breadcrumb context for building navigation URLs to child pages
-  const breadcrumbContext = useBreadcrumbContext(athlete.name, `/athletes/${nameToSlug(athlete.name)}`)
+  // Get breadcrumb 'from' value for building navigation URLs
+  const breadcrumbFrom = useBreadcrumbFrom()
 
   return (
     <div className="h-full overflow-y-auto bg-background">
@@ -200,7 +200,11 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 <span className="text-sm text-muted-foreground">Loading...</span>
               </div>
             }>
-              <ProfileBreadcrumb currentPage={athlete.name} />
+              <ProfileBreadcrumb 
+                currentPage={athlete.name} 
+                profileType="athlete"
+                teamInfo={teamInfo ? { name: teamName, id: teamInfo.id } : undefined}
+              />
             </Suspense>
           </div>
           
@@ -213,7 +217,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 {teamInfo ? (
                   <Link 
-                    href={breadcrumbContext.buildUrl(`/teams/${teamInfo.id}`)}
+                    href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
                     className="text-primary font-medium hover:underline"
                   >
                     {teamName}

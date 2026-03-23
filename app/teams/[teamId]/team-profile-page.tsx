@@ -7,14 +7,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PreviewModule } from "@/components/preview-module"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import { nameToSlug } from "@/lib/athletes-data"
-import { Play, ChevronRight, ChevronLeft } from "lucide-react"
+import { Play, ChevronRight, ChevronLeft, X } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
+import type { Game } from "@/types/game"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -148,6 +150,7 @@ interface TeamProfilePageProps {
 export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
+  const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const highlightsRef = useRef<HTMLDivElement>(null)
   
   // Get breadcrumb 'from' value for building navigation URLs
@@ -217,6 +220,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
         const gameStats = generateGameStats(game.id)
         return {
           id: game.id,
+          game, // Include full game object for preview
           date: new Date(game.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           competition: game.gameType === "playoff" ? "Playoff" : `Week ${game.week}`,
           opponent: opponent?.name || "Unknown",
@@ -518,41 +522,45 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {recentGames.map((game) => (
+                      {recentGames.map((gameData) => (
                         <TableRow
-                          key={game.id}
-                          className="cursor-pointer hover:bg-muted/50"
+                          key={gameData.id}
+                          className={cn(
+                            "cursor-pointer hover:bg-muted/50",
+                            previewGame?.id === gameData.id && "bg-primary/10"
+                          )}
+                          onClick={() => setPreviewGame(gameData.game)}
                         >
                           <TableCell className="px-3 py-3">
                             <button className="w-6 h-6 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
                               <Play className="w-3 h-3 text-muted-foreground ml-0.5" />
                             </button>
                           </TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{game.date}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{game.competition}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{gameData.date}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{gameData.competition}</TableCell>
                           <TableCell className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-5 h-5 rounded flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-                                style={{ backgroundColor: game.opponentColor }}
+                                style={{ backgroundColor: gameData.opponentColor }}
                               >
-                                {game.opponentAbbr.slice(0, 2)}
+                                {gameData.opponentAbbr.slice(0, 2)}
                               </div>
-                              <span className="text-xs text-foreground">{game.opponentAbbr}</span>
+                              <span className="text-xs text-foreground">{gameData.opponentAbbr}</span>
                             </div>
                           </TableCell>
                           <TableCell className="px-3 py-3">
                             <span className={cn(
                               "text-xs font-semibold",
-                              game.won ? "text-emerald-500" : "text-red-500"
+                              gameData.won ? "text-emerald-500" : "text-red-500"
                             )}>
-                              {game.score}
+                              {gameData.score}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.passYds}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.rushYds}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums">{game.stats.turnovers}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.thirdDownPct}%</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.passYds}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.rushYds}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums">{gameData.stats.turnovers}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.thirdDownPct}%</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -602,6 +610,28 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           </div>
         )}
       </main>
+
+      {/* Game Preview Slide-over Panel */}
+      {previewGame && (
+        <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-background border-l border-border shadow-xl z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Game Preview</h3>
+            <button
+              onClick={() => setPreviewGame(null)}
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <PreviewModule
+              game={previewGame}
+              onClose={() => setPreviewGame(null)}
+              hideHeader
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

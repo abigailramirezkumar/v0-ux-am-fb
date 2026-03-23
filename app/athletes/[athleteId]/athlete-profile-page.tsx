@@ -3,14 +3,19 @@
 import { useMemo, useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { X } from "lucide-react"
 
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { MultiSelect } from "@/components/ui/multi-select"
+import { PreviewModule } from "@/components/preview-module"
 import { cn } from "@/lib/utils"
 import { getAllSeasonsForAthlete, getSeasonsForTeams, getTeamsForSeasons } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
+import { mockGames } from "@/lib/mock-games"
+import { findTeamById } from "@/lib/games-context"
 import type { Athlete } from "@/types/athlete"
+import type { Game } from "@/types/game"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,14 +93,7 @@ const MOCK_PLAYLISTS = [
   { id: "10", name: "Screen Plays", clips: 45 },
 ]
 
-// Mock data for Recent Games
-const MOCK_RECENT_GAMES = [
-  { id: "1", date: "Jan 12, 2025", competition: "Divisional Round", opponent: "Ravens", result: "W", score: "31-24", yards: 156, tds: 2, tackles: 0 },
-  { id: "2", date: "Jan 05, 2025", competition: "Wild Card", opponent: "Steelers", result: "W", score: "28-14", yards: 180, tds: 1, tackles: 0 },
-  { id: "3", date: "Dec 29, 2024", competition: "Week 17", opponent: "Browns", result: "W", score: "35-21", yards: 142, tds: 2, tackles: 0 },
-  { id: "4", date: "Dec 22, 2024", competition: "Week 16", opponent: "Bengals", result: "L", score: "24-27", yards: 98, tds: 1, tackles: 0 },
-  { id: "5", date: "Dec 15, 2024", competition: "Week 15", opponent: "Chiefs", result: "L", score: "17-31", yards: 67, tds: 0, tackles: 0 },
-]
+
 
 /** Return position-relevant stats for an athlete */
 function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string; secondary?: string; note?: string }[] {
@@ -207,6 +205,7 @@ interface AthleteProfilePageProps {
 export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const searchParams = useSearchParams()
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
+  const [previewGame, setPreviewGame] = useState<Game | null>(null)
   
   // Get the team from URL if coming from a team page
   const fromTeamParam = searchParams.get("team")
@@ -302,6 +301,47 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   
   // Get breadcrumb 'from' value for building navigation URLs
   const breadcrumbFrom = useBreadcrumbFrom()
+  
+  // Get recent games for this athlete's current team
+  const recentGames = useMemo(() => {
+    const teamId = teamInfo?.id
+    if (!teamId) return []
+    
+    return mockGames
+      .filter((g) => g.homeTeamId === teamId || g.awayTeamId === teamId)
+      .filter((g) => g.status === "final" && g.score)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5)
+      .map((game) => {
+        const isHome = game.homeTeamId === teamId
+        const teamScore = isHome ? game.score!.home : game.score!.away
+        const opponentScore = isHome ? game.score!.away : game.score!.home
+        const opponentId = isHome ? game.awayTeamId : game.homeTeamId
+        const opponent = findTeamById(opponentId)
+        const won = teamScore > opponentScore
+        // Generate position-specific stats based on hash
+        const h = hashString(game.id + athlete.name)
+        const yards = athlete.position === "QB" ? 200 + (h % 150) : 
+                      athlete.position === "RB" ? 60 + (h % 120) :
+                      ["WR", "TE"].includes(athlete.position) ? 40 + (h % 100) : 0
+        const tds = h % 3
+        const tackles = ["LB", "DE", "DT", "CB", "S"].includes(athlete.position) ? 3 + (h % 10) : 0
+        
+        return {
+          id: game.id,
+          game, // Include full game object for preview
+          date: new Date(game.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          competition: game.gameType === "playoff" ? "Playoff" : `Week ${game.week}`,
+          opponent: opponent?.name || "Unknown",
+          opponentAbbr: opponent?.abbreviation || "UNK",
+          result: won ? "W" : "L",
+          score: `${teamScore}-${opponentScore}`,
+          yards,
+          tds,
+          tackles,
+        }
+      })
+  }, [teamInfo?.id, athlete.name, athlete.position])
 
   // Build team history display for the Teams section
   const teamHistoryDisplay = useMemo(() => {
@@ -529,62 +569,72 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 </section>
 
                 {/* Recent Games Section */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-foreground">Recent Games</h3>
-                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
-                      View All
-                    </button>
-                  </div>
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="bg-muted/30 border-b border-border">
-                            <th className="w-10 px-3 py-2"></th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date</th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Competition</th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Opponent</th>
-                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Score</th>
-                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Yds</th>
-                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">TDs</th>
-                            <th className="text-center px-2 py-2 font-medium text-muted-foreground">Tkl</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {MOCK_RECENT_GAMES.map((game, idx) => (
-                            <tr key={game.id} className={cn("border-b border-border", idx % 2 === 0 && "bg-muted/10")}>
-                              <td className="px-3 py-2">
-                                <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-                                  <Icon name="play" className="w-3 h-3 text-muted-foreground" />
-                                </button>
-                              </td>
-                              <td className="px-3 py-2 text-foreground whitespace-nowrap">{game.date}</td>
-                              <td className="px-3 py-2 text-foreground">{game.competition}</td>
-                              <td className="px-3 py-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-muted-foreground">vs</span>
-                                  <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[8px] font-bold text-muted-foreground">
-                                    {game.opponent.slice(0, 2)}
-                                  </div>
-                                  <span className="text-foreground">{game.opponent}</span>
-                                </div>
-                              </td>
-                              <td className="px-3 py-2">
-                                <span className={cn("font-medium", game.result === "W" ? "text-green-500" : "text-red-500")}>
-                                  {game.result} {game.score}
-                                </span>
-                              </td>
-                              <td className="text-center px-2 py-2 text-primary font-medium">{game.yards}</td>
-                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tds}</td>
-                              <td className="text-center px-2 py-2 text-primary font-medium">{game.tackles}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                {recentGames.length > 0 && (
+                  <section>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-foreground">Recent Games</h3>
+                      <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                        View All
+                      </button>
                     </div>
-                  </div>
-                </section>
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="bg-muted/30 border-b border-border">
+                              <th className="w-10 px-3 py-2"></th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground">Date</th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground">Competition</th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground">Opponent</th>
+                              <th className="text-left px-3 py-2 font-medium text-muted-foreground">Score</th>
+                              <th className="text-center px-2 py-2 font-medium text-muted-foreground">Yds</th>
+                              <th className="text-center px-2 py-2 font-medium text-muted-foreground">TDs</th>
+                              <th className="text-center px-2 py-2 font-medium text-muted-foreground">Tkl</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {recentGames.map((gameData, idx) => (
+                              <tr 
+                                key={gameData.id} 
+                                className={cn(
+                                  "border-b border-border cursor-pointer hover:bg-muted/50",
+                                  idx % 2 === 0 && "bg-muted/10",
+                                  previewGame?.id === gameData.id && "bg-primary/10"
+                                )}
+                                onClick={() => setPreviewGame(gameData.game)}
+                              >
+                                <td className="px-3 py-2">
+                                  <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+                                    <Icon name="play" className="w-3 h-3 text-muted-foreground" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-2 text-foreground whitespace-nowrap">{gameData.date}</td>
+                                <td className="px-3 py-2 text-foreground">{gameData.competition}</td>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">vs</span>
+                                    <div className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[8px] font-bold text-muted-foreground">
+                                      {gameData.opponentAbbr.slice(0, 2)}
+                                    </div>
+                                    <span className="text-foreground">{gameData.opponent}</span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <span className={cn("font-medium", gameData.result === "W" ? "text-green-500" : "text-red-500")}>
+                                    {gameData.result} {gameData.score}
+                                  </span>
+                                </td>
+                                <td className="text-center px-2 py-2 text-primary font-medium">{gameData.yards}</td>
+                                <td className="text-center px-2 py-2 text-primary font-medium">{gameData.tds}</td>
+                                <td className="text-center px-2 py-2 text-primary font-medium">{gameData.tackles}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                )}
 
                 {/* Teams Section - Updated to show team history */}
                 <section>
@@ -630,6 +680,28 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
             )}
         </div>
       </main>
+
+      {/* Game Preview Slide-over Panel */}
+      {previewGame && (
+        <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-background border-l border-border shadow-xl z-50 flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <h3 className="font-semibold text-foreground">Game Preview</h3>
+            <button
+              onClick={() => setPreviewGame(null)}
+              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            <PreviewModule
+              game={previewGame}
+              onClose={() => setPreviewGame(null)}
+              hideHeader
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

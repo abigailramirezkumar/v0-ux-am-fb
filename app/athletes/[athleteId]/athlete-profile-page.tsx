@@ -385,7 +385,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   }, [athlete.teamHistory, athlete.team, currentTeamName, teamInfo, athlete.id])
 
   return (
-    <div className="h-full flex flex-col bg-muted/30">
+    <div className="h-full flex flex-col bg-sidebar">
       {/* Main Content Area with Resizable Preview */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 gap-1">
         {/* Main Content Panel */}

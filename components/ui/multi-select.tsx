@@ -124,7 +124,8 @@ export function MultiSelect({
           >
             <Checkbox
               checked={allSelected || value.length === 0}
-              className="h-4 w-4"
+              onCheckedChange={() => handleSelectAll()}
+              className="h-4 w-4 pointer-events-none"
             />
             <span className="text-sm font-medium">{allLabel}</span>
           </div>
@@ -140,7 +141,8 @@ export function MultiSelect({
             >
               <Checkbox
                 checked={value.includes(option.value)}
-                className="h-4 w-4"
+                onCheckedChange={() => handleToggle(option.value)}
+                className="h-4 w-4 pointer-events-none"
               />
               <span className="text-sm">{option.label}</span>
             </div>
@@ -160,7 +162,8 @@ export function MultiSelect({
                 >
                   <Checkbox
                     checked={value.includes(option.value)}
-                    className="h-4 w-4"
+                    onCheckedChange={() => handleToggle(option.value)}
+                    className="h-4 w-4 pointer-events-none"
                   />
                   <span className="text-sm">{option.label}</span>
                 </div>

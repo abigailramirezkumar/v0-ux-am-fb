@@ -213,8 +213,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   
   // Build team options from athlete's team history
   const teamOptions = useMemo(() => {
+    console.log("[v0] Building team options, teamHistory:", athlete.teamHistory)
     if (!athlete.teamHistory || athlete.teamHistory.length === 0) {
       // Fallback to current team only
+      console.log("[v0] No team history, using current team:", athlete.team)
       return [{
         value: athlete.team,
         label: TEAM_FULL_NAMES[athlete.team] || athlete.team,
@@ -222,15 +224,21 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       }]
     }
     
-    return athlete.teamHistory.map(entry => ({
+    const options = athlete.teamHistory.map(entry => ({
       value: entry.team,
       label: TEAM_FULL_NAMES[entry.team] || entry.team,
       group: TEAM_TYPE_LABELS[entry.type] || entry.type,
     }))
+    console.log("[v0] Team options:", options)
+    return options
   }, [athlete.teamHistory, athlete.team])
   
   // Get all available seasons for this athlete
-  const allSeasons = useMemo(() => getAllSeasonsForAthlete(athlete), [athlete])
+  const allSeasons = useMemo(() => {
+    const seasons = getAllSeasonsForAthlete(athlete)
+    console.log("[v0] All seasons for athlete:", seasons)
+    return seasons
+  }, [athlete])
   
   // State for selected teams - initialize based on URL param
   const [selectedTeams, setSelectedTeams] = useState<string[]>(() => {
@@ -285,12 +293,16 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       // Filter seasons to only those available for selected teams
       const availableSeasons = getSeasonsForTeams(athlete, selectedTeams)
       // Keep only seasons that are still valid
-      const validSeasons = selectedSeasons.filter(s => availableSeasons.includes(s))
-      if (validSeasons.length !== selectedSeasons.length) {
-        setSelectedSeasons(validSeasons.length > 0 ? validSeasons : [])
-      }
+      setSelectedSeasons(prev => {
+        const validSeasons = prev.filter(s => availableSeasons.includes(s))
+        if (validSeasons.length !== prev.length) {
+          return validSeasons.length > 0 ? validSeasons : []
+        }
+        return prev
+      })
     }
-  }, [selectedTeams, athlete, selectedSeasons])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTeams, athlete])
   
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team

@@ -181,11 +181,11 @@ export function ExploreV2() {
   // V2 Navigation Handlers - Navigate to full profile pages instead of nested previews
   const handleNavigateToAthletePage = (athlete: Athlete & { id?: string }) => {
     const slug = nameToSlug(athlete.name)
-    router.push(`/athletes/${slug}`)
+    router.push(`/athletes/${slug}?from=explore`)
   }
 
   const handleNavigateToTeamPage = (team: Team) => {
-    router.push(`/teams/${team.id}`)
+    router.push(`/teams/${team.id}?from=explore`)
   }
 
   const handleNavigateToClipWatch = (play: PlayData) => {

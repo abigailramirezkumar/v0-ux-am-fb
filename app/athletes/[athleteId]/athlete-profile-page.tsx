@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, Suspense } from "react"
 import Link from "next/link"
 
 import { Icon } from "@/components/icon"
+import { ProfileBreadcrumb } from "@/components/profile-breadcrumb"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
@@ -188,10 +189,19 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-3">
+            <Suspense fallback={
+              <div className="flex items-center gap-3">
+                <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Loading...</span>
+              </div>
+            }>
+              <ProfileBreadcrumb currentPage={athlete.name} />
+            </Suspense>
+          </div>
+          
           <div className="flex items-center gap-4">
-            <Link href="/explore" className="text-muted-foreground hover:text-foreground transition-colors">
-              <Icon name="chevronLeft" className="w-5 h-5" />
-            </Link>
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
               {athlete.name.split(" ").map((n) => n[0]).join("")}
             </div>
@@ -200,7 +210,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 {teamInfo ? (
                   <Link 
-                    href={`/teams/${teamInfo.id}`}
+                    href={`/teams/${teamInfo.id}?from=explore`}
                     className="text-primary font-medium hover:underline"
                   >
                     {teamName}

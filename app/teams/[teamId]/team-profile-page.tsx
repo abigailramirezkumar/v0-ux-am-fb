@@ -1,10 +1,11 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState, Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Icon } from "@/components/icon"
+import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -144,7 +145,10 @@ interface TeamProfilePageProps {
 export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
   const highlightsRef = useRef<HTMLDivElement>(null)
-
+  
+  // Get breadcrumb 'from' value for building navigation URLs
+  const breadcrumbFrom = useBreadcrumbFrom()
+  
   // Get team identity
   const identity = useMemo(() => generateTeamIdentity(team.id, team.name), [team.id, team.name])
 
@@ -251,11 +255,20 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
       {/* Sticky Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-3">
+            <Suspense fallback={
+              <div className="flex items-center gap-3">
+                <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Loading...</span>
+              </div>
+            }>
+              <ProfileBreadcrumb currentPage={team.name} profileType="team" />
+            </Suspense>
+          </div>
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/explore" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Icon name="chevronLeft" className="w-5 h-5" />
-              </Link>
               <div
                 className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
                 style={{ backgroundColor: team.logoColor }}
@@ -558,7 +571,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                   {topPlayers.map((player, idx) => (
                     <Link
                       key={player.id || idx}
-                      href={`/athletes/${nameToSlug(player.name)}`}
+                      href={`/athletes/${nameToSlug(player.name)}?from=${breadcrumbFrom}`}
                       className="rounded-lg border border-border p-4 hover:bg-muted/30 transition-colors"
                     >
                       <p className="text-xs font-semibold text-primary mb-1">{player.statLabel}</p>

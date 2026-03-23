@@ -4,7 +4,7 @@ import { useMemo, useState, Suspense } from "react"
 import Link from "next/link"
 
 import { Icon } from "@/components/icon"
-import { ProfileBreadcrumb } from "@/components/profile-breadcrumb"
+import { ProfileBreadcrumb, useBreadcrumbContext } from "@/components/profile-breadcrumb"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
@@ -179,10 +179,13 @@ interface AthleteProfilePageProps {
 
 export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
-
+  
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
+  
+  // Get breadcrumb context for building navigation URLs to child pages
+  const breadcrumbContext = useBreadcrumbContext(athlete.name, `/athletes/${nameToSlug(athlete.name)}`)
 
   return (
     <div className="h-full overflow-y-auto bg-background">
@@ -210,7 +213,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 {teamInfo ? (
                   <Link 
-                    href={`/teams/${teamInfo.id}?from=explore`}
+                    href={breadcrumbContext.buildUrl(`/teams/${teamInfo.id}`)}
                     className="text-primary font-medium hover:underline"
                   >
                     {teamName}

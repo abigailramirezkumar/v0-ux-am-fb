@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { AthleteProfilePage } from "./athlete-profile-page"
 import { athletes, nameToSlug } from "@/lib/athletes-data"
@@ -20,7 +21,11 @@ export default async function Page({ params }: PageProps) {
     notFound()
   }
 
-  return <AthleteProfilePage athlete={athlete} />
+  return (
+    <Suspense fallback={<div className="h-full bg-background" />}>
+      <AthleteProfilePage athlete={athlete} />
+    </Suspense>
+  )
 }
 
 // ---------------------------------------------------------------------------

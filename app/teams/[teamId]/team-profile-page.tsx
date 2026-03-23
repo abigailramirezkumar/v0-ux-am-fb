@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Icon } from "@/components/icon"
-import { ProfileBreadcrumb } from "@/components/profile-breadcrumb"
+import { ProfileBreadcrumb, useBreadcrumbContext } from "@/components/profile-breadcrumb"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -145,7 +145,10 @@ interface TeamProfilePageProps {
 export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
   const highlightsRef = useRef<HTMLDivElement>(null)
-
+  
+  // Get breadcrumb context for building navigation URLs to child pages
+  const breadcrumbContext = useBreadcrumbContext(team.name, `/teams/${team.id}`)
+  
   // Get team identity
   const identity = useMemo(() => generateTeamIdentity(team.id, team.name), [team.id, team.name])
 
@@ -568,7 +571,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                   {topPlayers.map((player, idx) => (
                     <Link
                       key={player.id || idx}
-                      href={`/athletes/${nameToSlug(player.name)}?from=explore`}
+                      href={breadcrumbContext.buildUrl(`/athletes/${nameToSlug(player.name)}`)}
                       className="rounded-lg border border-border p-4 hover:bg-muted/30 transition-colors"
                     >
                       <p className="text-xs font-semibold text-primary mb-1">{player.statLabel}</p>

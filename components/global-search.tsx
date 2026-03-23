@@ -17,15 +17,18 @@ import {
 } from "@/components/ui/popover"
 import { useGlobalSearch } from "@/hooks/use-global-search"
 import { useLibraryContext } from "@/lib/library-context"
+import { useSearchContext } from "@/lib/search-context"
+import { nameToSlug } from "@/lib/athletes-data"
 import { cn } from "@/lib/utils"
 
 export function GlobalSearch() {
   const router = useRouter()
   const { query, setQuery, results } = useGlobalSearch()
   const { navigateToFolder, setWatchItem } = useLibraryContext()
+  const { inputRef } = useSearchContext()
   const [open, setOpen] = useState(false)
 
-  const hasResults = results.folders.length > 0 || results.items.length > 0 || results.clips.length > 0
+  const hasResults = results.folders.length > 0 || results.items.length > 0 || results.clips.length > 0 || results.athletes.length > 0 || results.teams.length > 0
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -35,8 +38,9 @@ export function GlobalSearch() {
             <Icon name="search" className="w-4 h-4 text-muted-foreground" />
           </div>
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Search folders, files, or clips..."
+            placeholder="Search athletes, teams, folders, files..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -115,6 +119,63 @@ export function GlobalSearch() {
                       {item.path && (
                         <span className="text-xs text-muted-foreground truncate">{item.path}</span>
                       )}
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {results.athletes.length > 0 && (
+              <CommandGroup heading="Athletes">
+                {results.athletes.map(athlete => (
+                  <CommandItem
+                    key={athlete.id}
+                    value={`${athlete.name} ${athlete.team} ${athlete.position}`}
+                    onSelect={() => {
+                      router.push(`/athletes/${nameToSlug(athlete.name)}?from=search`)
+                      setOpen(false)
+                      setQuery("")
+                    }}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground flex-shrink-0">
+                      {athlete.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium truncate">{athlete.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {athlete.team} - {athlete.position} #{athlete.jersey_number}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {results.teams.length > 0 && (
+              <CommandGroup heading="Teams">
+                {results.teams.map(team => (
+                  <CommandItem
+                    key={team.id}
+                    value={`${team.name} ${team.abbreviation} ${team.conference}`}
+                    onSelect={() => {
+                      router.push(`/teams/${team.id}?from=search`)
+                      setOpen(false)
+                      setQuery("")
+                    }}
+                    className="flex items-center gap-3 cursor-pointer"
+                  >
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ backgroundColor: team.logoColor }}
+                    >
+                      {team.abbreviation.slice(0, 2)}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium truncate">{team.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {team.league} - {team.conference}
+                      </span>
                     </div>
                   </CommandItem>
                 ))}

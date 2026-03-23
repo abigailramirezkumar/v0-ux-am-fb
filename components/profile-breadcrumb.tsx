@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Icon } from "@/components/icon"
+import { useSearchContextOptional } from "@/lib/search-context"
 
 interface ProfileBreadcrumbProps {
   /** The current page title (e.g., athlete name or team name) */
@@ -41,25 +42,47 @@ export function buildBreadcrumbUrl(
 export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: ProfileBreadcrumbProps) {
   const searchParams = useSearchParams()
   const fromParam = searchParams.get("from")
+  const searchContext = useSearchContextOptional()
 
   // Get the root source info based on the 'from' parameter
   const isFromSearch = fromParam === "search"
   const rootHref = "/explore"
   const fromValue = fromParam || "explore"
 
+  // Handler for clicking the search icon to focus the search bar
+  const handleSearchClick = (e: React.MouseEvent) => {
+    if (isFromSearch && searchContext) {
+      e.preventDefault()
+      searchContext.focusSearch()
+    }
+  }
+
+  // Render the root icon - either search or explore
+  const RootIcon = isFromSearch ? (
+    <button
+      onClick={handleSearchClick}
+      className="hover:text-foreground transition-colors flex items-center"
+      aria-label="Focus search bar"
+    >
+      <Icon name="search" className="w-4 h-4" />
+    </button>
+  ) : (
+    <Link
+      href={rootHref}
+      className="hover:text-foreground transition-colors flex items-center"
+      aria-label="Back to explore"
+    >
+      <Icon name="explore" className="w-4 h-4" />
+    </Link>
+  )
+
   // Build hierarchical breadcrumb based on profile type
   // Hierarchy is always: Root > Team > Athlete
   if (profileType === "team") {
-    // Team profile: Explore > Team (current)
+    // Team profile: Search/Explore > Team (current)
     return (
       <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
-        <Link
-          href={rootHref}
-          className="hover:text-foreground transition-colors flex items-center"
-          aria-label={isFromSearch ? "Back to search results" : "Back to explore"}
-        >
-          <Icon name="explore" className="w-4 h-4" />
-        </Link>
+        {RootIcon}
         <span>/</span>
         <span className="text-foreground font-semibold">{currentPage}</span>
         <span>/</span>
@@ -67,19 +90,13 @@ export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: Profil
     )
   }
 
-  // Athlete profile: Explore > Team > Athlete (current)
+  // Athlete profile: Search/Explore > Team > Athlete (current)
   // Team is always shown in the hierarchy
   const teamHref = teamInfo ? buildBreadcrumbUrl(`/teams/${teamInfo.id}`, fromValue) : rootHref
 
   return (
     <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
-      <Link
-        href={rootHref}
-        className="hover:text-foreground transition-colors flex items-center"
-        aria-label={isFromSearch ? "Back to search results" : "Back to explore"}
-      >
-        <Icon name="explore" className="w-4 h-4" />
-      </Link>
+      {RootIcon}
       {teamInfo && (
         <>
           <span>/</span>

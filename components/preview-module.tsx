@@ -1874,7 +1874,7 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
       </div>
 
       {/* Fixed Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
         <Button
           variant="outline"
           className="flex-1 font-semibold"
@@ -2237,7 +2237,7 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
       </div>
 
       {/* Fixed Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
         <Button
           variant="outline"
           className="flex-1 font-semibold"
@@ -2407,7 +2407,7 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
   </div>
 
   {/* Fixed Footer */}
-  <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+  <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
   <Button
   variant="outline"
   className="flex-1 font-semibold"
@@ -2644,7 +2644,7 @@ export function PreviewModule({
       </div>
 
       {/* Fixed Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border/50 px-4 py-3 flex items-center gap-2 shrink-0">
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
         <AddToPlaylistButton play={play} />
         <Button
           variant="outline"

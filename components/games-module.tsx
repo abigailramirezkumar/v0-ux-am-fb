@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { mockGames, mockClips, findTeamById as getTeamById } from "@/lib/games-context"
 import { Input } from "@/components/ui/input"
+import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { Search } from "lucide-react"
 import type { Game, GameLeague } from "@/types/game"
@@ -61,15 +62,13 @@ function TeamBadge({ teamId, className }: { teamId: string; className?: string }
   if (!team) return null
 
   return (
-    <div
-      className={cn(
-        "w-9 h-6 flex items-center justify-center rounded text-[10px] font-bold text-white shrink-0",
-        className
-      )}
-      style={{ backgroundColor: team.logoColor }}
-    >
-      {team.abbreviation}
-    </div>
+    <TeamLogo
+      teamId={teamId}
+      abbreviation={team.abbreviation}
+      logoColor={team.logoColor}
+      size="sm"
+      className={cn("w-9 h-6 rounded", className)}
+    />
   )
 }
 

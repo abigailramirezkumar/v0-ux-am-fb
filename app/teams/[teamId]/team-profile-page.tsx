@@ -8,6 +8,7 @@ import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PreviewModule } from "@/components/preview-module"
+import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -277,12 +278,12 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                style={{ backgroundColor: team.logoColor }}
-              >
-                {team.abbreviation}
-              </div>
+              <TeamLogo
+                teamId={team.id}
+                abbreviation={team.abbreviation}
+                logoColor={team.logoColor}
+                size="lg"
+              />
               <div>
                 <h1 className="text-xl font-bold text-foreground">{team.name}</h1>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">

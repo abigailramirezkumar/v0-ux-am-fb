@@ -3,20 +3,6 @@
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { Icon } from "@/components/icon"
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
-} from "@/components/breadcrumb"
-
-interface BreadcrumbStep {
-  label: string
-  href: string
-  icon?: "compass" | "search"
-}
 
 interface ProfileBreadcrumbProps {
   /** The current page title (e.g., athlete name or team name) */
@@ -43,6 +29,11 @@ export function buildBreadcrumbUrl(
 /**
  * ProfileBreadcrumb - Hierarchical breadcrumb navigation for profile pages
  * 
+ * Styled to match the library subheader breadcrumbs:
+ * - Explore icon on the left
+ * - Items separated by " / "
+ * - Muted text for intermediate items, semibold for current
+ * 
  * Enforces hierarchy: Explore/Search > Team > Athlete
  * - Team profiles: Always show "Explore > Team"
  * - Athlete profiles: Always show "Explore > Team > Athlete" (team is required)
@@ -52,25 +43,8 @@ export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: Profil
   const fromParam = searchParams.get("from")
 
   // Get the root source info based on the 'from' parameter
-  const getRootSource = (): BreadcrumbStep => {
-    switch (fromParam) {
-      case "search":
-        return {
-          label: "Search Results",
-          href: "/explore",
-          icon: "search",
-        }
-      case "explore":
-      default:
-        return {
-          label: "Explore",
-          href: "/explore",
-          icon: "compass",
-        }
-    }
-  }
-
-  const rootSource = getRootSource()
+  const isFromSearch = fromParam === "search"
+  const rootHref = "/explore"
   const fromValue = fromParam || "explore"
 
   // Build hierarchical breadcrumb based on profile type
@@ -78,75 +52,49 @@ export function ProfileBreadcrumb({ currentPage, profileType, teamInfo }: Profil
   if (profileType === "team") {
     // Team profile: Explore > Team (current)
     return (
-      <div className="flex items-center gap-3">
-        <Link 
-          href={rootSource.href} 
-          className="text-muted-foreground hover:text-foreground transition-colors"
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+        <Link
+          href={rootHref}
+          className="hover:text-foreground transition-colors flex items-center"
+          aria-label={isFromSearch ? "Back to search results" : "Back to explore"}
         >
-          <Icon name="chevronLeft" className="w-5 h-5" />
+          <Icon name="explore" className="w-4 h-4" />
         </Link>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={rootSource.href} className="flex items-center gap-1.5">
-                  {rootSource.icon && <Icon name={rootSource.icon} className="w-3.5 h-3.5" />}
-                  {rootSource.label}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{currentPage}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
+        <span>/</span>
+        <span className="text-foreground font-semibold">{currentPage}</span>
+        <span>/</span>
+      </nav>
     )
   }
 
   // Athlete profile: Explore > Team > Athlete (current)
   // Team is always shown in the hierarchy
-  const teamHref = teamInfo ? buildBreadcrumbUrl(`/teams/${teamInfo.id}`, fromValue) : "/explore"
-  const backHref = teamInfo ? teamHref : rootSource.href
+  const teamHref = teamInfo ? buildBreadcrumbUrl(`/teams/${teamInfo.id}`, fromValue) : rootHref
 
   return (
-    <div className="flex items-center gap-3">
-      <Link 
-        href={backHref} 
-        className="text-muted-foreground hover:text-foreground transition-colors"
+    <nav className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <Link
+        href={rootHref}
+        className="hover:text-foreground transition-colors flex items-center"
+        aria-label={isFromSearch ? "Back to search results" : "Back to explore"}
       >
-        <Icon name="chevronLeft" className="w-5 h-5" />
+        <Icon name="explore" className="w-4 h-4" />
       </Link>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={rootSource.href} className="flex items-center gap-1.5">
-                {rootSource.icon && <Icon name={rootSource.icon} className="w-3.5 h-3.5" />}
-                {rootSource.label}
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {teamInfo && (
-            <>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href={teamHref}>
-                    {teamInfo.name}
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </>
-          )}
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{currentPage}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-    </div>
+      {teamInfo && (
+        <>
+          <span>/</span>
+          <Link
+            href={teamHref}
+            className="hover:text-foreground transition-colors"
+          >
+            {teamInfo.name}
+          </Link>
+        </>
+      )}
+      <span>/</span>
+      <span className="text-foreground font-semibold">{currentPage}</span>
+      <span>/</span>
+    </nav>
   )
 }
 

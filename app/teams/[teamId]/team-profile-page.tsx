@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -134,6 +135,8 @@ function generateGameStats(gameId: string) {
 const TEAM_PROFILE_TABS = ["Overview", "Games", "Players", "Events", "Report"] as const
 type TeamProfileTab = (typeof TEAM_PROFILE_TABS)[number]
 
+const SEASONS = ["All Seasons", "2025/26", "2024/25", "2023/24", "2022/23", "2021/22"] as const
+
 // ---------------------------------------------------------------------------
 // Team Profile Page Component
 // ---------------------------------------------------------------------------
@@ -144,6 +147,7 @@ interface TeamProfilePageProps {
 
 export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
+  const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const highlightsRef = useRef<HTMLDivElement>(null)
   
   // Get breadcrumb 'from' value for building navigation URLs
@@ -284,7 +288,18 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 </div>
               </div>
             </div>
-
+            <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+              <SelectTrigger size="sm" className="w-[130px]">
+                <SelectValue placeholder="Season" />
+              </SelectTrigger>
+              <SelectContent>
+                {SEASONS.map((season) => (
+                  <SelectItem key={season} value={season}>
+                    {season}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
@@ -346,10 +361,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
 
               {/* Key Stats Section */}
               <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-bold text-foreground">Key Stats</h2>
-                  <span className="text-xs text-muted-foreground border border-border rounded px-2 py-1">2025/26</span>
-                </div>
+                <h2 className="text-base font-bold text-foreground mb-4">Key Stats</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Passing YPG */}
                   <div className="rounded-lg border border-border p-4">

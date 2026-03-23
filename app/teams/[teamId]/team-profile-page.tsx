@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState, Suspense } from "react"
+import { useMemo, useRef, useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,6 +9,8 @@ import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-bread
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PreviewModule } from "@/components/preview-module"
 import { TeamLogo } from "@/components/team-logo"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -153,6 +155,16 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const highlightsRef = useRef<HTMLDivElement>(null)
+  const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Control preview panel expansion/collapse
+  useEffect(() => {
+    if (previewGame) {
+      previewPanelRef.current?.resize(45)
+    } else {
+      previewPanelRef.current?.collapse()
+    }
+  }, [previewGame])
   
   // Get breadcrumb 'from' value for building navigation URLs
   const breadcrumbFrom = useBreadcrumbFrom()
@@ -260,7 +272,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-background">
+    <div className="h-full flex flex-col bg-background">
       {/* Sticky Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4">
@@ -331,10 +343,14 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-6">
-        {activeTab === "Overview" && (
-          <div className="space-y-8">
+      {/* Main Content Area with Resizable Preview */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* Main Content Panel */}
+        <ResizablePanel defaultSize={100} minSize={50} id="team-main" order={1}>
+          <main className="h-full overflow-y-auto">
+            <div className="max-w-6xl mx-auto px-6 py-6">
+              {activeTab === "Overview" && (
+                <div className="space-y-8">
             {/* Two-column layout: Identity and Key Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Identity Section */}
@@ -602,27 +618,40 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 </div>
               </section>
             )}
-          </div>
-        )}
+              </div>
+            )}
 
-        {activeTab !== "Overview" && (
-          <div className="py-20 text-center">
-            <p className="text-muted-foreground">{activeTab} content coming soon.</p>
-          </div>
-        )}
-      </main>
+            {activeTab !== "Overview" && (
+              <div className="py-20 text-center">
+                <p className="text-muted-foreground">{activeTab} content coming soon.</p>
+              </div>
+            )}
+            </div>
+          </main>
+        </ResizablePanel>
 
-      {/* Game Preview Slide-over Panel */}
-      {previewGame && (
-        <div className="fixed top-14 bottom-0 right-0 w-full max-w-xl z-40">
+        {/* Preview Panel */}
+        <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+        <ResizablePanel
+          ref={previewPanelRef}
+          defaultSize={0}
+          minSize={30}
+          maxSize={50}
+          collapsible
+          collapsedSize={0}
+          id="team-preview"
+          order={2}
+        >
           <div className="h-full pr-3 py-3 pl-0">
-            <PreviewModule
-              game={previewGame}
-              onClose={() => setPreviewGame(null)}
-            />
+            {previewGame && (
+              <PreviewModule
+                game={previewGame}
+                onClose={() => setPreviewGame(null)}
+              />
+            )}
           </div>
-        </div>
-      )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

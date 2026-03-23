@@ -1,14 +1,15 @@
 "use client"
 
-import { useMemo, useState, useEffect, Suspense } from "react"
+import { useMemo, useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-
 
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { MultiSelect } from "@/components/ui/multi-select"
 import { PreviewModule } from "@/components/preview-module"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 import { cn } from "@/lib/utils"
 import { getAllSeasonsForAthlete, getSeasonsForTeams, getTeamsForSeasons } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
@@ -206,6 +207,16 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const searchParams = useSearchParams()
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
+  const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Control preview panel expansion/collapse
+  useEffect(() => {
+    if (previewGame) {
+      previewPanelRef.current?.resize(45)
+    } else {
+      previewPanelRef.current?.collapse()
+    }
+  }, [previewGame])
   
   // Get the team from URL if coming from a team page
   const fromTeamParam = searchParams.get("team")
@@ -374,7 +385,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   }, [athlete.teamHistory, athlete.team, currentTeamName, teamInfo, athlete.id])
 
   return (
-    <div className="h-full overflow-y-auto bg-background">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -449,9 +460,13 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="space-y-6">
+      {/* Main Content Area with Resizable Preview */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* Main Content Panel */}
+        <ResizablePanel defaultSize={100} minSize={50} id="athlete-main" order={1}>
+          <main className="h-full overflow-y-auto">
+            <div className="max-w-6xl mx-auto px-4 py-6">
+              <div className="space-y-6">
           {/* Profile Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {PROFILE_TABS.map((tab) => (
@@ -678,20 +693,33 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 <p className="text-muted-foreground">{profileTab} content coming soon.</p>
               </div>
             )}
-        </div>
-      </main>
+              </div>
+            </div>
+          </main>
+        </ResizablePanel>
 
-      {/* Game Preview Slide-over Panel */}
-      {previewGame && (
-        <div className="fixed top-14 bottom-0 right-0 w-full max-w-xl z-40">
+        {/* Preview Panel */}
+        <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+        <ResizablePanel
+          ref={previewPanelRef}
+          defaultSize={0}
+          minSize={30}
+          maxSize={50}
+          collapsible
+          collapsedSize={0}
+          id="athlete-preview"
+          order={2}
+        >
           <div className="h-full pr-3 py-3 pl-0">
-            <PreviewModule
-              game={previewGame}
-              onClose={() => setPreviewGame(null)}
-            />
+            {previewGame && (
+              <PreviewModule
+                game={previewGame}
+                onClose={() => setPreviewGame(null)}
+              />
+            )}
           </div>
-        </div>
-      )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

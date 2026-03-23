@@ -1,13 +1,14 @@
 "use client"
 
-import { useMemo, useState, Suspense } from "react"
+import { useMemo, useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MultiSelect } from "@/components/ui/multi-select"
 import { cn } from "@/lib/utils"
-import { nameToSlug } from "@/lib/athletes-data"
+import { getAllSeasonsForAthlete, getSeasonsForTeams, getTeamsForSeasons } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
 import type { Athlete } from "@/types/athlete"
 
@@ -34,17 +35,32 @@ const TEAM_FULL_NAMES: Record<string, string> = {
   CLE: "Cleveland Browns", NYG: "New York Giants", PIT: "Pittsburgh Steelers",
   DEN: "Denver Broncos", IND: "Indianapolis Colts", NE: "New England Patriots",
   TB: "Tampa Bay Buccaneers", JAX: "Jacksonville Jaguars", LAC: "Los Angeles Chargers",
-  CHI: "Chicago Bears", GB: "Green Bay Packers",
+  CHI: "Chicago Bears", GB: "Green Bay Packers", TEN: "Tennessee Titans",
+  CAR: "Carolina Panthers", NO: "New Orleans Saints",
   // College teams
   UGA: "Georgia Bulldogs", TEX: "Texas Longhorns", OSU: "Ohio State Buckeyes",
   ORE: "Oregon Ducks", ALA: "Alabama Crimson Tide", MICH: "Michigan Wolverines",
   PSU: "Penn State Nittany Lions", MIAMI: "Miami Hurricanes", CLEM: "Clemson Tigers",
-  LSU: "LSU Tigers",
+  LSU: "LSU Tigers", LOU: "Louisville Cardinals", WYO: "Wyoming Cowboys",
+  TTU: "Texas Tech Red Raiders", CAL: "California Golden Bears", STAN: "Stanford Cardinal",
+  USC: "USC Trojans", OU: "Oklahoma Sooners", BYU: "BYU Cougars", ND: "Notre Dame Fighting Irish",
+  IOWA: "Iowa Hawkeyes", TAMU: "Texas A&M Aggies", EMU: "Eastern Michigan Eagles",
+  UK: "Kentucky Wildcats", FAU: "Florida Atlantic Owls", MSST: "Mississippi State Bulldogs",
+  WISC: "Wisconsin Badgers", FSU: "Florida State Seminoles", CIN_C: "Cincinnati Bearcats",
+  WF: "Wake Forest Demon Deacons", MINN: "Minnesota Golden Gophers", BC: "Boston College Eagles",
+  UW: "Washington Huskies", ISU: "Iowa State Cyclones", WALA: "West Alabama Tigers",
   // High School teams
   MDM: "Mater Dei Monarchs", SJB: "St. John Bosco Braves", IMG: "IMG Academy Ascenders",
   SLC: "Southlake Carroll Dragons", NSM: "North Shore Mustangs", STA: "St. Thomas Aquinas Raiders",
   DLS: "De La Salle Spartans", BUFD: "Buford Wolves", KATY: "Katy Tigers",
   DUN: "Duncanville Panthers",
+}
+
+// Map team abbreviations to their team type for grouping
+const TEAM_TYPE_LABELS: Record<string, string> = {
+  nfl: "NFL",
+  college: "College",
+  highschool: "High School",
 }
 
 const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
@@ -170,6 +186,16 @@ function getKeyStatsForAthlete(athlete: Athlete): { label: string; value: string
   ]
 }
 
+// Map team abbreviation to team ID for team lookup
+const teamAbbreviationToId: Record<string, string> = {
+  // NFL Teams
+  BAL: "bal", BUF: "buf", KC: "kc", DET: "det", CIN: "cin", HOU: "hou",
+  SF: "sf", PHI: "phi", MIN: "min", MIA: "mia", DAL: "dal", LAR: "lar",
+  NYJ: "nyj", ATL: "atl", LV: "lv", CLE: "cle", NYG: "nyg", PIT: "pit",
+  DEN: "den", JAX: "jax", LAC: "lac", TB: "tb", CHI: "chi", GB: "gb",
+  TEN: "ten", CAR: "car", NO: "no",
+}
+
 // ---------------------------------------------------------------------------
 // Athlete Profile Page Component
 // ---------------------------------------------------------------------------
@@ -178,18 +204,130 @@ interface AthleteProfilePageProps {
   athlete: Athlete & { id: string }
 }
 
-const SEASONS = ["All Seasons", "2025/26", "2024/25", "2023/24", "2022/23", "2021/22"] as const
-
 export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
+  const searchParams = useSearchParams()
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
-  const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
+  
+  // Get the team from URL if coming from a team page
+  const fromTeamParam = searchParams.get("team")
+  
+  // Build team options from athlete's team history
+  const teamOptions = useMemo(() => {
+    if (!athlete.teamHistory || athlete.teamHistory.length === 0) {
+      // Fallback to current team only
+      return [{
+        value: athlete.team,
+        label: TEAM_FULL_NAMES[athlete.team] || athlete.team,
+        group: "NFL"
+      }]
+    }
+    
+    return athlete.teamHistory.map(entry => ({
+      value: entry.team,
+      label: TEAM_FULL_NAMES[entry.team] || entry.team,
+      group: TEAM_TYPE_LABELS[entry.type] || entry.type,
+    }))
+  }, [athlete.teamHistory, athlete.team])
+  
+  // Get all available seasons for this athlete
+  const allSeasons = useMemo(() => getAllSeasonsForAthlete(athlete), [athlete])
+  
+  // State for selected teams - initialize based on URL param
+  const [selectedTeams, setSelectedTeams] = useState<string[]>(() => {
+    if (fromTeamParam) {
+      // Find if this team is in the athlete's history
+      const teamExists = athlete.teamHistory?.some(t => 
+        teamAbbreviationToId[t.team] === fromTeamParam || t.team === fromTeamParam
+      )
+      if (teamExists) {
+        // Find the team abbreviation from the team ID
+        const teamAbbr = Object.entries(teamAbbreviationToId).find(([, id]) => id === fromTeamParam)?.[0]
+        || athlete.teamHistory?.find(t => teamAbbreviationToId[t.team] === fromTeamParam)?.team
+        if (teamAbbr) return [teamAbbr]
+      }
+    }
+    return [] // Empty means all teams
+  })
+  
+  // Build season options based on selected teams
+  const seasonOptions = useMemo(() => {
+    let availableSeasons: string[]
+    
+    if (selectedTeams.length === 0) {
+      // All teams selected, show all seasons
+      availableSeasons = allSeasons
+    } else {
+      // Filter seasons by selected teams
+      availableSeasons = getSeasonsForTeams(athlete, selectedTeams)
+    }
+    
+    return availableSeasons.map(season => ({
+      value: season,
+      label: season,
+    }))
+  }, [selectedTeams, allSeasons, athlete])
+  
+  // State for selected seasons - initialize based on team selection
+  const [selectedSeasons, setSelectedSeasons] = useState<string[]>(() => {
+    if (fromTeamParam && selectedTeams.length > 0) {
+      // Pre-select all seasons for the team we came from
+      return getSeasonsForTeams(athlete, selectedTeams)
+    }
+    return [] // Empty means all seasons
+  })
+  
+  // When teams change, update available seasons and potentially reset selection
+  useEffect(() => {
+    if (selectedTeams.length === 0) {
+      // All teams selected, reset seasons to all
+      setSelectedSeasons([])
+    } else {
+      // Filter seasons to only those available for selected teams
+      const availableSeasons = getSeasonsForTeams(athlete, selectedTeams)
+      // Keep only seasons that are still valid
+      const validSeasons = selectedSeasons.filter(s => availableSeasons.includes(s))
+      if (validSeasons.length !== selectedSeasons.length) {
+        setSelectedSeasons(validSeasons.length > 0 ? validSeasons : [])
+      }
+    }
+  }, [selectedTeams, athlete, selectedSeasons])
   
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
-  const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
   
   // Get breadcrumb 'from' value for building navigation URLs
   const breadcrumbFrom = useBreadcrumbFrom()
+
+  // Build team history display for the Teams section
+  const teamHistoryDisplay = useMemo(() => {
+    if (!athlete.teamHistory || athlete.teamHistory.length === 0) {
+      return [{
+        team: athlete.team,
+        name: currentTeamName,
+        type: "nfl" as const,
+        seasons: ["2023 - Present"],
+        logoColor: teamInfo?.logoColor || "#666"
+      }]
+    }
+    
+    return athlete.teamHistory.map(entry => {
+      const teamId = teamAbbreviationToId[entry.team]
+      const teamData = teamId ? getTeamForAthlete(athlete.id) : null
+      const years = entry.seasons.map(s => parseInt(s.split('/')[0])).sort((a, b) => b - a)
+      const startYear = Math.min(...years)
+      const endYear = Math.max(...years)
+      const yearRange = endYear === 2025 ? `${startYear} - Present` : `${startYear} - ${endYear}`
+      
+      return {
+        team: entry.team,
+        name: TEAM_FULL_NAMES[entry.team] || entry.team,
+        type: entry.type,
+        seasons: [yearRange],
+        logoColor: teamData?.logoColor || "#666"
+      }
+    })
+  }, [athlete.teamHistory, athlete.team, currentTeamName, teamInfo, athlete.id])
 
   return (
     <div className="h-full overflow-y-auto bg-background">
@@ -207,7 +345,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               <ProfileBreadcrumb 
                 currentPage={athlete.name} 
                 profileType="athlete"
-                teamInfo={teamInfo ? { name: teamName, id: teamInfo.id } : undefined}
+                teamInfo={teamInfo ? { name: currentTeamName, id: teamInfo.id } : undefined}
               />
             </Suspense>
           </div>
@@ -225,10 +363,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                       href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
                       className="text-primary font-medium hover:underline"
                     >
-                      {teamName}
+                      {currentTeamName}
                     </Link>
                   ) : (
-                    <span className="text-primary font-medium">{teamName}</span>
+                    <span className="text-primary font-medium">{currentTeamName}</span>
                   )}
                   <span className="text-border">{"·"}</span>
                   <span>{athlete.position}</span>
@@ -237,18 +375,32 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 </div>
               </div>
             </div>
-            <Select value={selectedSeason} onValueChange={setSelectedSeason}>
-              <SelectTrigger size="sm" className="w-[130px]">
-                <SelectValue placeholder="Season" />
-              </SelectTrigger>
-              <SelectContent>
-                {SEASONS.map((season) => (
-                  <SelectItem key={season} value={season}>
-                    {season}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Filter Dropdowns */}
+            <div className="flex items-center gap-2">
+              {/* Team Multi-Select */}
+              {teamOptions.length > 1 && (
+                <MultiSelect
+                  options={teamOptions}
+                  value={selectedTeams}
+                  onChange={setSelectedTeams}
+                  placeholder="Team"
+                  allLabel="All Teams"
+                  className="w-[150px]"
+                  groupOrder={["NFL", "College", "High School"]}
+                />
+              )}
+              
+              {/* Season Multi-Select */}
+              <MultiSelect
+                options={seasonOptions}
+                value={selectedSeasons}
+                onChange={setSelectedSeasons}
+                placeholder="Season"
+                allLabel="All Seasons"
+                className="w-[130px]"
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -287,7 +439,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                       <IdentityRow label="Position" value={athlete.position} />
                       <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
                       <IdentityRow label="College" value={athlete.college} />
-                      <IdentityRow label="Team" value={teamName} />
+                      <IdentityRow label="Team" value={currentTeamName} />
                       <IdentityRow label="League" value={athlete.league} isLast />
                     </div>
                   </section>
@@ -333,7 +485,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                         <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                           <span className="flex items-center gap-0.5">
-                            <span className="text-orange-500">{"🔥"}</span>
+                            <span className="text-orange-500">*</span>
                             {highlight.reactions}
                           </span>
                           <span>{"·"}</span>
@@ -430,40 +582,40 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                   </div>
                 </section>
 
-                {/* Teams Section */}
+                {/* Teams Section - Updated to show team history */}
                 <section>
-                  <h3 className="text-base font-bold text-foreground mb-4">Teams</h3>
-                  <div className="flex items-center gap-4 p-4 rounded-lg border border-border">
-                    {teamInfo ? (
-                      <>
-                        <div
-                          className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                          style={{ backgroundColor: teamInfo.logoColor }}
-                        >
-                          {teamInfo.abbreviation}
+                  <h3 className="text-base font-bold text-foreground mb-4">Career Teams</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teamHistoryDisplay.map((team, idx) => {
+                      const teamId = teamAbbreviationToId[team.team]
+                      return (
+                        <div key={`${team.team}-${idx}`} className="flex items-center gap-4 p-4 rounded-lg border border-border">
+                          <div
+                            className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
+                            style={{ backgroundColor: team.logoColor }}
+                          >
+                            {team.team.slice(0, 3)}
+                          </div>
+                          <div>
+                            {teamId ? (
+                              <Link 
+                                href={`/teams/${teamId}?from=${breadcrumbFrom}`}
+                                className="text-sm font-medium text-foreground hover:text-primary hover:underline"
+                              >
+                                {team.name}
+                              </Link>
+                            ) : (
+                              <p className="text-sm font-medium text-foreground">{team.name}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {athlete.position} {"·"} #{athlete.jersey_number}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{team.seasons.join(", ")}</p>
+                            <p className="text-xs text-primary/70 capitalize">{team.type}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{teamInfo.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {athlete.position} {"·"} #{athlete.jersey_number}
-                          </p>
-                          <p className="text-xs text-muted-foreground">2023 - Present</p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-bold shrink-0">
-                          {athlete.team.slice(0, 2)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{teamName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {athlete.position} {"·"} #{athlete.jersey_number}
-                          </p>
-                          <p className="text-xs text-muted-foreground">2023 - Present</p>
-                        </div>
-                      </>
-                    )}
+                      )
+                    })}
                   </div>
                 </section>
               </div>

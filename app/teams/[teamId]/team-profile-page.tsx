@@ -14,7 +14,7 @@ import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import { nameToSlug } from "@/lib/athletes-data"
-import { Play, ChevronRight, ChevronLeft, X } from "lucide-react"
+import { Play, ChevronRight, ChevronLeft } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
@@ -614,21 +614,11 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
 
       {/* Game Preview Slide-over Panel */}
       {previewGame && (
-        <div className="fixed inset-y-0 right-0 w-full max-w-xl bg-background border-l border-border shadow-xl z-50 flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h3 className="font-semibold text-foreground">Game Preview</h3>
-            <button
-              onClick={() => setPreviewGame(null)}
-              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
+        <div className="fixed top-14 bottom-0 right-0 w-full max-w-xl z-40">
+          <div className="h-full pr-3 py-3 pl-0">
             <PreviewModule
               game={previewGame}
               onClose={() => setPreviewGame(null)}
-              hideHeader
             />
           </div>
         </div>

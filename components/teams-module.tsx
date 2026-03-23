@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { Search, ChevronDown, ChevronRight } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { sportsData, type League, type Team, type Conference } from "@/lib/sports-data"
 import type { GameLeague } from "@/types/game"
@@ -53,12 +54,12 @@ function TeamTile({
       )}
       onClick={onClick}
     >
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-        style={{ backgroundColor: team.logoColor }}
-      >
-        {team.abbreviation}
-      </div>
+      <TeamLogo
+        teamId={team.id}
+        abbreviation={team.abbreviation}
+        logoColor={team.logoColor}
+        size="md"
+      />
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground truncate">{team.name}</p>
         <p className="text-xs text-muted-foreground">{team.abbreviation}</p>

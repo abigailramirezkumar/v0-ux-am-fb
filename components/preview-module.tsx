@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 import { Icon } from "@/components/icon"
+import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
 import { athletes, getAthleteByName } from "@/lib/athletes-data"
@@ -1670,12 +1671,12 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
                 className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => awayTeam && onNavigateToTeam?.(awayTeam)}
               >
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: awayTeam?.logoColor || "#666" }}
-                >
-                  {awayTeam?.abbreviation || "AWY"}
-                </div>
+                <TeamLogo
+                  teamId={awayTeam?.id || ""}
+                  abbreviation={awayTeam?.abbreviation || "AWY"}
+                  logoColor={awayTeam?.logoColor || "#666"}
+                  size="lg"
+                />
                 <span className={cn(
                   "text-sm text-center",
                   awayWon ? "font-bold text-foreground" : "text-muted-foreground"
@@ -1704,12 +1705,12 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
                 className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => homeTeam && onNavigateToTeam?.(homeTeam)}
               >
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                  style={{ backgroundColor: homeTeam?.logoColor || "#666" }}
-                >
-                  {homeTeam?.abbreviation || "HME"}
-                </div>
+                <TeamLogo
+                  teamId={homeTeam?.id || ""}
+                  abbreviation={homeTeam?.abbreviation || "HME"}
+                  logoColor={homeTeam?.logoColor || "#666"}
+                  size="lg"
+                />
                 <span className={cn(
                   "text-sm text-center",
                   homeWon ? "font-bold text-foreground" : "text-muted-foreground"
@@ -2057,12 +2058,12 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
       {!hideHeader && (
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-              style={{ backgroundColor: team.logoColor }}
-            >
-              {team.abbreviation}
-            </div>
+            <TeamLogo
+              teamId={team.id}
+              abbreviation={team.abbreviation}
+              logoColor={team.logoColor}
+              size="sm"
+            />
             <span className="text-sm font-bold truncate">{team.name}</span>
           </div>
           <Button
@@ -2080,12 +2081,13 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
       <div className="flex-1 overflow-y-auto pb-20">
         {/* Team Identity Card - matching Athlete pattern */}
         <div className="px-5 pt-6 pb-4 flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0"
-            style={{ backgroundColor: team.logoColor }}
-          >
-            {team.abbreviation}
-          </div>
+          <TeamLogo
+            teamId={team.id}
+            abbreviation={team.abbreviation}
+            logoColor={team.logoColor}
+            size="xl"
+            round
+          />
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-foreground leading-tight truncate">{team.name}</h2>
             {(() => {

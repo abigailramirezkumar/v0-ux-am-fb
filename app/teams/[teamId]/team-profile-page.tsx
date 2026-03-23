@@ -1,12 +1,16 @@
 "use client"
 
-import { useMemo, useRef, useState, Suspense } from "react"
+import { useMemo, useRef, useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PreviewModule } from "@/components/preview-module"
+import { TeamLogo } from "@/components/team-logo"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import type { ImperativePanelHandle } from "react-resizable-panels"
 import { cn } from "@/lib/utils"
 import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
@@ -15,6 +19,7 @@ import { nameToSlug } from "@/lib/athletes-data"
 import { Play, ChevronRight, ChevronLeft } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
+import type { Game } from "@/types/game"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -148,7 +153,18 @@ interface TeamProfilePageProps {
 export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
+  const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const highlightsRef = useRef<HTMLDivElement>(null)
+  const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Control preview panel expansion/collapse
+  useEffect(() => {
+    if (previewGame) {
+      previewPanelRef.current?.resize(45)
+    } else {
+      previewPanelRef.current?.collapse()
+    }
+  }, [previewGame])
   
   // Get breadcrumb 'from' value for building navigation URLs
   const breadcrumbFrom = useBreadcrumbFrom()
@@ -217,6 +233,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
         const gameStats = generateGameStats(game.id)
         return {
           id: game.id,
+          game, // Include full game object for preview
           date: new Date(game.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           competition: game.gameType === "playoff" ? "Playoff" : `Week ${game.week}`,
           opponent: opponent?.name || "Unknown",
@@ -255,81 +272,87 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-background">
-      {/* Sticky Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          {/* Breadcrumb Navigation */}
-          <div className="mb-3">
-            <Suspense fallback={
-              <div className="flex items-center gap-3">
-                <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
+    <div className="h-full flex flex-col bg-sidebar">
+      {/* Main Content Area with Resizable Preview */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1 gap-1">
+        {/* Main Content Panel */}
+        <ResizablePanel defaultSize={100} minSize={50} id="team-main" order={1}>
+          <div className="h-full bg-background rounded-lg overflow-hidden flex flex-col">
+            {/* Header */}
+            <header className="border-b border-border bg-background shrink-0">
+              <div className="px-6 py-4">
+                {/* Breadcrumb Navigation */}
+                <div className="mb-3">
+                  <Suspense fallback={
+                    <div className="flex items-center gap-3">
+                      <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Loading...</span>
+                    </div>
+                  }>
+                    <ProfileBreadcrumb currentPage={team.name} profileType="team" />
+                  </Suspense>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <TeamLogo
+                      teamId={team.id}
+                      abbreviation={team.abbreviation}
+                      logoColor={team.logoColor}
+                      size="lg"
+                    />
+                    <div>
+                      <h1 className="text-xl font-bold text-foreground">{team.name}</h1>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                        <span className="text-primary">{conferenceInfo.conference} {conferenceInfo.division}</span>
+                        <span className="text-border">{"·"}</span>
+                        <span>{conferenceInfo.league}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                    <SelectTrigger size="sm" className="w-[130px]">
+                      <SelectValue placeholder="Season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SEASONS.map((season) => (
+                        <SelectItem key={season} value={season}>
+                          {season}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            }>
-              <ProfileBreadcrumb currentPage={team.name} profileType="team" />
-            </Suspense>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
-                style={{ backgroundColor: team.logoColor }}
-              >
-                {team.abbreviation}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">{team.name}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                  <span className="text-primary">{conferenceInfo.conference} {conferenceInfo.division}</span>
-                  <span className="text-border">{"·"}</span>
-                  <span>{conferenceInfo.league}</span>
+            </header>
+
+            {/* Tab Navigation */}
+            <div className="border-b border-border bg-background shrink-0">
+              <div className="px-6">
+                <div className="flex items-center gap-1 py-2">
+                  {TEAM_PROFILE_TABS.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                        activeTab === tab
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-            <Select value={selectedSeason} onValueChange={setSelectedSeason}>
-              <SelectTrigger size="sm" className="w-[130px]">
-                <SelectValue placeholder="Season" />
-              </SelectTrigger>
-              <SelectContent>
-                {SEASONS.map((season) => (
-                  <SelectItem key={season} value={season}>
-                    {season}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </header>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-border bg-background sticky top-[73px] z-40">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center gap-1 py-2">
-            {TEAM_PROFILE_TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
-                  activeTab === tab
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-6">
-        {activeTab === "Overview" && (
-          <div className="space-y-8">
+            {/* Scrollable Content */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="px-6 py-6">
+                {activeTab === "Overview" && (
+                  <div className="space-y-8">
             {/* Two-column layout: Identity and Key Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Identity Section */}
@@ -518,41 +541,45 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {recentGames.map((game) => (
+                      {recentGames.map((gameData) => (
                         <TableRow
-                          key={game.id}
-                          className="cursor-pointer hover:bg-muted/50"
+                          key={gameData.id}
+                          className={cn(
+                            "cursor-pointer hover:bg-muted/50",
+                            previewGame?.id === gameData.id && "bg-primary/10"
+                          )}
+                          onClick={() => setPreviewGame(gameData.game)}
                         >
                           <TableCell className="px-3 py-3">
                             <button className="w-6 h-6 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
                               <Play className="w-3 h-3 text-muted-foreground ml-0.5" />
                             </button>
                           </TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{game.date}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{game.competition}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{gameData.date}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-muted-foreground">{gameData.competition}</TableCell>
                           <TableCell className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-5 h-5 rounded flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-                                style={{ backgroundColor: game.opponentColor }}
+                                style={{ backgroundColor: gameData.opponentColor }}
                               >
-                                {game.opponentAbbr.slice(0, 2)}
+                                {gameData.opponentAbbr.slice(0, 2)}
                               </div>
-                              <span className="text-xs text-foreground">{game.opponentAbbr}</span>
+                              <span className="text-xs text-foreground">{gameData.opponentAbbr}</span>
                             </div>
                           </TableCell>
                           <TableCell className="px-3 py-3">
                             <span className={cn(
                               "text-xs font-semibold",
-                              game.won ? "text-emerald-500" : "text-red-500"
+                              gameData.won ? "text-emerald-500" : "text-red-500"
                             )}>
-                              {game.score}
+                              {gameData.score}
                             </span>
                           </TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.passYds}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.rushYds}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums">{game.stats.turnovers}</TableCell>
-                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{game.stats.thirdDownPct}%</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.passYds}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.rushYds}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums">{gameData.stats.turnovers}</TableCell>
+                          <TableCell className="text-xs px-3 py-3 text-right tabular-nums text-primary">{gameData.stats.thirdDownPct}%</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -574,7 +601,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                   {topPlayers.map((player, idx) => (
                     <Link
                       key={player.id || idx}
-                      href={`/athletes/${nameToSlug(player.name)}?from=${breadcrumbFrom}`}
+                      href={`/athletes/${nameToSlug(player.name)}?from=team-${team.id}&team=${team.id}`}
                       className="rounded-lg border border-border p-4 hover:bg-muted/30 transition-colors"
                     >
                       <p className="text-xs font-semibold text-primary mb-1">{player.statLabel}</p>
@@ -593,15 +620,39 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 </div>
               </section>
             )}
-          </div>
-        )}
+                  </div>
+                )}
 
-        {activeTab !== "Overview" && (
-          <div className="py-20 text-center">
-            <p className="text-muted-foreground">{activeTab} content coming soon.</p>
+                {activeTab !== "Overview" && (
+                  <div className="py-20 text-center">
+                    <p className="text-muted-foreground">{activeTab} content coming soon.</p>
+                  </div>
+                )}
+              </div>
+            </main>
           </div>
-        )}
-      </main>
+        </ResizablePanel>
+
+        {/* Preview Panel */}
+        <ResizableHandle className="w-0 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+        <ResizablePanel
+          ref={previewPanelRef}
+          defaultSize={0}
+          minSize={30}
+          maxSize={50}
+          collapsible
+          collapsedSize={0}
+          id="team-preview"
+          order={2}
+        >
+          {previewGame && (
+            <PreviewModule
+              game={previewGame}
+              onClose={() => setPreviewGame(null)}
+            />
+          )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

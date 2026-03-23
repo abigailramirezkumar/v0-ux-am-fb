@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Icon } from "@/components/icon"
+import { TeamLogo } from "@/components/team-logo"
 import { 
   Command, 
   CommandList, 
@@ -165,12 +166,13 @@ export function GlobalSearch() {
                     }}
                     className="flex items-center gap-3 cursor-pointer"
                   >
-                    <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                      style={{ backgroundColor: team.logoColor }}
-                    >
-                      {team.abbreviation.slice(0, 2)}
-                    </div>
+                    <TeamLogo
+                      teamId={team.id}
+                      abbreviation={team.abbreviation}
+                      logoColor={team.logoColor}
+                      size="sm"
+                      round
+                    />
                     <div className="flex flex-col min-w-0">
                       <span className="text-sm font-medium truncate">{team.name}</span>
                       <span className="text-xs text-muted-foreground truncate">

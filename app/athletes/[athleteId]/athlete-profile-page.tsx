@@ -387,10 +387,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   return (
     <div className="h-full flex flex-col bg-muted/30">
       {/* Main Content Area with Resizable Preview */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1 p-3 gap-3">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 gap-1">
         {/* Main Content Panel */}
         <ResizablePanel defaultSize={100} minSize={50} id="athlete-main" order={1}>
-          <div className="h-full bg-background rounded-lg border border-border overflow-hidden flex flex-col">
+          <div className="h-full bg-background rounded-lg overflow-hidden flex flex-col">
             {/* Header */}
             <header className="border-b border-border bg-background shrink-0">
               <div className="px-6 py-4">

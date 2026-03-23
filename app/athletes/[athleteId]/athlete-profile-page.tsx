@@ -5,6 +5,7 @@ import Link from "next/link"
 
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { nameToSlug } from "@/lib/athletes-data"
 import { getTeamForAthlete } from "@/lib/mock-teams"
@@ -177,8 +178,11 @@ interface AthleteProfilePageProps {
   athlete: Athlete & { id: string }
 }
 
+const SEASONS = ["All Seasons", "2025/26", "2024/25", "2023/24", "2022/23", "2021/22"] as const
+
 export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
+  const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
@@ -208,29 +212,43 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
             </Suspense>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
-              {athlete.name.split(" ").map((n) => n[0]).join("")}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">{athlete.name}</h1>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                {teamInfo ? (
-                  <Link 
-                    href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    {teamName}
-                  </Link>
-                ) : (
-                  <span className="text-primary font-medium">{teamName}</span>
-                )}
-                <span className="text-border">{"·"}</span>
-                <span>{athlete.position}</span>
-                <span className="text-border">{"·"}</span>
-                <span>#{athlete.jersey_number}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
+                {athlete.name.split(" ").map((n) => n[0]).join("")}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">{athlete.name}</h1>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {teamInfo ? (
+                    <Link 
+                      href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      {teamName}
+                    </Link>
+                  ) : (
+                    <span className="text-primary font-medium">{teamName}</span>
+                  )}
+                  <span className="text-border">{"·"}</span>
+                  <span>{athlete.position}</span>
+                  <span className="text-border">{"·"}</span>
+                  <span>#{athlete.jersey_number}</span>
+                </div>
               </div>
             </div>
+            <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+              <SelectTrigger size="sm" className="w-[130px]">
+                <SelectValue placeholder="Season" />
+              </SelectTrigger>
+              <SelectContent>
+                {SEASONS.map((season) => (
+                  <SelectItem key={season} value={season}>
+                    {season}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
@@ -276,13 +294,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
 
                   {/* Key Stats Section */}
                   <section>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-base font-bold text-foreground">Key Stats</h3>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span>2025/26</span>
-                        <Icon name="chevronDown" className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
+                    <h3 className="text-base font-bold text-foreground mb-4">Key Stats</h3>
                     <div className="grid grid-cols-3 gap-3">
                       {keyStats.slice(0, 6).map((stat) => (
                         <div key={stat.label} className="rounded-lg border border-border p-3">

@@ -385,88 +385,90 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   }, [athlete.teamHistory, athlete.team, currentTeamName, teamInfo, athlete.id])
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          {/* Breadcrumb Navigation */}
-          <div className="mb-3">
-            <Suspense fallback={
-              <div className="flex items-center gap-3">
-                <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
-              </div>
-            }>
-              <ProfileBreadcrumb 
-                currentPage={athlete.name} 
-                profileType="athlete"
-                teamInfo={teamInfo ? { name: currentTeamName, id: teamInfo.id } : undefined}
-              />
-            </Suspense>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
-                {athlete.name.split(" ").map((n) => n[0]).join("")}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">{athlete.name}</h1>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  {teamInfo ? (
-                    <Link 
-                      href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {currentTeamName}
-                    </Link>
-                  ) : (
-                    <span className="text-primary font-medium">{currentTeamName}</span>
-                  )}
-                  <span className="text-border">{"·"}</span>
-                  <span>{athlete.position}</span>
-                  <span className="text-border">{"·"}</span>
-                  <span>#{athlete.jersey_number}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Filter Dropdowns */}
-            <div className="flex items-center gap-2">
-              {/* Team Multi-Select */}
-              {teamOptions.length > 1 && (
-                <MultiSelect
-                  options={teamOptions}
-                  value={selectedTeams}
-                  onChange={setSelectedTeams}
-                  placeholder="Team"
-                  allLabel="All Teams"
-                  className="w-[150px]"
-                  groupOrder={["NFL", "College", "High School"]}
-                />
-              )}
-              
-              {/* Season Multi-Select */}
-              <MultiSelect
-                options={seasonOptions}
-                value={selectedSeasons}
-                onChange={setSelectedSeasons}
-                placeholder="Season"
-                allLabel="All Seasons"
-                className="w-[130px]"
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="h-full flex flex-col bg-muted/30">
       {/* Main Content Area with Resizable Preview */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup direction="horizontal" className="flex-1 p-3 gap-3">
         {/* Main Content Panel */}
         <ResizablePanel defaultSize={100} minSize={50} id="athlete-main" order={1}>
-          <main className="h-full overflow-y-auto">
-            <div className="max-w-6xl mx-auto px-4 py-6">
-              <div className="space-y-6">
+          <div className="h-full bg-background rounded-lg border border-border overflow-hidden flex flex-col">
+            {/* Header */}
+            <header className="border-b border-border bg-background shrink-0">
+              <div className="px-6 py-4">
+                {/* Breadcrumb Navigation */}
+                <div className="mb-3">
+                  <Suspense fallback={
+                    <div className="flex items-center gap-3">
+                      <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Loading...</span>
+                    </div>
+                  }>
+                    <ProfileBreadcrumb 
+                      currentPage={athlete.name} 
+                      profileType="athlete"
+                      teamInfo={teamInfo ? { name: currentTeamName, id: teamInfo.id } : undefined}
+                    />
+                  </Suspense>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground shrink-0">
+                      {athlete.name.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-bold text-foreground">{athlete.name}</h1>
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        {teamInfo ? (
+                          <Link 
+                            href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
+                            className="text-primary font-medium hover:underline"
+                          >
+                            {currentTeamName}
+                          </Link>
+                        ) : (
+                          <span className="text-primary font-medium">{currentTeamName}</span>
+                        )}
+                        <span className="text-border">{"·"}</span>
+                        <span>{athlete.position}</span>
+                        <span className="text-border">{"·"}</span>
+                        <span>#{athlete.jersey_number}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Filter Dropdowns */}
+                  <div className="flex items-center gap-2">
+                    {/* Team Multi-Select */}
+                    {teamOptions.length > 1 && (
+                      <MultiSelect
+                        options={teamOptions}
+                        value={selectedTeams}
+                        onChange={setSelectedTeams}
+                        placeholder="Team"
+                        allLabel="All Teams"
+                        className="w-[150px]"
+                        groupOrder={["NFL", "College", "High School"]}
+                      />
+                    )}
+                    
+                    {/* Season Multi-Select */}
+                    <MultiSelect
+                      options={seasonOptions}
+                      value={selectedSeasons}
+                      onChange={setSelectedSeasons}
+                      placeholder="Season"
+                      allLabel="All Seasons"
+                      className="w-[130px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* Scrollable Content */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="px-6 py-6">
+                <div className="space-y-6">
           {/* Profile Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {PROFILE_TABS.map((tab) => (
@@ -693,13 +695,14 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 <p className="text-muted-foreground">{profileTab} content coming soon.</p>
               </div>
             )}
+                </div>
               </div>
-            </div>
-          </main>
+            </main>
+          </div>
         </ResizablePanel>
 
         {/* Preview Panel */}
-        <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+        <ResizableHandle className="w-0 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
         <ResizablePanel
           ref={previewPanelRef}
           defaultSize={0}
@@ -710,14 +713,12 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
           id="athlete-preview"
           order={2}
         >
-          <div className="h-full pr-3 py-3 pl-0">
-            {previewGame && (
-              <PreviewModule
-                game={previewGame}
-                onClose={() => setPreviewGame(null)}
-              />
-            )}
-          </div>
+          {previewGame && (
+            <PreviewModule
+              game={previewGame}
+              onClose={() => setPreviewGame(null)}
+            />
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

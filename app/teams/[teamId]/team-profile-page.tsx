@@ -272,85 +272,87 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Sticky Header */}
-      <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          {/* Breadcrumb Navigation */}
-          <div className="mb-3">
-            <Suspense fallback={
-              <div className="flex items-center gap-3">
-                <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
+    <div className="h-full flex flex-col bg-muted/30">
+      {/* Main Content Area with Resizable Preview */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1 p-3 gap-3">
+        {/* Main Content Panel */}
+        <ResizablePanel defaultSize={100} minSize={50} id="team-main" order={1}>
+          <div className="h-full bg-background rounded-lg border border-border overflow-hidden flex flex-col">
+            {/* Header */}
+            <header className="border-b border-border bg-background shrink-0">
+              <div className="px-6 py-4">
+                {/* Breadcrumb Navigation */}
+                <div className="mb-3">
+                  <Suspense fallback={
+                    <div className="flex items-center gap-3">
+                      <Icon name="chevronLeft" className="w-5 h-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Loading...</span>
+                    </div>
+                  }>
+                    <ProfileBreadcrumb currentPage={team.name} profileType="team" />
+                  </Suspense>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <TeamLogo
+                      teamId={team.id}
+                      abbreviation={team.abbreviation}
+                      logoColor={team.logoColor}
+                      size="lg"
+                    />
+                    <div>
+                      <h1 className="text-xl font-bold text-foreground">{team.name}</h1>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                        <span className="text-primary">{conferenceInfo.conference} {conferenceInfo.division}</span>
+                        <span className="text-border">{"·"}</span>
+                        <span>{conferenceInfo.league}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                    <SelectTrigger size="sm" className="w-[130px]">
+                      <SelectValue placeholder="Season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SEASONS.map((season) => (
+                        <SelectItem key={season} value={season}>
+                          {season}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            }>
-              <ProfileBreadcrumb currentPage={team.name} profileType="team" />
-            </Suspense>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <TeamLogo
-                teamId={team.id}
-                abbreviation={team.abbreviation}
-                logoColor={team.logoColor}
-                size="lg"
-              />
-              <div>
-                <h1 className="text-xl font-bold text-foreground">{team.name}</h1>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                  <span className="text-primary">{conferenceInfo.conference} {conferenceInfo.division}</span>
-                  <span className="text-border">{"·"}</span>
-                  <span>{conferenceInfo.league}</span>
+            </header>
+
+            {/* Tab Navigation */}
+            <div className="border-b border-border bg-background shrink-0">
+              <div className="px-6">
+                <div className="flex items-center gap-1 py-2">
+                  {TEAM_PROFILE_TABS.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                        activeTab === tab
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-            <Select value={selectedSeason} onValueChange={setSelectedSeason}>
-              <SelectTrigger size="sm" className="w-[130px]">
-                <SelectValue placeholder="Season" />
-              </SelectTrigger>
-              <SelectContent>
-                {SEASONS.map((season) => (
-                  <SelectItem key={season} value={season}>
-                    {season}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </header>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-border bg-background sticky top-[73px] z-40">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center gap-1 py-2">
-            {TEAM_PROFILE_TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
-                  activeTab === tab
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area with Resizable Preview */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        {/* Main Content Panel */}
-        <ResizablePanel defaultSize={100} minSize={50} id="team-main" order={1}>
-          <main className="h-full overflow-y-auto">
-            <div className="max-w-6xl mx-auto px-6 py-6">
-              {activeTab === "Overview" && (
-                <div className="space-y-8">
+            {/* Scrollable Content */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="px-6 py-6">
+                {activeTab === "Overview" && (
+                  <div className="space-y-8">
             {/* Two-column layout: Identity and Key Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Identity Section */}
@@ -618,20 +620,21 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 </div>
               </section>
             )}
-              </div>
-            )}
+                  </div>
+                )}
 
-            {activeTab !== "Overview" && (
-              <div className="py-20 text-center">
-                <p className="text-muted-foreground">{activeTab} content coming soon.</p>
+                {activeTab !== "Overview" && (
+                  <div className="py-20 text-center">
+                    <p className="text-muted-foreground">{activeTab} content coming soon.</p>
+                  </div>
+                )}
               </div>
-            )}
-            </div>
-          </main>
+            </main>
+          </div>
         </ResizablePanel>
 
         {/* Preview Panel */}
-        <ResizableHandle className="w-[8px] bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
+        <ResizableHandle className="w-0 bg-transparent border-0 after:hidden before:hidden [&>div]:hidden" />
         <ResizablePanel
           ref={previewPanelRef}
           defaultSize={0}
@@ -642,14 +645,12 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           id="team-preview"
           order={2}
         >
-          <div className="h-full pr-3 py-3 pl-0">
-            {previewGame && (
-              <PreviewModule
-                game={previewGame}
-                onClose={() => setPreviewGame(null)}
-              />
-            )}
-          </div>
+          {previewGame && (
+            <PreviewModule
+              game={previewGame}
+              onClose={() => setPreviewGame(null)}
+            />
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

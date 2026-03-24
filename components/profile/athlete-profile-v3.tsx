@@ -18,32 +18,46 @@ interface AthleteProfileV3Props {
 
 function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
   const { visibleModules } = useProfileContext()
-  const reportsPanelRef = useRef<ImperativePanelHandle>(null)
   const videoPanelRef = useRef<ImperativePanelHandle>(null)
+  const reportsPanelRef = useRef<ImperativePanelHandle>(null)
+  const initializedRef = useRef(false)
 
-  // Control reports panel expansion/collapse
+  // Collapse panels on mount, then respond to toggle changes
   useEffect(() => {
-    const panel = reportsPanelRef.current
-    if (!panel) return
-    
-    if (visibleModules.reports) {
-      panel.resize(25)
-    } else {
-      panel.collapse()
+    if (!initializedRef.current) {
+      // Initial collapse on mount
+      videoPanelRef.current?.collapse()
+      reportsPanelRef.current?.collapse()
+      initializedRef.current = true
+      return
     }
-  }, [visibleModules.reports])
+  }, [])
 
   // Control video panel expansion/collapse
   useEffect(() => {
+    if (!initializedRef.current) return
     const panel = videoPanelRef.current
     if (!panel) return
     
     if (visibleModules.video) {
-      panel.resize(25)
+      panel.expand()
     } else {
       panel.collapse()
     }
   }, [visibleModules.video])
+
+  // Control reports panel expansion/collapse
+  useEffect(() => {
+    if (!initializedRef.current) return
+    const panel = reportsPanelRef.current
+    if (!panel) return
+    
+    if (visibleModules.reports) {
+      panel.expand()
+    } else {
+      panel.collapse()
+    }
+  }, [visibleModules.reports])
 
   return (
     <div className="flex h-full w-full">
@@ -55,7 +69,7 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
         >
           {/* Main Content Panel */}
           <ResizablePanel
-            defaultSize={100}
+            defaultSize={50}
             minSize={30}
             id="athlete-profile-main"
             order={1}
@@ -65,10 +79,10 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
 
           <ResizableHandle className="bg-transparent" />
 
-          {/* Video Panel - collapsible, default closed */}
+          {/* Video Panel - collapsible */}
           <ResizablePanel
             ref={videoPanelRef}
-            defaultSize={0}
+            defaultSize={25}
             minSize={15}
             collapsible
             collapsedSize={0}
@@ -82,10 +96,10 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
 
           <ResizableHandle className="bg-transparent" />
 
-          {/* Reports Panel - collapsible, default closed */}
+          {/* Reports Panel - collapsible */}
           <ResizablePanel
             ref={reportsPanelRef}
-            defaultSize={0}
+            defaultSize={25}
             minSize={15}
             collapsible
             collapsedSize={0}

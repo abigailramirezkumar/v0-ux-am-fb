@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PreviewModule } from "@/components/preview-module"
+import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { TeamLogo } from "@/components/team-logo"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
@@ -646,7 +646,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           order={2}
         >
           {previewGame && (
-            <PreviewModule
+            <PreviewModuleV1
               game={previewGame}
               onClose={() => setPreviewGame(null)}
             />

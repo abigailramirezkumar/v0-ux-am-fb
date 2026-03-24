@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation"
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { PreviewModule } from "@/components/preview-module"
+import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 import { cn } from "@/lib/utils"
@@ -714,7 +714,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
           order={2}
         >
           {previewGame && (
-            <PreviewModule
+            <PreviewModuleV1
               game={previewGame}
               onClose={() => setPreviewGame(null)}
             />

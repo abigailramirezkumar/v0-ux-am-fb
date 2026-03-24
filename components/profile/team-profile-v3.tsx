@@ -23,19 +23,25 @@ function TeamProfileV3Content({ team }: TeamProfileV3Props) {
 
   // Control reports panel expansion/collapse
   useEffect(() => {
+    const panel = reportsPanelRef.current
+    if (!panel) return
+    
     if (visibleModules.reports) {
-      reportsPanelRef.current?.expand()
+      panel.resize(25)
     } else {
-      reportsPanelRef.current?.collapse()
+      panel.collapse()
     }
   }, [visibleModules.reports])
 
   // Control video panel expansion/collapse
   useEffect(() => {
+    const panel = videoPanelRef.current
+    if (!panel) return
+    
     if (visibleModules.video) {
-      videoPanelRef.current?.expand()
+      panel.resize(25)
     } else {
-      videoPanelRef.current?.collapse()
+      panel.collapse()
     }
   }, [visibleModules.video])
 

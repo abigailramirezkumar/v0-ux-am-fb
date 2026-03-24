@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { TeamProfilePage } from "./team-profile-page"
+import { TeamProfileWrapper } from "@/components/profile/team-profile-wrapper"
 import { sportsData } from "@/lib/sports-data"
 import type { Team } from "@/lib/sports-data"
 
@@ -45,7 +45,7 @@ export default async function Page({ params }: PageProps) {
 
   return (
     <Suspense fallback={<div className="h-full bg-background" />}>
-      <TeamProfilePage team={team} />
+      <TeamProfileWrapper team={team} />
     </Suspense>
   )
 }

@@ -1692,8 +1692,8 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Video Preview */}
-        <div className="px-4 pt-4">
+        {/* Sticky Video Preview - stays visible while scrolling through clips */}
+        <div className="sticky top-0 z-10 bg-background px-4 pt-4 pb-2 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
           <PreviewVideoPlayer
             videoUrl={videoUrl}
             sourceType={sourceType}
@@ -1701,9 +1701,8 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
             onOpenClip={handleOpenPlaylist}
           />
         </div>
-
         {/* Clips List */}
-        <div className="px-4 pt-4 pb-4">
+        <div className="px-4 pt-2 pb-4">
           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
             Clips ({playlist.clips?.length || 0})
           </h4>

@@ -16,8 +16,19 @@ const ReportsIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const VideoIcon = ({ className }: { className?: string }) => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M2 4C2 3.44772 2.44772 3 3 3H10C10.5523 3 11 3.44772 11 4V5.38197L13.5528 4.10557C13.8628 3.95056 14.2309 3.97155 14.5211 4.16011C14.8113 4.34867 15 4.67567 15 5V11C15 11.3243 14.8113 11.6513 14.5211 11.8399C14.2309 12.0284 13.8628 12.0494 13.5528 11.8944L11 10.618V12C11 12.5523 10.5523 13 10 13H3C2.44772 13 2 12.5523 2 12V4Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
 export function ProfileToolbar() {
-  const { visibleModules, toggleModule } = useProfileContext()
+  const { visibleModules, toggleModule, videoContent } = useProfileContext()
 
   const ToggleBtn = ({
     active,
@@ -44,8 +55,24 @@ export function ProfileToolbar() {
     </button>
   )
 
+  // Video module is only shown when there's video content to display
+  const hasVideoContent = videoContent !== null
+
   return (
     <div className="w-16 flex flex-col bg-sidebar border-l border-border/20 z-20 shrink-0 items-center gap-3 py-3">
+      <ToggleBtn
+        active={visibleModules.video && hasVideoContent}
+        onClick={() => toggleModule("video")}
+        icon={
+          <div className="relative">
+            <VideoIcon className="w-4 h-4" />
+            {hasVideoContent && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+            )}
+          </div>
+        }
+        label="Video"
+      />
       <ToggleBtn
         active={visibleModules.reports}
         onClick={() => toggleModule("reports")}

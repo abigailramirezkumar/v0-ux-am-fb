@@ -1,15 +1,29 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
+import type { Game } from "@/types/game"
+import type { MediaItemData } from "@/types/library"
 
 interface ProfileModules {
   reports: boolean
+  video: boolean
+}
+
+// Video content can be either a game or a playlist
+interface VideoContent {
+  type: "game" | "playlist"
+  game?: Game
+  playlist?: MediaItemData
 }
 
 interface ProfileContextValue {
   visibleModules: ProfileModules
   toggleModule: (module: keyof ProfileModules) => void
   setModuleVisibility: (module: keyof ProfileModules, visible: boolean) => void
+  // Video module state
+  videoContent: VideoContent | null
+  setVideoContent: (content: VideoContent | null) => void
+  clearVideoContent: () => void
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null)
@@ -17,7 +31,9 @@ const ProfileContext = createContext<ProfileContextValue | null>(null)
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [visibleModules, setVisibleModules] = useState<ProfileModules>({
     reports: false,
+    video: false,
   })
+  const [videoContent, setVideoContentState] = useState<VideoContent | null>(null)
 
   const toggleModule = (module: keyof ProfileModules) => {
     setVisibleModules((prev) => ({
@@ -33,12 +49,27 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  const setVideoContent = (content: VideoContent | null) => {
+    setVideoContentState(content)
+    // Auto-open the video module when content is set
+    if (content) {
+      setModuleVisibility("video", true)
+    }
+  }
+
+  const clearVideoContent = () => {
+    setVideoContentState(null)
+  }
+
   return (
     <ProfileContext.Provider
       value={{
         visibleModules,
         toggleModule,
         setModuleVisibility,
+        videoContent,
+        setVideoContent,
+        clearVideoContent,
       }}
     >
       {children}

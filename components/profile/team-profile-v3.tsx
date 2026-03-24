@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { ReportsModule } from "@/components/reports-module"
+import { VideoModule } from "@/components/profile/video-module"
 import { ProfileToolbar } from "@/components/profile/profile-toolbar"
 import { ProfileProvider, useProfileContext } from "@/lib/profile-context"
 import type { ImperativePanelHandle } from "react-resizable-panels"
@@ -18,6 +19,7 @@ interface TeamProfileV3Props {
 function TeamProfileV3Content({ team }: TeamProfileV3Props) {
   const { visibleModules } = useProfileContext()
   const reportsPanelRef = useRef<ImperativePanelHandle>(null)
+  const videoPanelRef = useRef<ImperativePanelHandle>(null)
 
   // Control reports panel expansion/collapse
   useEffect(() => {
@@ -27,6 +29,15 @@ function TeamProfileV3Content({ team }: TeamProfileV3Props) {
       reportsPanelRef.current?.collapse()
     }
   }, [visibleModules.reports])
+
+  // Control video panel expansion/collapse
+  useEffect(() => {
+    if (visibleModules.video) {
+      videoPanelRef.current?.expand()
+    } else {
+      videoPanelRef.current?.collapse()
+    }
+  }, [visibleModules.video])
 
   return (
     <div className="flex h-full w-full">
@@ -48,6 +59,23 @@ function TeamProfileV3Content({ team }: TeamProfileV3Props) {
 
           <ResizableHandle className="bg-transparent" />
 
+          {/* Video Panel - collapsible, default closed */}
+          <ResizablePanel
+            ref={videoPanelRef}
+            defaultSize={25}
+            minSize={15}
+            collapsible
+            collapsedSize={0}
+            id="team-video-panel"
+            order={2}
+          >
+            <div className="h-full pl-1 overflow-hidden">
+              <VideoModule />
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle className="bg-transparent" />
+
           {/* Reports Panel - collapsible, default closed */}
           <ResizablePanel
             ref={reportsPanelRef}
@@ -56,7 +84,7 @@ function TeamProfileV3Content({ team }: TeamProfileV3Props) {
             collapsible
             collapsedSize={0}
             id="team-reports-panel"
-            order={2}
+            order={3}
           >
             <div className="h-full pl-1 overflow-hidden">
               <ReportsModule />

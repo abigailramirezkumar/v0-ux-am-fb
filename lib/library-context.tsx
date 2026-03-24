@@ -779,6 +779,7 @@ interface LibraryContextType {
 export interface MoveItem {
   id: string
   type: "folder" | "item"
+  name?: string
 }
 
 const defaultColumns: Column[] = [

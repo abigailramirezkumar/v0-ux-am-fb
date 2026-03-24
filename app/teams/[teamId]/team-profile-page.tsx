@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Icon } from "@/components/icon"
 import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PreviewModule } from "@/components/preview-module"
+import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { TeamLogo } from "@/components/team-logo"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
@@ -20,6 +20,7 @@ import { Play, ChevronRight, ChevronLeft } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
+import type { MediaItemData, ClipData } from "@/types/library"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -154,17 +155,53 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [activeTab, setActiveTab] = useState<TeamProfileTab>("Overview")
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
+  const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
   const highlightsRef = useRef<HTMLDivElement>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   
   // Control preview panel expansion/collapse
   useEffect(() => {
-    if (previewGame) {
+    if (previewGame || previewPlaylist) {
       previewPanelRef.current?.resize(45)
     } else {
       previewPanelRef.current?.collapse()
     }
-  }, [previewGame])
+  }, [previewGame, previewPlaylist])
+
+  // Helper to convert mock playlist to MediaItemData
+  const handlePlaylistClick = (mockPlaylist: { id: string; name: string; clips: number }) => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic mock clips for the playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(mockPlaylist.clips, 20) }, (_, i) => ({
+      id: `${mockPlaylist.id}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: i % 2 === 0 ? "Pass" : "Run" as const,
+      game: `${team.name} Game`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: mockPlaylist.id,
+      name: mockPlaylist.name,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
+
+  // Close handler for preview panel
+  const handleClosePreview = () => {
+    setPreviewGame(null)
+    setPreviewPlaylist(null)
+  }
   
   // Get breadcrumb 'from' value for building navigation URLs
   const breadcrumbFrom = useBreadcrumbFrom()
@@ -506,9 +543,13 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 {playlists.map((playlist) => (
                   <button
                     key={playlist.id}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border hover:bg-muted/50 transition-colors"
+                    onClick={() => handlePlaylistClick(playlist)}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border hover:bg-muted/50 transition-colors",
+                      previewPlaylist?.id === playlist.id && "bg-primary/10 border-primary/30"
+                    )}
                   >
-                    <Play className="w-3.5 h-3.5 text-muted-foreground" />
+                    <Icon name="playlist" className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">{playlist.name}</span>
                     <span className="text-sm text-muted-foreground">{playlist.clips} clips</span>
                   </button>
@@ -548,7 +589,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                             "cursor-pointer hover:bg-muted/50",
                             previewGame?.id === gameData.id && "bg-primary/10"
                           )}
-                          onClick={() => setPreviewGame(gameData.game)}
+                          onClick={() => { setPreviewPlaylist(null); setPreviewGame(gameData.game); }}
                         >
                           <TableCell className="px-3 py-3">
                             <button className="w-6 h-6 rounded-full border border-border flex items-center justify-center hover:bg-muted transition-colors">
@@ -645,10 +686,11 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           id="team-preview"
           order={2}
         >
-          {previewGame && (
-            <PreviewModule
-              game={previewGame}
-              onClose={() => setPreviewGame(null)}
+          {(previewGame || previewPlaylist) && (
+            <PreviewModuleV1
+              game={previewGame ?? undefined}
+              playlist={previewPlaylist ?? undefined}
+              onClose={handleClosePreview}
             />
           )}
         </ResizablePanel>

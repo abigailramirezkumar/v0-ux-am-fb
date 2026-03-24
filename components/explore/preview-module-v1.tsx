@@ -16,6 +16,7 @@ import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
+import type { MediaItemData } from "@/types/library"
 
 // Import the individual preview components from the main preview module
 import { PreviewModule } from "@/components/preview-module"
@@ -24,12 +25,12 @@ import { PreviewModule } from "@/components/preview-module"
 // Types
 // ---------------------------------------------------------------------------
 
-export type PreviewItemType = "game" | "team" | "athlete" | "clip"
+export type PreviewItemType = "game" | "team" | "athlete" | "clip" | "playlist"
 
 export interface BreadcrumbItem {
   type: PreviewItemType
   label: string
-  data: PlayData | Game | Team | (Athlete & { id?: string })
+  data: PlayData | Game | Team | (Athlete & { id?: string }) | MediaItemData
 }
 
 interface PreviewModuleV1Props {
@@ -37,6 +38,7 @@ interface PreviewModuleV1Props {
   game?: Game
   team?: Team
   athlete?: Athlete & { id?: string }
+  playlist?: MediaItemData
   onClose: () => void
 }
 
@@ -49,6 +51,7 @@ const HIERARCHY_ORDER: Record<PreviewItemType, number> = {
   team: 1,
   athlete: 2,
   clip: 3,
+  playlist: 0, // Playlist is at the same level as game - can navigate to clips
 }
 
 /**
@@ -77,6 +80,8 @@ function getBreadcrumbLabel(item: BreadcrumbItem): string {
       return (item.data as Team).name || "Team"
     case "athlete":
       return (item.data as Athlete).name || "Athlete"
+    case "playlist":
+      return (item.data as MediaItemData).name || "Playlist"
     default:
       return item.label
   }
@@ -91,6 +96,7 @@ function getItemIcon(type: PreviewItemType): string {
     case "team": return "team"
     case "athlete": return "user"
     case "clip": return "play"
+    case "playlist": return "playlist"
     default: return "file"
   }
 }
@@ -177,6 +183,7 @@ export function PreviewModuleV1({
   game, 
   team, 
   athlete, 
+  playlist,
   onClose,
 }: PreviewModuleV1Props) {
   // Back history stack - items we can go back to
@@ -188,8 +195,9 @@ export function PreviewModuleV1({
   // Current preview state - what's currently being shown
   const [currentPreview, setCurrentPreview] = useState<{
     type: PreviewItemType
-    data: PlayData | Game | Team | (Athlete & { id?: string })
+    data: PlayData | Game | Team | (Athlete & { id?: string }) | MediaItemData
   } | null>(() => {
+    if (playlist) return { type: "playlist", data: playlist }
     if (game) return { type: "game", data: game }
     if (team) return { type: "team", data: team }
     if (athlete) return { type: "athlete", data: athlete }
@@ -199,16 +207,21 @@ export function PreviewModuleV1({
 
   // Reset navigation when the root item changes from parent
   const rootItemKey = useMemo(() => {
+    if (playlist) return `playlist-${playlist.id}`
     if (game) return `game-${game.id}`
     if (team) return `team-${team.id}`
     if (athlete) return `athlete-${athlete.id || athlete.name}`
     if (play) return `clip-${play.id}`
     return null
-  }, [game, team, athlete, play])
+  }, [playlist, game, team, athlete, play])
 
   // When root item changes, reset stacks and set current preview
   useMemo(() => {
-    if (game) {
+    if (playlist) {
+      setCurrentPreview({ type: "playlist", data: playlist })
+      setBackStack([])
+      setForwardStack([])
+    } else if (game) {
       setCurrentPreview({ type: "game", data: game })
       setBackStack([])
       setForwardStack([])
@@ -228,7 +241,7 @@ export function PreviewModuleV1({
   }, [rootItemKey])
 
   // Navigate to a new item (drill down) - clears forward stack
-  const navigateTo = useCallback((type: PreviewItemType, data: PlayData | Game | Team | (Athlete & { id?: string }), label: string) => {
+  const navigateTo = useCallback((type: PreviewItemType, data: PlayData | Game | Team | (Athlete & { id?: string }) | MediaItemData, label: string) => {
     const newItem = { type, label, data }
     
     // Push current item to back stack before navigating
@@ -310,6 +323,10 @@ export function PreviewModuleV1({
     navigateTo("clip", playData, `Clip ${playData.playNumber}`)
   }, [navigateTo])
 
+  const handleNavigateToPlaylist = useCallback((playlistData: MediaItemData) => {
+    navigateTo("playlist", playlistData, playlistData.name || "Playlist")
+  }, [navigateTo])
+
   if (!currentPreview) return null
 
   // Render the appropriate preview based on current state
@@ -350,6 +367,15 @@ export function PreviewModuleV1({
             play={currentPreview.data as PlayData}
             onClose={() => {}} // Handled by our header
             onNavigateToAthlete={handleNavigateToAthlete}
+            hideHeader
+          />
+        )
+      case "playlist":
+        return (
+          <PreviewModule
+            playlist={currentPreview.data as MediaItemData}
+            onClose={() => {}} // Handled by our header
+            onNavigateToClip={handleNavigateToClip}
             hideHeader
           />
         )

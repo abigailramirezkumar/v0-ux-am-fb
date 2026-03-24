@@ -17,6 +17,7 @@ import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
+import type { MediaItemData, ClipData } from "@/types/library"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -207,16 +208,52 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const searchParams = useSearchParams()
   const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
+  const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   
   // Control preview panel expansion/collapse
   useEffect(() => {
-    if (previewGame) {
+    if (previewGame || previewPlaylist) {
       previewPanelRef.current?.resize(45)
     } else {
       previewPanelRef.current?.collapse()
     }
-  }, [previewGame])
+  }, [previewGame, previewPlaylist])
+
+  // Helper to convert mock playlist to MediaItemData
+  const handlePlaylistClick = (mockPlaylist: { id: string; name: string; clips: number }) => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic mock clips for the playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(mockPlaylist.clips, 20) }, (_, i) => ({
+      id: `${mockPlaylist.id}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: i % 2 === 0 ? "Pass" : "Run" as const,
+      game: `${athlete.team} vs OPP`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: mockPlaylist.id,
+      name: mockPlaylist.name,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
+
+  // Close handler for preview panel
+  const handleClosePreview = () => {
+    setPreviewGame(null)
+    setPreviewPlaylist(null)
+  }
   
   // Get the team from URL if coming from a team page
   const fromTeamParam = searchParams.get("team")
@@ -571,10 +608,14 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     {MOCK_PLAYLISTS.map((playlist) => (
                       <button
                         key={playlist.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left"
+                        onClick={() => handlePlaylistClick(playlist)}
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left",
+                          previewPlaylist?.id === playlist.id && "bg-primary/10 border-primary/30"
+                        )}
                       >
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <Icon name="play" className="w-4 h-4 text-muted-foreground" />
+                          <Icon name="playlist" className="w-4 h-4 text-muted-foreground" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{playlist.name}</p>
@@ -618,7 +659,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                                   idx % 2 === 0 && "bg-muted/10",
                                   previewGame?.id === gameData.id && "bg-primary/10"
                                 )}
-                                onClick={() => setPreviewGame(gameData.game)}
+                                onClick={() => { setPreviewPlaylist(null); setPreviewGame(gameData.game); }}
                               >
                                 <td className="px-3 py-2">
                                   <button className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
@@ -713,10 +754,11 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
           id="athlete-preview"
           order={2}
         >
-          {previewGame && (
+          {(previewGame || previewPlaylist) && (
             <PreviewModuleV1
-              game={previewGame}
-              onClose={() => setPreviewGame(null)}
+              game={previewGame ?? undefined}
+              playlist={previewPlaylist ?? undefined}
+              onClose={handleClosePreview}
             />
           )}
         </ResizablePanel>

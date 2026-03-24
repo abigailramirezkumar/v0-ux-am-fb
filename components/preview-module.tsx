@@ -14,7 +14,7 @@ import { useLibraryContext } from "@/lib/library-context"
 import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
-import type { ClipData } from "@/types/library"
+import type { ClipData, MediaItemData } from "@/types/library"
 import type { Game } from "@/types/game"
 import { findTeamById, mockClips } from "@/lib/games-context"
 import { mockGames } from "@/lib/mock-games"
@@ -1544,6 +1544,246 @@ function TagsAndNotesTab({ playId }: { playId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// PlaylistPreview Component
+// ---------------------------------------------------------------------------
+
+interface PlaylistPreviewProps {
+  playlist: MediaItemData
+  onClose: () => void
+  onNavigateToClip?: (play: PlayData) => void
+  hideHeader?: boolean
+}
+
+function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: PlaylistPreviewProps) {
+  const router = useRouter()
+  const { setPendingPreviewClips, openMoveModal } = useLibraryContext()
+  
+  // Get the first clip for video preview
+  const firstClip = playlist.clips?.[0]
+  
+  // Video preview URL from first clip or default
+  const videoUrl = useMemo(() => {
+    if (firstClip?.videoUrl) {
+      return firstClip.videoUrl
+    }
+    const h = hashString(playlist.id)
+    return VIDEO_POOL[h % VIDEO_POOL.length]
+  }, [playlist.id, firstClip])
+
+  // Source type for the video badge - using a display string
+  const sourceType = useMemo(() => {
+    const h = hashString(playlist.id)
+    const types = ["GAME", "PRACTICE", "SCOUT"] as const
+    return types[h % types.length]
+  }, [playlist.id])
+
+  // Format dates
+  const formattedCreatedDate = useMemo(() => {
+    const date = new Date(playlist.createdAt)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  }, [playlist.createdAt])
+
+  const formattedModifiedDate = useMemo(() => {
+    const date = new Date(playlist.modifiedAt)
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  }, [playlist.modifiedAt])
+
+  // Handle "Open Playlist" - navigate to watch page with playlist clips
+  const handleOpenPlaylist = useCallback(() => {
+    if (playlist.clips && playlist.clips.length > 0) {
+      setPendingPreviewClips(playlist.clips)
+    }
+    router.push("/watch")
+  }, [playlist.clips, setPendingPreviewClips, router])
+
+  // Handle "Save to Library" - open Move modal
+  const handleSaveToLibrary = useCallback(() => {
+    openMoveModal([{ id: playlist.id, type: "item", name: playlist.name }])
+  }, [playlist.id, playlist.name, openMoveModal])
+
+  // Handle clicking a clip in the list
+  const handleClipClick = useCallback((clip: ClipData) => {
+    if (onNavigateToClip) {
+      // Convert clip to PlayData format for navigation
+      const playData: PlayData = {
+        id: clip.id,
+        playNumber: clip.playNumber || 1,
+        odk: clip.odk || "O",
+        quarter: clip.quarter || 1,
+        down: clip.down || 1,
+        distance: clip.distance || 10,
+        yardLine: clip.yardLine || "OWN 25",
+        yardLineNumeric: 25,
+        hash: clip.hash || "M",
+        yards: clip.yards || 0,
+        result: clip.result || "",
+        gainLoss: clip.gainLoss || "Gn",
+        defFront: clip.defFront || "4-3",
+        defStr: clip.defStr || "Over",
+        coverage: clip.coverage || "Cover 3",
+        blitz: clip.blitz || "None",
+        game: clip.game || "Unknown Game",
+        playType: clip.playType || "Pass",
+        passResult: clip.passResult,
+        runDirection: clip.runDirection,
+        personnelO: clip.personnelO || "11",
+        personnelD: clip.personnelD || "Nickel",
+        isTouchdown: clip.isTouchdown || false,
+        isFirstDown: clip.isFirstDown || false,
+        isPenalty: clip.isPenalty || false,
+        penaltyType: clip.penaltyType,
+      }
+      onNavigateToClip(playData)
+    }
+  }, [onNavigateToClip])
+
+  // Generate a display label for clips
+  const getClipLabel = (clip: ClipData, index: number) => {
+    if (clip.game) {
+      const parts = []
+      if (clip.quarter) parts.push(`Q${clip.quarter}`)
+      if (clip.down && clip.distance) parts.push(`${clip.down}&${clip.distance}`)
+      if (clip.playType) parts.push(clip.playType)
+      return parts.length > 0 ? parts.join(" - ") : `Clip ${index + 1}`
+    }
+    return `Clip ${index + 1}`
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
+      {/* Fixed Header - hidden when using breadcrumb wrapper */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon name="playlist" className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-bold truncate">{playlist.name}</span>
+            <span className="text-muted-foreground text-sm shrink-0">|</span>
+            <span className="text-sm text-muted-foreground truncate">
+              {playlist.clips?.length || 0} clips
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+          >
+            <Icon name="close" className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto pb-20">
+        {/* Video Preview */}
+        <div className="px-4 pt-4">
+          <PreviewVideoPlayer
+            videoUrl={videoUrl}
+            sourceType={sourceType}
+            score={null}
+            onOpenClip={handleOpenPlaylist}
+          />
+        </div>
+
+        {/* Playlist Info */}
+        <div className="px-4 pt-5 pb-3">
+          <h4 className="text-base font-bold text-foreground mb-4">Playlist Details</h4>
+          <div className="space-y-0">
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Name</span>
+              <span className="text-sm text-muted-foreground">{playlist.name}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Clips</span>
+              <span className="text-sm text-muted-foreground">{playlist.clips?.length || 0}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Created</span>
+              <span className="text-sm text-muted-foreground">{formattedCreatedDate}</span>
+            </div>
+            <div className="flex justify-between py-3 border-b border-dotted border-border">
+              <span className="text-sm font-medium text-foreground">Modified</span>
+              <span className="text-sm text-muted-foreground">{formattedModifiedDate}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Clips List */}
+        <div className="px-4 pt-4 pb-6">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+            Clips ({playlist.clips?.length || 0})
+          </h4>
+          {playlist.clips && playlist.clips.length > 0 ? (
+            <div className="space-y-2">
+              {playlist.clips.map((clip, index) => (
+                <button
+                  key={clip.id}
+                  onClick={() => handleClipClick(clip)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+                >
+                  {/* Clip thumbnail */}
+                  <div className="w-16 h-10 bg-muted rounded overflow-hidden shrink-0">
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Icon name="play" className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                  
+                  {/* Clip info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {getClipLabel(clip, index)}
+                    </p>
+                    {clip.game && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {clip.game}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Play indicator */}
+                  <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Icon name="playlist" className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">This playlist is empty</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed Footer */}
+      <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
+        <Button
+          variant="outline"
+          className="flex-1 font-semibold"
+          onClick={handleSaveToLibrary}
+        >
+          <Icon name="folder" className="w-4 h-4 mr-2" />
+          Save to Library
+        </Button>
+        <Button
+          className="flex-1 font-semibold bg-primary text-primary-foreground"
+          onClick={handleOpenPlaylist}
+        >
+          Open Playlist
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // GamePreview Component
 // ---------------------------------------------------------------------------
 
@@ -2438,6 +2678,7 @@ interface PreviewModuleProps {
   game?: Game
   team?: Team
   athlete?: Athlete & { id?: string }
+  playlist?: MediaItemData
   onClose: () => void
   // Navigation callbacks for breadcrumb support
   onNavigateToTeam?: (team: Team) => void
@@ -2453,6 +2694,7 @@ export function PreviewModule({
   game, 
   team, 
   athlete, 
+  playlist,
   onClose,
   onNavigateToTeam,
   onNavigateToAthlete,
@@ -2460,6 +2702,11 @@ export function PreviewModule({
   onNavigateToClip,
   hideHeader,
 }: PreviewModuleProps) {
+  // If playlist is provided, render PlaylistPreview
+  if (playlist) {
+    return <PlaylistPreview playlist={playlist} onClose={onClose} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
+  }
+
   // If athlete is provided, render AthletePreview
   if (athlete) {
     return <AthletePreview athlete={athlete} onClose={onClose} hideHeader={hideHeader} onNavigateToTeam={onNavigateToTeam} />

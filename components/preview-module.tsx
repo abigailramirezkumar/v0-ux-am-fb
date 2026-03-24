@@ -1558,24 +1558,28 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
   const router = useRouter()
   const { setPendingPreviewClips, openMoveModal } = useLibraryContext()
   
-  // Get the first clip for video preview
-  const firstClip = playlist.clips?.[0]
+  // Track currently selected clip for video preview
+  const [selectedClipIndex, setSelectedClipIndex] = useState(0)
+  const selectedClip = playlist.clips?.[selectedClipIndex] || playlist.clips?.[0]
   
-  // Video preview URL from first clip or default
+  // Video preview URL from selected clip or default
   const videoUrl = useMemo(() => {
-    if (firstClip?.videoUrl) {
-      return firstClip.videoUrl
+    if (selectedClip?.videoUrl) {
+      return selectedClip.videoUrl
     }
-    const h = hashString(playlist.id)
+    // Generate deterministic video based on clip id or playlist id
+    const id = selectedClip?.id || playlist.id
+    const h = hashString(id)
     return VIDEO_POOL[h % VIDEO_POOL.length]
-  }, [playlist.id, firstClip])
+  }, [playlist.id, selectedClip])
 
   // Source type for the video badge - using a display string
   const sourceType = useMemo(() => {
-    const h = hashString(playlist.id)
+    const id = selectedClip?.id || playlist.id
+    const h = hashString(id)
     const types = ["GAME", "PRACTICE", "SCOUT"] as const
     return types[h % types.length]
-  }, [playlist.id])
+  }, [playlist.id, selectedClip])
 
   // Format dates
   const formattedCreatedDate = useMemo(() => {
@@ -1609,8 +1613,13 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
     openMoveModal([{ id: playlist.id, type: "item", name: playlist.name }])
   }, [playlist.id, playlist.name, openMoveModal])
 
-  // Handle clicking a clip in the list
-  const handleClipClick = useCallback((clip: ClipData) => {
+  // Handle clicking a clip in the list - select it for video preview
+  const handleClipSelect = useCallback((index: number) => {
+    setSelectedClipIndex(index)
+  }, [])
+
+  // Handle viewing clip details - navigate to clip preview
+  const handleViewClipDetails = useCallback((clip: ClipData) => {
     if (onNavigateToClip) {
       // Convert clip to PlayData format for navigation
       const playData: PlayData = {
@@ -1693,9 +1702,74 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
           />
         </div>
 
-        {/* Playlist Info */}
-        <div className="px-4 pt-5 pb-3">
-          <h4 className="text-base font-bold text-foreground mb-4">Playlist Details</h4>
+        {/* Clips List */}
+        <div className="px-4 pt-4 pb-4">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+            Clips ({playlist.clips?.length || 0})
+          </h4>
+          {playlist.clips && playlist.clips.length > 0 ? (
+            <div className="space-y-2">
+              {playlist.clips.map((clip, index) => (
+                <div
+                  key={clip.id}
+                  className={cn(
+                    "group w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left cursor-pointer",
+                    selectedClipIndex === index 
+                      ? "bg-primary/10 border border-primary/30" 
+                      : "bg-muted/30 hover:bg-muted/50"
+                  )}
+                  onClick={() => handleClipSelect(index)}
+                >
+                  {/* Clip thumbnail with play indicator */}
+                  <div className="w-16 h-10 bg-muted rounded overflow-hidden shrink-0 relative">
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Icon name="play" className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    {selectedClipIndex === index && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Icon name="play" className="w-4 h-4 text-primary" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Clip info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {getClipLabel(clip, index)}
+                    </p>
+                    {clip.game && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {clip.game}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* View Details button - appears on hover */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-xs h-7 px-2"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewClipDetails(clip)
+                    }}
+                  >
+                    View Clip Details
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <Icon name="playlist" className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">This playlist is empty</p>
+            </div>
+          )}
+        </div>
+
+        {/* Playlist Details - moved below clips */}
+        <div className="px-4 pt-2 pb-6">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Playlist Details</h4>
           <div className="space-y-0">
             <div className="flex justify-between py-3 border-b border-dotted border-border">
               <span className="text-sm font-medium text-foreground">Name</span>
@@ -1714,51 +1788,6 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
               <span className="text-sm text-muted-foreground">{formattedModifiedDate}</span>
             </div>
           </div>
-        </div>
-
-        {/* Clips List */}
-        <div className="px-4 pt-4 pb-6">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-            Clips ({playlist.clips?.length || 0})
-          </h4>
-          {playlist.clips && playlist.clips.length > 0 ? (
-            <div className="space-y-2">
-              {playlist.clips.map((clip, index) => (
-                <button
-                  key={clip.id}
-                  onClick={() => handleClipClick(clip)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left"
-                >
-                  {/* Clip thumbnail */}
-                  <div className="w-16 h-10 bg-muted rounded overflow-hidden shrink-0">
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      <Icon name="play" className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  
-                  {/* Clip info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {getClipLabel(clip, index)}
-                    </p>
-                    {clip.game && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {clip.game}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Play indicator */}
-                  <Icon name="chevronRight" className="w-4 h-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center">
-              <Icon name="playlist" className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">This playlist is empty</p>
-            </div>
-          )}
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import { GamesFiltersModule } from "@/components/games-filters-module"
 import { GamesModule } from "@/components/games-module"
 import { TeamsModule } from "@/components/teams-module"
 import { AthletesModule } from "@/components/athletes-module"
-import { PreviewModule } from "@/components/preview-module"
+import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import { useExploreFilters } from "@/hooks/use-explore-filters"
@@ -97,8 +97,9 @@ function EmptyTabState({ label }: { label: string }) {
 /**
  * V3 - Everything is a module
  * 
- * This version starts from the current explore page state and will be customized
- * to treat all content as modular, composable components.
+ * This version has complete parity with V1 and uses the PreviewModuleV1 with 
+ * back/forward navigation. It serves as the foundation for modular, composable
+ * components where everything can be treated as a self-contained module.
  */
 export function ExploreV3() {
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
@@ -349,7 +350,7 @@ export function ExploreV3() {
               >
                 <div className="h-full pr-3 py-3 pl-0">
                   {(previewPlay || previewGame || previewTeam || previewAthlete) && (
-                    <PreviewModule
+                    <PreviewModuleV1
                       play={previewPlay || undefined}
                       game={previewGame || undefined}
                       team={previewTeam || undefined}

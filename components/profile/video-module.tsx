@@ -94,14 +94,18 @@ function MiniVideoPlayer({
 
 function EmptyState() {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-6 py-12">
-      <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-4">
-        <Icon name="play" className="w-6 h-6 text-muted-foreground/50" />
+    <div className="h-full w-full flex flex-col bg-background rounded-xl shadow-sm overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center h-10 px-3 border-b border-border shrink-0">
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
+          Video
+        </span>
       </div>
-      <h4 className="text-sm font-semibold text-foreground mb-1">No Video Selected</h4>
-      <p className="text-xs text-muted-foreground max-w-[200px]">
-        Select a game or playlist from the profile to view video here.
-      </p>
+
+      {/* Body placeholder */}
+      <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+        <p>Select a game or playlist to view video</p>
+      </div>
     </div>
   )
 }
@@ -155,13 +159,18 @@ function GameVideoView({ game }: { game: Game }) {
   }, [gameClips, gameLabel, game.id, setPendingPreviewClips, router])
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-background rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon name="game" className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-bold truncate">{gameLabel}</span>
-        </div>
+      <div className="flex items-center h-10 px-3 border-b border-border shrink-0">
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
+          Video
+        </span>
+      </div>
+      
+      {/* Game label sub-header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 shrink-0">
+        <Icon name="game" className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium truncate">{gameLabel}</span>
       </div>
 
       {/* Scrollable content */}
@@ -265,16 +274,21 @@ function PlaylistVideoView({ playlist }: { playlist: any }) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-background rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Icon name="playlist" className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-bold truncate">{playlist.name}</span>
-          <span className="text-muted-foreground text-xs shrink-0">
-            {clips.length} clips
-          </span>
-        </div>
+      <div className="flex items-center h-10 px-3 border-b border-border shrink-0">
+        <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
+          Video
+        </span>
+      </div>
+      
+      {/* Playlist label sub-header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50 shrink-0">
+        <Icon name="playlist" className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium truncate">{playlist.name}</span>
+        <span className="text-muted-foreground text-xs shrink-0">
+          {clips.length} clips
+        </span>
       </div>
 
       {/* Scrollable content */}

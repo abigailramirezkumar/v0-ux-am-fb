@@ -51,10 +51,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const setVideoContent = (content: VideoContent | null) => {
     setVideoContentState(content)
-    // Auto-open the video module when content is set
-    if (content) {
-      setModuleVisibility("video", true)
-    }
   }
 
   const clearVideoContent = () => {

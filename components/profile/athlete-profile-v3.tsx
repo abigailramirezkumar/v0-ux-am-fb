@@ -49,7 +49,7 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
         >
           {/* Main Content Panel */}
           <ResizablePanel
-            defaultSize={75}
+            defaultSize={100}
             minSize={30}
             id="athlete-profile-main"
             order={1}
@@ -62,7 +62,7 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
           {/* Video Panel - collapsible, default closed */}
           <ResizablePanel
             ref={videoPanelRef}
-            defaultSize={25}
+            defaultSize={0}
             minSize={15}
             collapsible
             collapsedSize={0}
@@ -79,7 +79,7 @@ function AthleteProfileV3Content({ athlete }: AthleteProfileV3Props) {
           {/* Reports Panel - collapsible, default closed */}
           <ResizablePanel
             ref={reportsPanelRef}
-            defaultSize={25}
+            defaultSize={0}
             minSize={15}
             collapsible
             collapsedSize={0}

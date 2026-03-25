@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Icon } from "@/components/icon"
+import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
 import { athletes, getAthleteByName } from "@/lib/athletes-data"
@@ -979,12 +980,13 @@ function TeamPreviewV3({ team, onClose }: { team: Team; onClose: () => void }) {
       <div className="flex-1 overflow-y-auto pb-20">
         {/* Team banner */}
         <div className="px-5 pt-6 pb-4 flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-lg flex items-center justify-center text-white text-lg font-bold shrink-0"
-            style={{ backgroundColor: team.logoColor }}
-          >
-            {team.abbreviation}
-          </div>
+          <TeamLogo
+            teamId={team.id}
+            abbreviation={team.abbreviation}
+            logoColor={team.logoColor}
+            size="xl"
+            round
+          />
           <div className="min-w-0">
             <h2 className="text-xl font-bold text-foreground leading-tight truncate">{team.name}</h2>
             <p className="text-sm text-muted-foreground mt-0.5">{team.abbreviation}</p>
@@ -1018,6 +1020,7 @@ function TeamPreviewV3({ team, onClose }: { team: Team; onClose: () => void }) {
                 {teamGames.map((game) => {
                   const isHome = game.homeTeamId === team.id
                   const opponent = isHome ? findTeamById(game.awayTeamId) : findTeamById(game.homeTeamId)
+                  const scoreStr = game.score ? `${game.score.home}-${game.score.away}` : "TBD"
                   return (
                     <div key={game.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
                       <div className="flex-1 min-w-0">
@@ -1026,7 +1029,7 @@ function TeamPreviewV3({ team, onClose }: { team: Team; onClose: () => void }) {
                           {isHome ? "vs" : "@"} {opponent?.name || "Unknown"}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-foreground">{game.score || "TBD"}</span>
+                      <span className="text-sm font-semibold text-foreground">{scoreStr}</span>
                     </div>
                   )
                 })}
@@ -1119,6 +1122,12 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
     return VIDEO_POOL[idx]
   }, [game.id])
 
+  // Format score as string for display
+  const scoreDisplay = useMemo(() => {
+    if (!game.score) return null
+    return `${game.score.home}-${game.score.away}`
+  }, [game.score])
+
   const handleOpenGame = useCallback(() => {
     router.push(`/games/${game.id}?from=explore`)
   }, [router, game.id])
@@ -1127,7 +1136,7 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
-        <span className="text-sm font-semibold text-foreground truncate">{game.name}</span>
+        <span className="text-sm font-semibold text-foreground truncate">{game.matchupDisplay}</span>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -1145,7 +1154,7 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
           <PreviewVideoPlayer
             videoUrl={videoUrl}
             sourceType="GAME"
-            score={game.score}
+            score={scoreDisplay}
             onOpenClip={handleOpenGame}
           />
         </div>
@@ -1154,19 +1163,19 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
         <div className="px-4 pb-4">
           <div className="flex items-center justify-between p-4 rounded-lg border border-border">
             <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                style={{ backgroundColor: homeTeam?.logoColor || "#666" }}
-              >
-                {homeTeam?.abbreviation || "HOME"}
-              </div>
+              <TeamLogo
+                teamId={homeTeam?.id || ""}
+                abbreviation={homeTeam?.abbreviation || "HME"}
+                logoColor={homeTeam?.logoColor || "#666"}
+                size="md"
+              />
               <div>
                 <p className="text-sm font-semibold text-foreground">{homeTeam?.name || "Home Team"}</p>
                 <p className="text-xs text-muted-foreground">Home</p>
               </div>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-foreground">{game.score || "vs"}</p>
+              <p className="text-lg font-bold text-foreground">{scoreDisplay || "vs"}</p>
               <p className="text-xs text-muted-foreground">{game.date}</p>
             </div>
             <div className="flex items-center gap-3">
@@ -1174,12 +1183,12 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
                 <p className="text-sm font-semibold text-foreground text-right">{awayTeam?.name || "Away Team"}</p>
                 <p className="text-xs text-muted-foreground text-right">Away</p>
               </div>
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-sm font-bold"
-                style={{ backgroundColor: awayTeam?.logoColor || "#666" }}
-              >
-                {awayTeam?.abbreviation || "AWAY"}
-              </div>
+              <TeamLogo
+                teamId={awayTeam?.id || ""}
+                abbreviation={awayTeam?.abbreviation || "AWY"}
+                logoColor={awayTeam?.logoColor || "#666"}
+                size="md"
+              />
             </div>
           </div>
         </div>
@@ -1234,8 +1243,10 @@ function GamePreviewV3({ game, onClose }: { game: Game; onClose: () => void }) {
                     {idx + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{clip.title || `Clip ${idx + 1}`}</p>
-                    <p className="text-xs text-muted-foreground">{clip.duration || "0:00"}</p>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      Q{clip.quarter} - {clip.down === 1 ? "1st" : clip.down === 2 ? "2nd" : clip.down === 3 ? "3rd" : "4th"} & {clip.distance}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{clip.time} - {clip.formation.type}</p>
                   </div>
                 </div>
               ))}

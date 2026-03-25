@@ -8,7 +8,7 @@ import { GamesFiltersModule } from "@/components/games-filters-module"
 import { GamesModule } from "@/components/games-module"
 import { TeamsModule } from "@/components/teams-module"
 import { AthletesModule } from "@/components/athletes-module"
-import { PreviewModule } from "@/components/preview-module"
+import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import { useExploreFilters } from "@/hooks/use-explore-filters"
@@ -349,7 +349,7 @@ export function ExploreV3() {
               >
                 <div className="h-full pr-3 py-3 pl-0">
                   {(previewPlay || previewGame || previewTeam || previewAthlete) && (
-                    <PreviewModule
+                    <PreviewModuleV1
                       play={previewPlay || undefined}
                       game={previewGame || undefined}
                       team={previewTeam || undefined}

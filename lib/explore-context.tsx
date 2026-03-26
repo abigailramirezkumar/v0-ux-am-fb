@@ -2,12 +2,16 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 
+export type ExploreTab = "clips" | "games" | "teams" | "athletes"
+
 interface ExploreContextValue {
   showFilters: boolean
   setShowFilters: (show: boolean) => void
   toggleFilters: () => void
   activeFilterCount: number
   setActiveFilterCount: (count: number) => void
+  activeTab: ExploreTab
+  setActiveTab: (tab: ExploreTab) => void
 }
 
 const ExploreContext = createContext<ExploreContextValue | null>(null)
@@ -15,6 +19,7 @@ const ExploreContext = createContext<ExploreContextValue | null>(null)
 export function ExploreProvider({ children }: { children: ReactNode }) {
   const [showFilters, setShowFilters] = useState(true)
   const [activeFilterCount, setActiveFilterCount] = useState(0)
+  const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
 
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev)
@@ -28,6 +33,8 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
         toggleFilters,
         activeFilterCount,
         setActiveFilterCount,
+        activeTab,
+        setActiveTab,
       }}
     >
       {children}

@@ -2518,7 +2518,7 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
         </Button>
         <Button
           className="flex-1 font-semibold"
-          onClick={() => router.push(`/teams/${team.id}?from=explore`)}
+          onClick={() => router.push(`/teams/${team.id}?from=explore&entity=teams`)}
         >
           View Full Profile
         </Button>
@@ -2688,7 +2688,7 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
   </Button>
   <Button
   className="flex-1 font-semibold"
-  onClick={() => router.push(`/athletes/${athleteSlug}?from=explore`)}
+  onClick={() => router.push(`/athletes/${athleteSlug}?from=explore&entity=athletes`)}
   >
   View Full Profile
   </Button>

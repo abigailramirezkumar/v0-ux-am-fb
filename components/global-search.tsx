@@ -133,7 +133,7 @@ export function GlobalSearch() {
                     key={athlete.id}
                     value={`${athlete.name} ${athlete.team} ${athlete.position}`}
                     onSelect={() => {
-                      router.push(`/athletes/${nameToSlug(athlete.name)}?from=search`)
+                      router.push(`/athletes/${nameToSlug(athlete.name)}?from=search&entity=athletes`)
                       setOpen(false)
                       setQuery("")
                     }}
@@ -160,7 +160,7 @@ export function GlobalSearch() {
                     key={team.id}
                     value={`${team.name} ${team.abbreviation} ${team.conference}`}
                     onSelect={() => {
-                      router.push(`/teams/${team.id}?from=search`)
+                      router.push(`/teams/${team.id}?from=search&entity=teams`)
                       setOpen(false)
                       setQuery("")
                     }}

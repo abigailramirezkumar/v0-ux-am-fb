@@ -151,12 +151,28 @@ export function ProfileBreadcrumb({
     )
   }
 
+  // Get the entity label for the profile type
+  const profileEntityLabel = profileType === "athlete" ? "Athletes" : "Teams"
+  const profileEntityTab = profileType === "athlete" ? "athletes" : "teams"
+
   // Build hierarchical breadcrumb based on context
-  // Team profile: [Entity] / [Team Name]
+  // Team profile from search: Search Results / Teams / [Team Name]
+  // Team profile direct: Teams / [Team Name]
   if (profileType === "team") {
     return (
       <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
         {renderRootBreadcrumb()}
+        {isFromSearch && (
+          <>
+            <span className="text-muted-foreground">/</span>
+            <Link
+              href={`/explore?tab=${profileEntityTab}${filtersParam ? `&filters=${filtersParam}` : ""}`}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {profileEntityLabel}
+            </Link>
+          </>
+        )}
         <span className="text-muted-foreground">/</span>
         <span className="text-foreground font-semibold">{currentPage}</span>
         {contentName && (
@@ -193,10 +209,22 @@ export function ProfileBreadcrumb({
     )
   }
 
+  // Athlete profile from search: Search Results / Athletes / [Athlete Name]
   // Direct athlete profile: Athletes / [Athlete Name]
   return (
     <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
       {renderRootBreadcrumb()}
+      {isFromSearch && (
+        <>
+          <span className="text-muted-foreground">/</span>
+          <Link
+            href={`/explore?tab=${profileEntityTab}${filtersParam ? `&filters=${filtersParam}` : ""}`}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {profileEntityLabel}
+          </Link>
+        </>
+      )}
       <span className="text-muted-foreground">/</span>
       <span className="text-foreground font-semibold">{currentPage}</span>
       {contentName && (

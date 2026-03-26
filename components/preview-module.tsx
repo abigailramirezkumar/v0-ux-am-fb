@@ -2539,7 +2539,6 @@ interface AthletePreviewProps {
 }
 
 function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: AthletePreviewProps) {
-  const [profileTab, setProfileTab] = useState<typeof PROFILE_TABS[number]>("Overview")
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const athleteTeam = useMemo(() => findTeamById(athlete.team), [athlete.team])
@@ -2606,40 +2605,29 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
           </div>
         </div>
 
-        {/* Profile tabs */}
-        <div className="px-5 pb-4 flex items-center gap-1.5 overflow-x-auto">
-          {PROFILE_TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setProfileTab(tab)}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
-                profileTab === tab
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
+        {/* Compact Identity Grid */}
+        <div className="px-5 pb-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Height</span>
+              <span className="text-foreground font-medium">{athlete.height}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Weight</span>
+              <span className="text-foreground font-medium">{athlete.weight} lbs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Position</span>
+              <span className="text-foreground font-medium">{athlete.position}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">College</span>
+              <span className="text-foreground font-medium truncate">{athlete.college}</span>
+            </div>
+          </div>
         </div>
 
-        {profileTab === "Overview" ? (
-          <div className="px-5 pb-6">
-            {/* Identity section */}
-            <h3 className="text-lg font-bold text-foreground mb-3">Identity</h3>
-            <div className="flex flex-col">
-<IdentityRow label="Height / Weight" value={`${athlete.height} / ${athlete.weight} lbs`} />
-  <IdentityRow label="Position" value={athlete.position} />
-  <IdentityRow label="Jersey" value={`#${athlete.jersey_number}`} />
-  <IdentityRow label="College" value={athlete.college} />
-  <IdentityRow 
-    label="Team" 
-    value={teamName} 
-    isLast 
-    onClick={athleteTeam && onNavigateToTeam ? () => onNavigateToTeam(athleteTeam) : undefined}
-  />
-  </div>
+        <div className="px-5 pb-6">
   
   {/* Key Stats */}
   <div className="mt-8">
@@ -2667,11 +2655,6 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
   </div>
   </div>
   </div>
-  ) : (
-  <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-  {profileTab} content coming soon.
-  </div>
-  )}
   </div>
 
   {/* Fixed Footer */}

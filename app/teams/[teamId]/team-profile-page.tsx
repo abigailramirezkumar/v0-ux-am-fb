@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Icon } from "@/components/icon"
-import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
+import { ProfileBreadcrumb, useBreadcrumbContext } from "@/components/profile-breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { TeamLogo } from "@/components/team-logo"
@@ -203,8 +203,8 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
     setPreviewPlaylist(null)
   }
   
-  // Get breadcrumb 'from' value for building navigation URLs
-  const breadcrumbFrom = useBreadcrumbFrom()
+  // Get breadcrumb context for building navigation URLs
+  const { from: breadcrumbFrom, entity, filters } = useBreadcrumbContext()
   
   // Get team identity
   const identity = useMemo(() => generateTeamIdentity(team.id, team.name), [team.id, team.name])
@@ -642,7 +642,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                   {topPlayers.map((player, idx) => (
                     <Link
                       key={player.id || idx}
-                      href={`/athletes/${nameToSlug(player.name)}?from=team-${team.id}&team=${team.id}`}
+                      href={`/athletes/${nameToSlug(player.name)}?from=team-${team.id}&entity=teams&team=${team.id}${filters ? `&filters=${filters}` : ""}`}
                       className="rounded-lg border border-border p-4 hover:bg-muted/30 transition-colors"
                     >
                       <p className="text-xs font-semibold text-primary mb-1">{player.statLabel}</p>

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
 import { Icon } from "@/components/icon"
-import { ProfileBreadcrumb, useBreadcrumbFrom } from "@/components/profile-breadcrumb"
+import { ProfileBreadcrumb, useBreadcrumbContext } from "@/components/profile-breadcrumb"
 import { MultiSelect } from "@/components/ui/multi-select"
 import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
@@ -347,8 +347,8 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
   
-  // Get breadcrumb 'from' value for building navigation URLs
-  const breadcrumbFrom = useBreadcrumbFrom()
+  // Get breadcrumb context for building navigation URLs
+  const { from: breadcrumbFrom, entity, team: teamFromUrl, filters } = useBreadcrumbContext()
   
   // Get recent games for this athlete's current team
   const recentGames = useMemo(() => {
@@ -457,7 +457,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         {teamInfo ? (
                           <Link 
-                            href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}`}
+                            href={`/teams/${teamInfo.id}?from=${breadcrumbFrom}&entity=teams${filters ? `&filters=${filters}` : ""}`}
                             className="text-primary font-medium hover:underline"
                           >
                             {currentTeamName}

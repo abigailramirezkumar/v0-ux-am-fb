@@ -15,7 +15,7 @@ import { useExploreFilters } from "@/hooks/use-explore-filters"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 import { useLibraryContext } from "@/lib/library-context"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,7 @@ import type { PlayData } from "@/lib/mock-datasets"
 import type { Game, GameLeague } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
-import { useExploreContext } from "@/lib/explore-context"
+import { useExploreContext, type ExploreTab } from "@/lib/explore-context"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -32,8 +32,6 @@ const exploreTabs = [
   { value: "teams", label: "Teams" },
   { value: "athletes", label: "Athletes" },
 ] as const
-
-type ExploreTab = (typeof exploreTabs)[number]["value"]
 
 function PreviewClipsButton() {
   const { selectedPlayIds, activeDataset, clearPlaySelection } = useWatchContext()
@@ -101,12 +99,21 @@ function EmptyTabState({ label }: { label: string }) {
  * Customize this version to implement breadcrumb navigation in the preview module.
  */
 export function ExploreV1() {
-  const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
+  const { showFilters, setShowFilters, setActiveFilterCount, activeTab, setActiveTab } = useExploreContext()
+  const searchParams = useSearchParams()
+  
+  // Sync activeTab with URL parameter on mount
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") as ExploreTab | null
+    if (tabParam && ["clips", "games", "teams", "athletes"].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams, setActiveTab])
+  
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewTeam, setPreviewTeam] = useState<Team | null>(null)
   const [previewAthlete, setPreviewAthlete] = useState<(Athlete & { id: string }) | null>(null)
-  const { showFilters, setShowFilters, setActiveFilterCount } = useExploreContext()
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 

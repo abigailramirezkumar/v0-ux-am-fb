@@ -2,13 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 
-export type ExploreVersion = "v1" | "v2" | "v3"
-
-export const EXPLORE_VERSION_LABELS: Record<ExploreVersion, string> = {
-  v1: "V1 - Preview Module Breadcrumbs",
-  v2: "V2 - Navigate to Full Profiles",
-  v3: "V3 - Everything is a module",
-}
+export type ExploreTab = "clips" | "games" | "teams" | "athletes"
 
 interface ExploreContextValue {
   showFilters: boolean
@@ -16,8 +10,8 @@ interface ExploreContextValue {
   toggleFilters: () => void
   activeFilterCount: number
   setActiveFilterCount: (count: number) => void
-  exploreVersion: ExploreVersion
-  setExploreVersion: (version: ExploreVersion) => void
+  activeTab: ExploreTab
+  setActiveTab: (tab: ExploreTab) => void
 }
 
 const ExploreContext = createContext<ExploreContextValue | null>(null)
@@ -25,7 +19,7 @@ const ExploreContext = createContext<ExploreContextValue | null>(null)
 export function ExploreProvider({ children }: { children: ReactNode }) {
   const [showFilters, setShowFilters] = useState(true)
   const [activeFilterCount, setActiveFilterCount] = useState(0)
-  const [exploreVersion, setExploreVersion] = useState<ExploreVersion>("v1")
+  const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
 
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev)
@@ -39,8 +33,8 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
         toggleFilters,
         activeFilterCount,
         setActiveFilterCount,
-        exploreVersion,
-        setExploreVersion,
+        activeTab,
+        setActiveTab,
       }}
     >
       {children}

@@ -802,7 +802,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                       play.league === "HighSchool" && "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
                       !play.league && "bg-muted text-muted-foreground"
                     )}>
-                      {play.league === "HighSchool" ? "HS" : play.league || "NFL"}
+                      {play.league === "HighSchool" ? "HS" : play.league === "College" ? "NCAA" : play.league || "NFL"}
                     </span>
                   </TableCell>
                   <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>

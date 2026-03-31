@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -15,12 +15,141 @@ import {
   type ToggleWithRangeFilterDef,
   type RangeFilterDef,
   type SelectFilterDef,
+  type DynamicTeamSelectFilterDef,
 } from "@/lib/filter-config"
+import { sportsData, type League } from "@/lib/sports-data"
 import { ToggleGroup } from "@/components/filters/toggle-group"
 import { ToggleGroupWithRange } from "@/components/filters/toggle-group-with-range"
 import { RangeSlider } from "@/components/filters/range-slider"
 import { FilterRow } from "@/components/filters/filter-row"
 import { SubsectionHeader } from "@/components/filters/subsection-header"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Check, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+// Map filter league values to sportsData league keys
+const leagueFilterToSportsDataKey: Record<string, League> = {
+  NFL: "NFL",
+  College: "NCAA (FBS)",
+  HighSchool: "HighSchool",
+}
+
+// Helper to get all teams for given leagues (or all if none selected)
+function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: string }[] {
+  const allTeams: { value: string; label: string }[] = []
+  
+  // If no leagues selected, show all teams
+  const leaguesToShow = selectedLeagues.length > 0 
+    ? selectedLeagues 
+    : ["NFL", "College", "HighSchool"]
+  
+  for (const filterLeague of leaguesToShow) {
+    const sportsDataKey = leagueFilterToSportsDataKey[filterLeague]
+    if (!sportsDataKey) continue
+    
+    const leagueData = sportsData[sportsDataKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // Add direct teams
+      for (const team of conference.teams) {
+        allTeams.push({ value: team.id, label: team.name })
+      }
+      // Add subdivision teams
+      if (conference.subdivisions) {
+        for (const subdivision of conference.subdivisions) {
+          for (const team of subdivision.teams) {
+            allTeams.push({ value: team.id, label: team.name })
+          }
+        }
+      }
+    }
+  }
+  
+  // Sort alphabetically by label
+  return allTeams.sort((a, b) => a.label.localeCompare(b.label))
+}
+
+// Helper to check if a team ID exists in the available teams for given leagues
+function isTeamInLeagues(teamId: string, selectedLeagues: string[]): boolean {
+  const availableTeams = getTeamsForLeagues(selectedLeagues)
+  return availableTeams.some(team => team.value === teamId)
+}
+
+// ---------------------------------------------------------------------------
+// Multi-Select Dropdown Component
+// ---------------------------------------------------------------------------
+interface MultiSelectDropdownProps {
+  options: { value: string; label: string }[]
+  selectedValues: string[]
+  onToggle: (value: string) => void
+  placeholder: string
+  displayText: string | null
+  className?: string
+}
+
+function MultiSelectDropdown({
+  options,
+  selectedValues,
+  onToggle,
+  placeholder,
+  displayText,
+  className,
+}: MultiSelectDropdownProps) {
+  const [open, setOpen] = useState(false)
+  
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "w-full h-9 px-3 text-sm border border-border rounded-md flex items-center justify-between transition-all duration-300",
+            displayText ? "text-foreground" : "text-muted-foreground",
+            className
+          )}
+        >
+          <span className="truncate">{displayText || placeholder}</span>
+          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search..." className="h-9" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const isSelected = selectedValues.includes(option.value)
+                return (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => onToggle(option.value)}
+                    className="cursor-pointer"
+                  >
+                    <div
+                      className={cn(
+                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "opacity-50 [&_svg]:invisible"
+                      )}
+                    >
+                      <Check className="h-3 w-3" />
+                    </div>
+                    <span>{option.label}</span>
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 interface FiltersModuleProps {
   filters: FilterState
@@ -28,6 +157,7 @@ interface FiltersModuleProps {
   onToggle: (category: AnyFilterCategory, value: string) => void
   onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
   onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
+  onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -45,7 +175,9 @@ function ConfigDrivenFilter({
   onToggle,
   onToggleAll,
   onRangeChange,
+  onSetFilter,
   resetRange,
+  teamFilterCleared,
 }: {
   def: FilterDef
   filters: FilterState
@@ -53,7 +185,9 @@ function ConfigDrivenFilter({
   onToggle: (category: AnyFilterCategory, value: string) => void
   onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
   onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
+  onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   resetRange: (category: RangeCategory, defaultRange: [number, number]) => void
+  teamFilterCleared: boolean
 }) {
   switch (def.type) {
     case "boolean":
@@ -149,8 +283,87 @@ function ConfigDrivenFilter({
       )
     }
 
+    case "dynamicTeamSelect": {
+      const d = def as DynamicTeamSelectFilterDef
+      // Get selected leagues from filters to determine which teams to show
+      const selectedLeagues = Array.from(filters.league || [])
+      const teamOptions = getTeamsForLeagues(selectedLeagues)
+      
+      // Get currently selected teams (multi-select)
+      const selectedTeamSet = filters.team
+      const selectedTeams = selectedTeamSet ? Array.from(selectedTeamSet) : []
+      const allTeamValues = teamOptions.map(opt => opt.value)
+      
+      // Build display text for selected teams
+      const getDisplayText = () => {
+        if (selectedTeams.length === 0) return null
+        if (selectedTeams.length === 1) {
+          const team = teamOptions.find(t => t.value === selectedTeams[0])
+          return team?.label || selectedTeams[0]
+        }
+        return `${selectedTeams.length} teams selected`
+      }
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category="team"
+          allValues={allTeamValues}
+          filters={filters}
+          onToggleAll={onToggleAll}
+        >
+          <MultiSelectDropdown
+            options={teamOptions}
+            selectedValues={selectedTeams}
+            onToggle={(value) => onToggle("team", value)}
+            placeholder={d.placeholder}
+            displayText={getDisplayText()}
+            className={teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
+          />
+        </FilterRow>
+      )
+    }
+
     case "select": {
       const d = def as SelectFilterDef
+      // Check if this is the Season filter to make it multi-select
+      if (d.label === "Season") {
+        const selectedSeasonSet = filters.season
+        const selectedSeasons = selectedSeasonSet ? Array.from(selectedSeasonSet) : []
+        const allSeasonValues = d.options.map(opt => opt.value)
+        
+        // Build display text for selected seasons
+        const getDisplayText = () => {
+          if (selectedSeasons.length === 0) return null
+          if (selectedSeasons.length === 1) {
+            const season = d.options.find(s => s.value === selectedSeasons[0])
+            return season?.label || selectedSeasons[0]
+          }
+          return `${selectedSeasons.length} seasons selected`
+        }
+        
+        return (
+          <FilterRow
+            label={d.label}
+            count={d.count}
+            category="season"
+            allValues={allSeasonValues}
+            filters={filters}
+            onToggleAll={onToggleAll}
+          >
+            <MultiSelectDropdown
+              options={d.options}
+              selectedValues={selectedSeasons}
+              onToggle={(value) => onToggle("season", value)}
+              placeholder={d.placeholder}
+              displayText={getDisplayText()}
+            />
+          </FilterRow>
+        )
+      }
+      
+      // Default select behavior for other selects
       return (
         <FilterRow
           label={d.label}
@@ -185,9 +398,43 @@ export function FiltersModule({
   onToggle,
   onToggleAll,
   onRangeChange,
+  onSetFilter,
   onClear,
   activeFilterCount,
 }: FiltersModuleProps) {
+  // Track team filter cleared state for visual feedback
+  const [teamFilterCleared, setTeamFilterCleared] = useState(false)
+  const prevLeaguesRef = useRef<string[]>([])
+  
+  // Watch for league changes and clear teams that are no longer valid
+  useEffect(() => {
+    const currentLeagues = Array.from(filters.league || [])
+    const selectedTeamSet = filters.team
+    const selectedTeams = selectedTeamSet ? Array.from(selectedTeamSet) : []
+    
+    // Only check if there are teams selected and leagues have changed
+    if (selectedTeams.length > 0 && currentLeagues.length > 0) {
+      const prevLeagues = prevLeaguesRef.current
+      const leaguesChanged = prevLeagues.length !== currentLeagues.length || 
+        !prevLeagues.every(l => currentLeagues.includes(l))
+      
+      if (leaguesChanged) {
+        // Find teams that are no longer valid
+        const invalidTeams = selectedTeams.filter(team => !isTeamInLeagues(team, currentLeagues))
+        
+        if (invalidTeams.length > 0) {
+          // Clear invalid teams one by one using toggle
+          invalidTeams.forEach(team => onToggle("team", team))
+          // Show visual feedback
+          setTeamFilterCleared(true)
+          setTimeout(() => setTeamFilterCleared(false), 1500)
+        }
+      }
+    }
+    
+    prevLeaguesRef.current = currentLeagues
+  }, [filters.league, filters.team, onToggle])
+  
   // Helper to reset a range filter to its default
   const resetRange = useCallback(
     (category: RangeCategory, defaultRange: [number, number]) => {
@@ -251,7 +498,9 @@ export function FiltersModule({
                         onToggle={onToggle}
                         onToggleAll={onToggleAll}
                         onRangeChange={onRangeChange}
+                        onSetFilter={onSetFilter}
                         resetRange={resetRange}
+                        teamFilterCleared={teamFilterCleared}
                       />
                     ))}
                   </div>

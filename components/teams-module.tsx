@@ -13,7 +13,8 @@ import type { GameLeague } from "@/types/game"
 // ---------------------------------------------------------------------------
 interface TeamsModuleProps {
   selectedLeagues: GameLeague[]
-  selectedSeason: string | null
+  selectedSeasons: string[]
+  selectedTeams: string[]
   onClickTeam?: (team: Team) => void
   activeTeamId?: string
 }
@@ -28,7 +29,7 @@ const leagueMapping: Record<GameLeague, League> = {
 // Display names for leagues
 const leagueDisplayNames: Record<League, string> = {
   NFL: "NFL",
-  "NCAA (FBS)": "College",
+  "NCAA (FBS)": "NCAA",
   HighSchool: "High School",
 }
 
@@ -293,7 +294,7 @@ function LeagueSection({
 // ---------------------------------------------------------------------------
 // Main TeamsModule Component
 // ---------------------------------------------------------------------------
-export function TeamsModule({ selectedLeagues, selectedSeason, onClickTeam, activeTeamId }: TeamsModuleProps) {
+export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, onClickTeam, activeTeamId }: TeamsModuleProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
   // Get leagues to display based on filter

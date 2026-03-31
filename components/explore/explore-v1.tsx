@@ -341,6 +341,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickGame={handleGameClick}
                         activeGameId={previewGame?.id}
                       />
@@ -362,6 +363,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickAthlete={handleAthleteClick}
                         activeAthleteId={previewAthlete?.id}
                       />

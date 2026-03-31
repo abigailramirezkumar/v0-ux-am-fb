@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { athletes } from "@/lib/athletes-data"
+import { sportsData, type League } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { GameLeague } from "@/types/game"
 
@@ -18,8 +19,47 @@ interface AthletesModuleProps {
   selectedLeagues: GameLeague[]
   selectedSeasons: string[]
   selectedTeams: string[]
+  selectedCompetitions: string[]
   onClickAthlete?: (athlete: Athlete & { id: string }) => void
   activeAthleteId?: string
+}
+
+// Map GameLeague to sports-data League key
+const leagueToSportsDataKey: Record<GameLeague, League> = {
+  NFL: "NFL",
+  College: "NCAA (FBS)",
+  HighSchool: "HighSchool",
+}
+
+// Helper to check if a team is in any of the selected competitions
+function isTeamInCompetitions(teamName: string, selectedCompetitions: string[]): boolean {
+  if (selectedCompetitions.length === 0) return true
+  
+  for (const leagueKey of Object.values(leagueToSportsDataKey)) {
+    const leagueData = sportsData[leagueKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // Check subdivisions (NFL divisions)
+      if (conference.subdivisions && conference.subdivisions.length > 0) {
+        for (const subdivision of conference.subdivisions) {
+          if (selectedCompetitions.includes(subdivision.id)) {
+            // Match by team name or abbreviation
+            if (subdivision.teams.some(t => t.name === teamName || t.abbreviation === teamName)) {
+              return true
+            }
+          }
+        }
+      }
+      // Check conference teams directly (NCAA/HighSchool)
+      if (selectedCompetitions.includes(conference.id)) {
+        if (conference.teams.some(t => t.name === teamName || t.abbreviation === teamName)) {
+          return true
+        }
+      }
+    }
+  }
+  return false
 }
 
 type SortField = "name" | "position" | "team" | "jersey_number" | "college"
@@ -43,6 +83,7 @@ export function AthletesModule({
   selectedLeagues,
   selectedSeasons,
   selectedTeams,
+  selectedCompetitions,
   onClickAthlete,
   activeAthleteId,
 }: AthletesModuleProps) {
@@ -60,6 +101,11 @@ export function AthletesModule({
         const athleteLeague = LEAGUE_MAP[athlete.league]
         return athleteLeague && selectedLeagues.includes(athleteLeague)
       })
+    }
+
+    // Filter by competitions if any are selected
+    if (selectedCompetitions.length > 0) {
+      result = result.filter((athlete) => isTeamInCompetitions(athlete.team, selectedCompetitions))
     }
 
     // Filter by search query
@@ -95,7 +141,7 @@ export function AthletesModule({
     })
 
     return result
-  }, [selectedLeagues, searchQuery, sortField, sortDirection])
+  }, [selectedLeagues, selectedCompetitions, searchQuery, sortField, sortDirection])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {

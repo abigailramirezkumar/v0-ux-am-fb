@@ -13,6 +13,7 @@ export type FilterCategory =
   | "league"
   | "team"
   | "season"
+  | "competition"
   // Game Context
   | "down"
   | "distanceType"
@@ -167,7 +168,7 @@ export function hasActiveRange(
  * Useful at module boundaries that still accept `string`.
  */
 const FILTER_CATEGORIES: ReadonlySet<string> = new Set<FilterCategory>([
-  "league", "team", "season", "down", "distanceType", "hash", "playType", "touchdownType",
+  "league", "team", "season", "competition", "down", "distanceType", "hash", "playType", "touchdownType",
   "firstDownType", "turnoverType", "passResult", "passPressureResult",
   "depthOfTarget", "passLocation", "gainLoss", "yardsAfterContact", "runDirection",
   "runGap", "formationName", "personnelO", "personnelD",

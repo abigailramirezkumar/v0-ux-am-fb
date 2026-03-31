@@ -23,6 +23,10 @@ import { ToggleGroupWithRange } from "@/components/filters/toggle-group-with-ran
 import { RangeSlider } from "@/components/filters/range-slider"
 import { FilterRow } from "@/components/filters/filter-row"
 import { SubsectionHeader } from "@/components/filters/subsection-header"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Check, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 // Map filter league values to sportsData league keys
 const leagueFilterToSportsDataKey: Record<string, League> = {
@@ -71,6 +75,80 @@ function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: 
 function isTeamInLeagues(teamId: string, selectedLeagues: string[]): boolean {
   const availableTeams = getTeamsForLeagues(selectedLeagues)
   return availableTeams.some(team => team.value === teamId)
+}
+
+// ---------------------------------------------------------------------------
+// Multi-Select Dropdown Component
+// ---------------------------------------------------------------------------
+interface MultiSelectDropdownProps {
+  options: { value: string; label: string }[]
+  selectedValues: string[]
+  onToggle: (value: string) => void
+  placeholder: string
+  displayText: string | null
+  className?: string
+}
+
+function MultiSelectDropdown({
+  options,
+  selectedValues,
+  onToggle,
+  placeholder,
+  displayText,
+  className,
+}: MultiSelectDropdownProps) {
+  const [open, setOpen] = useState(false)
+  
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "w-full h-9 px-3 text-sm border border-border rounded-md flex items-center justify-between transition-all duration-300",
+            displayText ? "text-foreground" : "text-muted-foreground",
+            className
+          )}
+        >
+          <span className="truncate">{displayText || placeholder}</span>
+          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search..." className="h-9" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const isSelected = selectedValues.includes(option.value)
+                return (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => onToggle(option.value)}
+                    className="cursor-pointer"
+                  >
+                    <div
+                      className={cn(
+                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "opacity-50 [&_svg]:invisible"
+                      )}
+                    >
+                      <Check className="h-3 w-3" />
+                    </div>
+                    <span>{option.label}</span>
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 interface FiltersModuleProps {
@@ -211,77 +289,76 @@ function ConfigDrivenFilter({
       const selectedLeagues = Array.from(filters.league || [])
       const teamOptions = getTeamsForLeagues(selectedLeagues)
       
-      // Get currently selected team
+      // Get currently selected teams (multi-select)
       const selectedTeamSet = filters.team
-      const selectedTeam = selectedTeamSet && selectedTeamSet.size > 0 
-        ? Array.from(selectedTeamSet)[0] 
-        : undefined
+      const selectedTeams = selectedTeamSet ? Array.from(selectedTeamSet) : []
+      const allTeamValues = teamOptions.map(opt => opt.value)
+      
+      // Build display text for selected teams
+      const getDisplayText = () => {
+        if (selectedTeams.length === 0) return null
+        if (selectedTeams.length === 1) {
+          const team = teamOptions.find(t => t.value === selectedTeams[0])
+          return team?.label || selectedTeams[0]
+        }
+        return `${selectedTeams.length} teams selected`
+      }
       
       return (
         <FilterRow
           label={d.label}
           count={d.count}
+          category="team"
+          allValues={allTeamValues}
           filters={filters}
-          onToggle={onToggle}
+          onToggleAll={onToggleAll}
         >
-          <Select
-            value={selectedTeam || ""}
-            onValueChange={(value) => {
-              onSetFilter("team", value || null)
-            }}
-          >
-            <SelectTrigger 
-              className={`w-full h-9 text-sm border-border transition-all duration-300 ${
-                selectedTeam ? "text-foreground" : "text-muted-foreground"
-              } ${teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}`}
-            >
-              <SelectValue placeholder={d.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {teamOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelectDropdown
+            options={teamOptions}
+            selectedValues={selectedTeams}
+            onToggle={(value) => onToggle("team", value)}
+            placeholder={d.placeholder}
+            displayText={getDisplayText()}
+            className={teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
+          />
         </FilterRow>
       )
     }
 
     case "select": {
       const d = def as SelectFilterDef
-      // Check if this is the Season filter to make it controlled
+      // Check if this is the Season filter to make it multi-select
       if (d.label === "Season") {
         const selectedSeasonSet = filters.season
-        const selectedSeason = selectedSeasonSet && selectedSeasonSet.size > 0 
-          ? Array.from(selectedSeasonSet)[0] 
-          : undefined
+        const selectedSeasons = selectedSeasonSet ? Array.from(selectedSeasonSet) : []
+        const allSeasonValues = d.options.map(opt => opt.value)
+        
+        // Build display text for selected seasons
+        const getDisplayText = () => {
+          if (selectedSeasons.length === 0) return null
+          if (selectedSeasons.length === 1) {
+            const season = d.options.find(s => s.value === selectedSeasons[0])
+            return season?.label || selectedSeasons[0]
+          }
+          return `${selectedSeasons.length} seasons selected`
+        }
         
         return (
           <FilterRow
             label={d.label}
             count={d.count}
+            category="season"
+            allValues={allSeasonValues}
             filters={filters}
-            onToggle={onToggle}
+            onToggleAll={onToggleAll}
           >
-            <Select
-              value={selectedSeason || ""}
-              onValueChange={(value) => {
-                onSetFilter("season", value || null)
-              }}
-            >
-              <SelectTrigger className={`w-full h-9 text-sm border-border ${selectedSeason ? "text-foreground" : "text-muted-foreground"}`}>
-                <SelectValue placeholder={d.placeholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {d.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelectDropdown
+              options={d.options}
+              selectedValues={selectedSeasons}
+              onToggle={(value) => onToggle("season", value)}
+              placeholder={d.placeholder}
+              displayText={getDisplayText()}
+            />
           </FilterRow>
         )
       }
@@ -329,31 +406,34 @@ export function FiltersModule({
   const [teamFilterCleared, setTeamFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
   
-  // Watch for league changes and clear team if it's no longer valid
+  // Watch for league changes and clear teams that are no longer valid
   useEffect(() => {
     const currentLeagues = Array.from(filters.league || [])
     const selectedTeamSet = filters.team
-    const selectedTeam = selectedTeamSet && selectedTeamSet.size > 0 
-      ? Array.from(selectedTeamSet)[0] 
-      : undefined
+    const selectedTeams = selectedTeamSet ? Array.from(selectedTeamSet) : []
     
-    // Only check if there's a team selected and leagues have changed
-    if (selectedTeam && currentLeagues.length > 0) {
+    // Only check if there are teams selected and leagues have changed
+    if (selectedTeams.length > 0 && currentLeagues.length > 0) {
       const prevLeagues = prevLeaguesRef.current
       const leaguesChanged = prevLeagues.length !== currentLeagues.length || 
         !prevLeagues.every(l => currentLeagues.includes(l))
       
-      if (leaguesChanged && !isTeamInLeagues(selectedTeam, currentLeagues)) {
-        // Clear the team filter
-        onSetFilter("team", null)
-        // Show visual feedback
-        setTeamFilterCleared(true)
-        setTimeout(() => setTeamFilterCleared(false), 1500)
+      if (leaguesChanged) {
+        // Find teams that are no longer valid
+        const invalidTeams = selectedTeams.filter(team => !isTeamInLeagues(team, currentLeagues))
+        
+        if (invalidTeams.length > 0) {
+          // Clear invalid teams one by one using toggle
+          invalidTeams.forEach(team => onToggle("team", team))
+          // Show visual feedback
+          setTeamFilterCleared(true)
+          setTimeout(() => setTeamFilterCleared(false), 1500)
+        }
       }
     }
     
     prevLeaguesRef.current = currentLeagues
-  }, [filters.league, filters.team, onSetFilter])
+  }, [filters.league, filters.team, onToggle])
   
   // Helper to reset a range filter to its default
   const resetRange = useCallback(

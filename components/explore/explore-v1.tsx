@@ -117,9 +117,10 @@ export function ExploreV1() {
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
 
-  // Games tab filter state
+  // Games/Athletes/Teams tab filter state
   const [selectedLeagues, setSelectedLeagues] = useState<GameLeague[]>([])
-  const [selectedSeason, setSelectedSeason] = useState<string | null>(null)
+  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([])
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([])
 
   const handleLeagueToggle = (league: GameLeague) => {
     setSelectedLeagues((prev) =>
@@ -127,12 +128,25 @@ export function ExploreV1() {
     )
   }
 
-  const clearGamesFilters = () => {
-    setSelectedLeagues([])
-    setSelectedSeason(null)
+  const handleSeasonToggle = (season: string) => {
+    setSelectedSeasons((prev) =>
+      prev.includes(season) ? prev.filter((s) => s !== season) : [...prev, season]
+    )
   }
 
-  const gamesFilterCount = selectedLeagues.length + (selectedSeason ? 1 : 0)
+  const handleTeamToggle = (team: string) => {
+    setSelectedTeams((prev) =>
+      prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]
+    )
+  }
+
+  const clearGamesFilters = () => {
+    setSelectedLeagues([])
+    setSelectedSeasons([])
+    setSelectedTeams([])
+  }
+
+  const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length
 
   useEffect(() => {
     if (previewPlay || previewGame || previewTeam || previewAthlete) {
@@ -232,9 +246,11 @@ export function ExploreV1() {
               {activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? (
                 <GamesFiltersModule
                   selectedLeagues={selectedLeagues}
-                  selectedSeason={selectedSeason}
+                  selectedSeasons={selectedSeasons}
+                  selectedTeams={selectedTeams}
                   onLeagueToggle={handleLeagueToggle}
-                  onSeasonChange={setSelectedSeason}
+                  onSeasonToggle={handleSeasonToggle}
+                  onTeamToggle={handleTeamToggle}
                   onClear={clearGamesFilters}
                 />
               ) : (
@@ -311,9 +327,8 @@ export function ExploreV1() {
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
                       <GamesModule
                         selectedLeagues={selectedLeagues}
-                        selectedSeason={selectedSeason}
-                        onLeagueToggle={handleLeagueToggle}
-                        onSeasonChange={setSelectedSeason}
+                        selectedSeasons={selectedSeasons}
+                        selectedTeams={selectedTeams}
                         onClickGame={handleGameClick}
                         activeGameId={previewGame?.id}
                       />
@@ -322,7 +337,8 @@ export function ExploreV1() {
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
                       <TeamsModule
                         selectedLeagues={selectedLeagues}
-                        selectedSeason={selectedSeason}
+                        selectedSeasons={selectedSeasons}
+                        selectedTeams={selectedTeams}
                         onClickTeam={handleTeamClick}
                         activeTeamId={previewTeam?.id}
                       />
@@ -331,7 +347,8 @@ export function ExploreV1() {
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden">
                       <AthletesModule
                         selectedLeagues={selectedLeagues}
-                        selectedSeason={selectedSeason}
+                        selectedSeasons={selectedSeasons}
+                        selectedTeams={selectedTeams}
                         onClickAthlete={handleAthleteClick}
                         activeAthleteId={previewAthlete?.id}
                       />

@@ -16,7 +16,8 @@ import type { GameLeague } from "@/types/game"
 
 interface AthletesModuleProps {
   selectedLeagues: GameLeague[]
-  selectedSeason: string | null
+  selectedSeasons: string[]
+  selectedTeams: string[]
   onClickAthlete?: (athlete: Athlete & { id: string }) => void
   activeAthleteId?: string
 }
@@ -40,7 +41,8 @@ const LEAGUE_MAP: Record<string, GameLeague> = {
 
 export function AthletesModule({
   selectedLeagues,
-  selectedSeason,
+  selectedSeasons,
+  selectedTeams,
   onClickAthlete,
   activeAthleteId,
 }: AthletesModuleProps) {

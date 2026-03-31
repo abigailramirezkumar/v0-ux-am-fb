@@ -14,9 +14,8 @@ import type { Game, GameLeague } from "@/types/game"
 
 interface GamesModuleProps {
   selectedLeagues: GameLeague[]
-  selectedSeason: string | null
-  onLeagueToggle: (league: GameLeague) => void
-  onSeasonChange: (season: string | null) => void
+  selectedSeasons: string[]
+  selectedTeams: string[]
   onClickGame?: (game: Game) => void
   activeGameId?: string
 }
@@ -211,19 +210,12 @@ function LeagueSection({
 // ---------------------------------------------------------------------------
 export function GamesModule({
   selectedLeagues,
-  selectedSeason,
-  onLeagueToggle,
-  onSeasonChange,
+  selectedSeasons,
+  selectedTeams,
   onClickGame,
   activeGameId,
 }: GamesModuleProps) {
   const [searchQuery, setSearchQuery] = useState("")
-
-  // Get all unique seasons from games
-  const allSeasons = useMemo(() => {
-    const seasons = new Set(mockGames.map((g) => g.season))
-    return Array.from(seasons).sort((a, b) => b.localeCompare(a))
-  }, [])
 
   // Filter and organize games
   const organizedGames = useMemo(() => {
@@ -234,9 +226,16 @@ export function GamesModule({
       filtered = filtered.filter((g) => selectedLeagues.includes(g.league))
     }
 
-    // Filter by selected season (if any)
-    if (selectedSeason) {
-      filtered = filtered.filter((g) => g.season === selectedSeason)
+    // Filter by selected seasons (if any)
+    if (selectedSeasons.length > 0) {
+      filtered = filtered.filter((g) => selectedSeasons.includes(g.season))
+    }
+
+    // Filter by selected teams (if any)
+    if (selectedTeams.length > 0) {
+      filtered = filtered.filter((g) => 
+        selectedTeams.includes(g.homeTeamId) || selectedTeams.includes(g.awayTeamId)
+      )
     }
 
     // Filter by search query (team names or matchup display)
@@ -293,7 +292,7 @@ export function GamesModule({
     })
 
     return result
-  }, [selectedLeagues, selectedSeason, searchQuery])
+  }, [selectedLeagues, selectedSeasons, selectedTeams, searchQuery])
 
   // Count total games
   const totalGames = organizedGames.reduce(

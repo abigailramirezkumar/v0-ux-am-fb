@@ -1899,11 +1899,10 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
       {!hideHeader && (
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-bold truncate">{game.matchupDisplay}</span>
-            <span className="text-muted-foreground text-sm shrink-0">|</span>
-            <span className="text-sm text-muted-foreground truncate">
-              {game.gameType === "playoff" ? "Playoff" : `Week ${game.week}`}
+            <span className="text-sm font-bold truncate">
+              {game.status === "final" && game.score
+                ? `${homeTeam?.name || game.homeTeamId} ${game.score.home} \u2013 ${game.score.away} ${awayTeam?.name || game.awayTeamId}`
+                : `${homeTeam?.name || game.homeTeamId} vs. ${awayTeam?.name || game.awayTeamId}`}
             </span>
           </div>
           <Button

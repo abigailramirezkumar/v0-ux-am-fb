@@ -15,6 +15,7 @@ interface TeamsModuleProps {
   selectedLeagues: GameLeague[]
   selectedSeasons: string[]
   selectedTeams: string[]
+  selectedCompetitions: string[]
   onClickTeam?: (team: Team) => void
   activeTeamId?: string
 }
@@ -294,7 +295,7 @@ function LeagueSection({
 // ---------------------------------------------------------------------------
 // Main TeamsModule Component
 // ---------------------------------------------------------------------------
-export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, onClickTeam, activeTeamId }: TeamsModuleProps) {
+export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, onClickTeam, activeTeamId }: TeamsModuleProps) {
   const [searchQuery, setSearchQuery] = useState("")
 
   // Get leagues to display based on filter
@@ -305,13 +306,55 @@ export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, o
     return selectedLeagues.map((gl) => leagueMapping[gl])
   }, [selectedLeagues])
 
-  // Calculate total teams across all visible leagues
+  // Filter conferences based on selected competitions
+  const getFilteredConferences = useMemo(() => {
+    return (conferences: Conference[]): Conference[] => {
+      // If no competitions selected, return all conferences
+      if (selectedCompetitions.length === 0) {
+        return conferences
+      }
+
+      return conferences.reduce<Conference[]>((acc, conference) => {
+        // Check if conference itself is selected
+        const isConferenceSelected = selectedCompetitions.includes(conference.id)
+        
+        // Check if any subdivisions are selected
+        if (conference.subdivisions && conference.subdivisions.length > 0) {
+          const filteredSubdivisions = conference.subdivisions.filter(sub => 
+            selectedCompetitions.includes(sub.id)
+          )
+          
+          // If conference is selected or has matching subdivisions, include it
+          if (isConferenceSelected) {
+            // If conference selected, include all subdivisions
+            acc.push(conference)
+          } else if (filteredSubdivisions.length > 0) {
+            // Only include matching subdivisions
+            acc.push({
+              ...conference,
+              subdivisions: filteredSubdivisions
+            })
+          }
+        } else {
+          // No subdivisions, just check if conference is selected
+          if (isConferenceSelected) {
+            acc.push(conference)
+          }
+        }
+        
+        return acc
+      }, [])
+    }
+  }, [selectedCompetitions])
+
+  // Calculate total teams across all visible leagues (with competition filter)
   const totalTeams = useMemo(() => {
     return leaguesToShow.reduce((sum, league) => {
       const data = sportsData[league]
+      const filteredConferences = getFilteredConferences(data.conferences)
       return (
         sum +
-        data.conferences.reduce((confSum, conf) => {
+        filteredConferences.reduce((confSum, conf) => {
           if (conf.subdivisions && conf.subdivisions.length > 0) {
             return confSum + conf.subdivisions.reduce((subSum, sub) => subSum + sub.teams.length, 0)
           }
@@ -319,7 +362,7 @@ export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, o
         }, 0)
       )
     }, 0)
-  }, [leaguesToShow])
+  }, [leaguesToShow, getFilteredConferences])
 
   // Count filtered teams for footer
   const filteredTeamCount = useMemo(() => {
@@ -328,9 +371,10 @@ export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, o
     const query = searchQuery.toLowerCase()
     return leaguesToShow.reduce((sum, league) => {
       const data = sportsData[league]
+      const filteredConferences = getFilteredConferences(data.conferences)
       return (
         sum +
-        data.conferences.reduce((confSum, conf) => {
+        filteredConferences.reduce((confSum, conf) => {
           if (conf.subdivisions && conf.subdivisions.length > 0) {
             return (
               confSum +
@@ -357,7 +401,7 @@ export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, o
         }, 0)
       )
     }, 0)
-  }, [leaguesToShow, searchQuery, totalTeams])
+  }, [leaguesToShow, searchQuery, totalTeams, getFilteredConferences])
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -382,16 +426,20 @@ export function TeamsModule({ selectedLeagues, selectedSeasons, selectedTeams, o
       {/* Teams List */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-4 space-y-8">
-          {leaguesToShow.map((league) => (
-            <LeagueSection
-              key={league}
-              league={league}
-              conferences={sportsData[league].conferences}
-              searchQuery={searchQuery}
-              onClickTeam={onClickTeam}
-              activeTeamId={activeTeamId}
-            />
-          ))}
+          {leaguesToShow.map((league) => {
+            const filteredConferences = getFilteredConferences(sportsData[league].conferences)
+            if (filteredConferences.length === 0) return null
+            return (
+              <LeagueSection
+                key={league}
+                league={league}
+                conferences={filteredConferences}
+                searchQuery={searchQuery}
+                onClickTeam={onClickTeam}
+                activeTeamId={activeTeamId}
+              />
+            )
+          })}
         </div>
       </div>
 

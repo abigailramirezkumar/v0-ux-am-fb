@@ -351,6 +351,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickTeam={handleTeamClick}
                         activeTeamId={previewTeam?.id}
                       />

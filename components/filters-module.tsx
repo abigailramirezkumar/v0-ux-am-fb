@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -67,12 +67,19 @@ function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: 
   return allTeams.sort((a, b) => a.label.localeCompare(b.label))
 }
 
+// Helper to check if a team ID exists in the available teams for given leagues
+function isTeamInLeagues(teamId: string, selectedLeagues: string[]): boolean {
+  const availableTeams = getTeamsForLeagues(selectedLeagues)
+  return availableTeams.some(team => team.value === teamId)
+}
+
 interface FiltersModuleProps {
   filters: FilterState
   rangeFilters: RangeFilterState
   onToggle: (category: AnyFilterCategory, value: string) => void
   onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
   onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
+  onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   onClear: () => void
   uniqueGames: string[]
   activeFilterCount: number
@@ -90,7 +97,9 @@ function ConfigDrivenFilter({
   onToggle,
   onToggleAll,
   onRangeChange,
+  onSetFilter,
   resetRange,
+  teamFilterCleared,
 }: {
   def: FilterDef
   filters: FilterState
@@ -98,7 +107,9 @@ function ConfigDrivenFilter({
   onToggle: (category: AnyFilterCategory, value: string) => void
   onToggleAll: (category: AnyFilterCategory, allValues: string[]) => void
   onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
+  onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   resetRange: (category: RangeCategory, defaultRange: [number, number]) => void
+  teamFilterCleared: boolean
 }) {
   switch (def.type) {
     case "boolean":
@@ -194,8 +205,88 @@ function ConfigDrivenFilter({
       )
     }
 
+    case "dynamicTeamSelect": {
+      const d = def as DynamicTeamSelectFilterDef
+      // Get selected leagues from filters to determine which teams to show
+      const selectedLeagues = Array.from(filters.league || [])
+      const teamOptions = getTeamsForLeagues(selectedLeagues)
+      
+      // Get currently selected team
+      const selectedTeamSet = filters.team
+      const selectedTeam = selectedTeamSet && selectedTeamSet.size > 0 
+        ? Array.from(selectedTeamSet)[0] 
+        : undefined
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          filters={filters}
+          onToggle={onToggle}
+        >
+          <Select
+            value={selectedTeam || ""}
+            onValueChange={(value) => {
+              onSetFilter("team", value || null)
+            }}
+          >
+            <SelectTrigger 
+              className={`w-full h-9 text-sm border-border transition-all duration-300 ${
+                selectedTeam ? "text-foreground" : "text-muted-foreground"
+              } ${teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}`}
+            >
+              <SelectValue placeholder={d.placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {teamOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterRow>
+      )
+    }
+
     case "select": {
       const d = def as SelectFilterDef
+      // Check if this is the Season filter to make it controlled
+      if (d.label === "Season") {
+        const selectedSeasonSet = filters.season
+        const selectedSeason = selectedSeasonSet && selectedSeasonSet.size > 0 
+          ? Array.from(selectedSeasonSet)[0] 
+          : undefined
+        
+        return (
+          <FilterRow
+            label={d.label}
+            count={d.count}
+            filters={filters}
+            onToggle={onToggle}
+          >
+            <Select
+              value={selectedSeason || ""}
+              onValueChange={(value) => {
+                onSetFilter("season", value || null)
+              }}
+            >
+              <SelectTrigger className={`w-full h-9 text-sm border-border ${selectedSeason ? "text-foreground" : "text-muted-foreground"}`}>
+                <SelectValue placeholder={d.placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {d.options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FilterRow>
+        )
+      }
+      
+      // Default select behavior for other selects
       return (
         <FilterRow
           label={d.label}
@@ -218,35 +309,6 @@ function ConfigDrivenFilter({
         </FilterRow>
       )
     }
-
-    case "dynamicTeamSelect": {
-      const d = def as DynamicTeamSelectFilterDef
-      // Get selected leagues from filters to determine which teams to show
-      const selectedLeagues = filters.league || []
-      const teamOptions = getTeamsForLeagues(selectedLeagues)
-      
-      return (
-        <FilterRow
-          label={d.label}
-          count={d.count}
-          filters={filters}
-          onToggle={onToggle}
-        >
-          <Select>
-            <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
-              <SelectValue placeholder={d.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {teamOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FilterRow>
-      )
-    }
   }
 }
 
@@ -259,9 +321,40 @@ export function FiltersModule({
   onToggle,
   onToggleAll,
   onRangeChange,
+  onSetFilter,
   onClear,
   activeFilterCount,
 }: FiltersModuleProps) {
+  // Track team filter cleared state for visual feedback
+  const [teamFilterCleared, setTeamFilterCleared] = useState(false)
+  const prevLeaguesRef = useRef<string[]>([])
+  
+  // Watch for league changes and clear team if it's no longer valid
+  useEffect(() => {
+    const currentLeagues = Array.from(filters.league || [])
+    const selectedTeamSet = filters.team
+    const selectedTeam = selectedTeamSet && selectedTeamSet.size > 0 
+      ? Array.from(selectedTeamSet)[0] 
+      : undefined
+    
+    // Only check if there's a team selected and leagues have changed
+    if (selectedTeam && currentLeagues.length > 0) {
+      const prevLeagues = prevLeaguesRef.current
+      const leaguesChanged = prevLeagues.length !== currentLeagues.length || 
+        !prevLeagues.every(l => currentLeagues.includes(l))
+      
+      if (leaguesChanged && !isTeamInLeagues(selectedTeam, currentLeagues)) {
+        // Clear the team filter
+        onSetFilter("team", null)
+        // Show visual feedback
+        setTeamFilterCleared(true)
+        setTimeout(() => setTeamFilterCleared(false), 1500)
+      }
+    }
+    
+    prevLeaguesRef.current = currentLeagues
+  }, [filters.league, filters.team, onSetFilter])
+  
   // Helper to reset a range filter to its default
   const resetRange = useCallback(
     (category: RangeCategory, defaultRange: [number, number]) => {
@@ -325,7 +418,9 @@ export function FiltersModule({
                         onToggle={onToggle}
                         onToggleAll={onToggleAll}
                         onRangeChange={onRangeChange}
+                        onSetFilter={onSetFilter}
                         resetRange={resetRange}
+                        teamFilterCleared={teamFilterCleared}
                       />
                     ))}
                   </div>

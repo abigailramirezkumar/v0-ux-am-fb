@@ -77,6 +77,20 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     })
   }, [])
 
+  // Set a single value filter (for dropdowns like team/season) - clears if null
+  const setFilter = useCallback((category: AnyFilterCategory, value: string | null) => {
+    setFilters((prev) => {
+      if (value === null) {
+        // Clear the category
+        if (!prev[category]) return prev
+        const { [category]: _, ...rest } = prev
+        return rest
+      }
+      // Set to single value
+      return { ...prev, [category]: new Set([value]) }
+    })
+  }, [])
+
   // Set a range filter (dual-thumb slider: [min, max])
   const setRangeFilter = useCallback((category: RangeCategory, value: [number, number], defaultRange: [number, number]) => {
     setRangeFilters((prev) => {
@@ -144,6 +158,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     rangeFilters,
     toggleFilter,
     toggleAllInCategory,
+    setFilter,
     setRangeFilter,
     clearFilters,
     filteredPlays,

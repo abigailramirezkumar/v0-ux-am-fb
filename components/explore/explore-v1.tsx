@@ -194,6 +194,7 @@ export function ExploreV1() {
     rangeFilters,
     toggleFilter,
     toggleAllInCategory,
+    setFilter,
     setRangeFilter,
     clearFilters,
     filteredPlays,
@@ -243,6 +244,7 @@ export function ExploreV1() {
                   onToggle={toggleFilter}
                   onToggleAll={toggleAllInCategory}
                   onRangeChange={setRangeFilter}
+                  onSetFilter={setFilter}
                   onClear={clearFilters}
                   uniqueGames={uniqueGames}
                   activeFilterCount={activeFilterCount}

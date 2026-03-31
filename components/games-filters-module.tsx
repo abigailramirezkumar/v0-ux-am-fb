@@ -25,6 +25,7 @@ interface GamesFiltersModuleProps {
   onSeasonToggle: (season: string) => void
   onTeamToggle: (team: string) => void
   onClear: () => void
+  hideTeamFilter?: boolean
 }
 
 // Map filter league values to sportsData league keys
@@ -161,13 +162,14 @@ export function GamesFiltersModule({
   onSeasonToggle,
   onTeamToggle,
   onClear,
+  hideTeamFilter = false,
 }: GamesFiltersModuleProps) {
   // Track team filter cleared state for visual feedback
   const [teamFilterCleared, setTeamFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
   
-  // Calculate active filter count
-  const activeFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length
+  // Calculate active filter count (exclude teams if hidden)
+  const activeFilterCount = selectedLeagues.length + selectedSeasons.length + (hideTeamFilter ? 0 : selectedTeams.length)
 
   // Get unique seasons from games
   const seasons = useMemo(() => {
@@ -356,40 +358,42 @@ export function GamesFiltersModule({
               </div>
 
               {/* Team Filter */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        // Toggle all teams
-                        if (selectedTeams.length > 0) {
-                          selectedTeams.forEach(t => onTeamToggle(t))
-                        } else {
-                          teamOptions.forEach(t => onTeamToggle(t.value))
-                        }
-                      }}
-                      className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                        selectedTeams.length > 0
-                          ? "border-blue-600 bg-blue-600"
-                          : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
-                      }`}
-                    >
-                      {selectedTeams.length > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-background" />
-                      )}
-                    </button>
-                    <span className="text-sm text-foreground">Team</span>
+              {!hideTeamFilter && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          // Toggle all teams
+                          if (selectedTeams.length > 0) {
+                            selectedTeams.forEach(t => onTeamToggle(t))
+                          } else {
+                            teamOptions.forEach(t => onTeamToggle(t.value))
+                          }
+                        }}
+                        className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                          selectedTeams.length > 0
+                            ? "border-blue-600 bg-blue-600"
+                            : "border-muted-foreground/40 bg-background hover:border-muted-foreground/60"
+                        }`}
+                      >
+                        {selectedTeams.length > 0 && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-background" />
+                        )}
+                      </button>
+                      <span className="text-sm text-foreground">Team</span>
+                    </div>
                   </div>
+                  <MultiSelectDropdown
+                    options={teamOptions}
+                    selectedValues={selectedTeams}
+                    onToggle={onTeamToggle}
+                    placeholder="Select team"
+                    displayText={getTeamDisplayText()}
+                    className={teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
+                  />
                 </div>
-                <MultiSelectDropdown
-                  options={teamOptions}
-                  selectedValues={selectedTeams}
-                  onToggle={onTeamToggle}
-                  placeholder="Select team"
-                  displayText={getTeamDisplayText()}
-                  className={teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
-                />
-              </div>
+              )}
             </AccordionContent>
           </AccordionItem>
         </Accordion>

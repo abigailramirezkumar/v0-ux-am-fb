@@ -252,6 +252,7 @@ export function ExploreV1() {
                   onSeasonToggle={handleSeasonToggle}
                   onTeamToggle={handleTeamToggle}
                   onClear={clearGamesFilters}
+                  hideTeamFilter={activeTab === "teams"}
                 />
               ) : (
                 <FiltersModule

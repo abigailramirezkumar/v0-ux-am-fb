@@ -168,6 +168,11 @@ export const FILTER_SECTIONS: FilterSection[] = [
             ],
           },
           {
+            type: "dynamicCompetitionSelect",
+            label: "Competition",
+            placeholder: "Select competition",
+          },
+          {
             type: "select",
             label: "Season",
             placeholder: "Select season",
@@ -183,11 +188,6 @@ export const FILTER_SECTIONS: FilterSection[] = [
             type: "dynamicTeamSelect",
             label: "Team",
             placeholder: "Select team",
-          },
-          {
-            type: "dynamicCompetitionSelect",
-            label: "Competition",
-            placeholder: "Select competition",
           },
         ],
       },

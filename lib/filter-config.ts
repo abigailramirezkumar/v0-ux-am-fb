@@ -71,12 +71,21 @@ export interface SelectFilterDef {
   options: { value: string; label: string }[]
 }
 
+/** A dynamic team select filter that filters teams based on selected league */
+export interface DynamicTeamSelectFilterDef {
+  type: "dynamicTeamSelect"
+  label: string
+  count?: number
+  placeholder: string
+}
+
 export type FilterDef =
   | ToggleFilterDef
   | ToggleWithRangeFilterDef
   | RangeFilterDef
   | BooleanFilterDef
   | SelectFilterDef
+  | DynamicTeamSelectFilterDef
 
 export interface FilterSubsection {
   subsectionLabel?: string
@@ -129,10 +138,10 @@ const SHORT_MEDIUM_LONG_RETURN_RANGE_MAP: Record<string, [number, number]> = {
 // ---- Section definitions ---------------------------------------------------
 
 export const FILTER_SECTIONS: FilterSection[] = [
-  // ===================== League =====================
+  // ===================== Scope =====================
   {
-    key: "league",
-    title: "League",
+    key: "scope",
+    title: "Scope",
     subsections: [
       {
         filters: [
@@ -148,6 +157,23 @@ export const FILTER_SECTIONS: FilterSection[] = [
                 { value: "HighSchool", label: "High School" },
               ],
             ],
+          },
+          {
+            type: "select",
+            label: "Season",
+            placeholder: "Select season",
+            options: [
+              { value: "2024", label: "2024" },
+              { value: "2023", label: "2023" },
+              { value: "2022", label: "2022" },
+              { value: "2021", label: "2021" },
+              { value: "2020", label: "2020" },
+            ],
+          },
+          {
+            type: "dynamicTeamSelect",
+            label: "Team",
+            placeholder: "Select team",
           },
         ],
       },
@@ -751,4 +777,4 @@ export const ALL_RANGE_CATEGORIES: string[] = FILTER_SECTIONS.flatMap((section) 
 )
 
 /** Default accordion sections that should be open on mount. */
-export const DEFAULT_OPEN_SECTIONS = ["league", "game-context", "play-context"]
+export const DEFAULT_OPEN_SECTIONS = ["scope", "game-context", "play-context"]

@@ -15,12 +15,57 @@ import {
   type ToggleWithRangeFilterDef,
   type RangeFilterDef,
   type SelectFilterDef,
+  type DynamicTeamSelectFilterDef,
 } from "@/lib/filter-config"
+import { sportsData, type League } from "@/lib/sports-data"
 import { ToggleGroup } from "@/components/filters/toggle-group"
 import { ToggleGroupWithRange } from "@/components/filters/toggle-group-with-range"
 import { RangeSlider } from "@/components/filters/range-slider"
 import { FilterRow } from "@/components/filters/filter-row"
 import { SubsectionHeader } from "@/components/filters/subsection-header"
+
+// Map filter league values to sportsData league keys
+const leagueFilterToSportsDataKey: Record<string, League> = {
+  NFL: "NFL",
+  College: "NCAA (FBS)",
+  HighSchool: "HighSchool",
+}
+
+// Helper to get all teams for given leagues (or all if none selected)
+function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: string }[] {
+  const allTeams: { value: string; label: string }[] = []
+  
+  // If no leagues selected, show all teams
+  const leaguesToShow = selectedLeagues.length > 0 
+    ? selectedLeagues 
+    : ["NFL", "College", "HighSchool"]
+  
+  for (const filterLeague of leaguesToShow) {
+    const sportsDataKey = leagueFilterToSportsDataKey[filterLeague]
+    if (!sportsDataKey) continue
+    
+    const leagueData = sportsData[sportsDataKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // Add direct teams
+      for (const team of conference.teams) {
+        allTeams.push({ value: team.id, label: team.name })
+      }
+      // Add subdivision teams
+      if (conference.subdivisions) {
+        for (const subdivision of conference.subdivisions) {
+          for (const team of subdivision.teams) {
+            allTeams.push({ value: team.id, label: team.name })
+          }
+        }
+      }
+    }
+  }
+  
+  // Sort alphabetically by label
+  return allTeams.sort((a, b) => a.label.localeCompare(b.label))
+}
 
 interface FiltersModuleProps {
   filters: FilterState
@@ -164,6 +209,35 @@ function ConfigDrivenFilter({
             </SelectTrigger>
             <SelectContent>
               {d.options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FilterRow>
+      )
+    }
+
+    case "dynamicTeamSelect": {
+      const d = def as DynamicTeamSelectFilterDef
+      // Get selected leagues from filters to determine which teams to show
+      const selectedLeagues = filters.league || []
+      const teamOptions = getTeamsForLeagues(selectedLeagues)
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          filters={filters}
+          onToggle={onToggle}
+        >
+          <Select>
+            <SelectTrigger className="w-full h-9 text-sm border-border text-muted-foreground">
+              <SelectValue placeholder={d.placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {teamOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>

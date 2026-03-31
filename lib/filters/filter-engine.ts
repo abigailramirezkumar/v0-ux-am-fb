@@ -5,6 +5,52 @@ import type {
   AnyFilterCategory,
   RangeCategory,
 } from "@/types/filters"
+import { getGameById } from "@/lib/mock-games"
+import { sportsData, type League } from "@/lib/sports-data"
+
+// Helper to get team IDs from a game
+function getTeamIdsForPlay(play: PlayData): string[] {
+  if (!play.gameId) {
+    console.log("[v0] getTeamIdsForPlay: No gameId for play", play.id)
+    return []
+  }
+  const game = getGameById(play.gameId)
+  if (!game) {
+    console.log("[v0] getTeamIdsForPlay: No game found for gameId", play.gameId)
+    return []
+  }
+  return [game.homeTeamId, game.awayTeamId]
+}
+
+// Helper to check if a team is in a given competition (conference/division)
+function isTeamInCompetition(teamId: string, competitionId: string): boolean {
+  const leagueKeys: League[] = ["NFL", "NCAA (FBS)", "HighSchool"]
+  
+  for (const leagueKey of leagueKeys) {
+    const leagueData = sportsData[leagueKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // Check subdivisions (NFL divisions)
+      if (conference.subdivisions && conference.subdivisions.length > 0) {
+        for (const subdivision of conference.subdivisions) {
+          if (subdivision.id === competitionId) {
+            if (subdivision.teams.some(t => t.id === teamId)) {
+              return true
+            }
+          }
+        }
+      }
+      // Check conference teams directly (NCAA/HighSchool)
+      if (conference.id === competitionId) {
+        if (conference.teams.some(t => t.id === teamId)) {
+          return true
+        }
+      }
+    }
+  }
+  return false
+}
 
 // --------------------------------------------------------------------------
 // Value accessors -- pure functions that map a play to the value used by
@@ -119,6 +165,26 @@ export function matchesSetFilters(
       if (selectedValues.has("Medium: 4-7") && dist >= 4 && dist <= 7) return true
       if (selectedValues.has("Long: 8+") && dist >= 8) return true
       return false
+    }
+
+    // Special handling for team filter - check if either team in the game matches
+    if (category === "team") {
+      const teamIds = getTeamIdsForPlay(play)
+      const matches = teamIds.some(teamId => selectedValues.has(teamId))
+      console.log("[v0] team filter check:", { playId: play.id, gameId: play.gameId, teamIds, selectedValues: Array.from(selectedValues), matches })
+      // Return true if any of the play's teams match any of the selected teams
+      return matches
+    }
+
+    // Special handling for competition filter - check if either team is in the competition
+    if (category === "competition") {
+      const teamIds = getTeamIdsForPlay(play)
+      const matches = teamIds.some(teamId => 
+        Array.from(selectedValues).some(competitionId => isTeamInCompetition(teamId, competitionId))
+      )
+      console.log("[v0] competition filter check:", { playId: play.id, gameId: play.gameId, teamIds, selectedValues: Array.from(selectedValues), matches })
+      // Return true if any of the play's teams are in any of the selected competitions
+      return matches
     }
 
     const value = getValueForCategory(play, category)

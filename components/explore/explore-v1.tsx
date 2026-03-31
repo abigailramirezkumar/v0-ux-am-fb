@@ -121,6 +121,7 @@ export function ExploreV1() {
   const [selectedLeagues, setSelectedLeagues] = useState<GameLeague[]>([])
   const [selectedSeasons, setSelectedSeasons] = useState<string[]>([])
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
+  const [selectedCompetitions, setSelectedCompetitions] = useState<string[]>([])
 
   const handleLeagueToggle = (league: GameLeague) => {
     setSelectedLeagues((prev) =>
@@ -140,13 +141,20 @@ export function ExploreV1() {
     )
   }
 
+  const handleCompetitionToggle = (competition: string) => {
+    setSelectedCompetitions((prev) =>
+      prev.includes(competition) ? prev.filter((c) => c !== competition) : [...prev, competition]
+    )
+  }
+
   const clearGamesFilters = () => {
     setSelectedLeagues([])
     setSelectedSeasons([])
     setSelectedTeams([])
+    setSelectedCompetitions([])
   }
 
-  const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length
+  const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length + selectedCompetitions.length
 
   useEffect(() => {
     if (previewPlay || previewGame || previewTeam || previewAthlete) {
@@ -248,11 +256,14 @@ export function ExploreV1() {
                   selectedLeagues={selectedLeagues}
                   selectedSeasons={selectedSeasons}
                   selectedTeams={selectedTeams}
+                  selectedCompetitions={selectedCompetitions}
                   onLeagueToggle={handleLeagueToggle}
                   onSeasonToggle={handleSeasonToggle}
                   onTeamToggle={handleTeamToggle}
+                  onCompetitionToggle={handleCompetitionToggle}
                   onClear={clearGamesFilters}
                   hideTeamFilter={activeTab === "teams"}
+                  hideSeasonFilter={activeTab === "teams"}
                 />
               ) : (
                 <FiltersModule

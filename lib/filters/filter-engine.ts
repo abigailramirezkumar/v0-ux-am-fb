@@ -10,15 +10,9 @@ import { sportsData, type League } from "@/lib/sports-data"
 
 // Helper to get team IDs from a game
 function getTeamIdsForPlay(play: PlayData): string[] {
-  if (!play.gameId) {
-    console.log("[v0] getTeamIdsForPlay: No gameId for play", play.id)
-    return []
-  }
+  if (!play.gameId) return []
   const game = getGameById(play.gameId)
-  if (!game) {
-    console.log("[v0] getTeamIdsForPlay: No game found for gameId", play.gameId)
-    return []
-  }
+  if (!game) return []
   return [game.homeTeamId, game.awayTeamId]
 }
 
@@ -170,21 +164,15 @@ export function matchesSetFilters(
     // Special handling for team filter - check if either team in the game matches
     if (category === "team") {
       const teamIds = getTeamIdsForPlay(play)
-      const matches = teamIds.some(teamId => selectedValues.has(teamId))
-      console.log("[v0] team filter check:", { playId: play.id, gameId: play.gameId, teamIds, selectedValues: Array.from(selectedValues), matches })
-      // Return true if any of the play's teams match any of the selected teams
-      return matches
+      return teamIds.some(teamId => selectedValues.has(teamId))
     }
 
     // Special handling for competition filter - check if either team is in the competition
     if (category === "competition") {
       const teamIds = getTeamIdsForPlay(play)
-      const matches = teamIds.some(teamId => 
+      return teamIds.some(teamId => 
         Array.from(selectedValues).some(competitionId => isTeamInCompetition(teamId, competitionId))
       )
-      console.log("[v0] competition filter check:", { playId: play.id, gameId: play.gameId, teamIds, selectedValues: Array.from(selectedValues), matches })
-      // Return true if any of the play's teams are in any of the selected competitions
-      return matches
     }
 
     const value = getValueForCategory(play, category)

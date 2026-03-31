@@ -160,6 +160,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     toggleAllInCategory,
     setFilter,
     setRangeFilter,
+    setFilters,
     clearFilters,
     filteredPlays,
     uniqueGames,

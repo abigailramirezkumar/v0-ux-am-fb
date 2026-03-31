@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
@@ -123,36 +123,36 @@ export function ExploreV1() {
   const [selectedTeams, setSelectedTeams] = useState<string[]>([])
   const [selectedCompetitions, setSelectedCompetitions] = useState<string[]>([])
 
-  const handleLeagueToggle = (league: GameLeague) => {
+  const handleLeagueToggle = useCallback((league: GameLeague) => {
     setSelectedLeagues((prev) =>
       prev.includes(league) ? prev.filter((l) => l !== league) : [...prev, league]
     )
-  }
+  }, [])
 
-  const handleSeasonToggle = (season: string) => {
+  const handleSeasonToggle = useCallback((season: string) => {
     setSelectedSeasons((prev) =>
       prev.includes(season) ? prev.filter((s) => s !== season) : [...prev, season]
     )
-  }
+  }, [])
 
-  const handleTeamToggle = (team: string) => {
+  const handleTeamToggle = useCallback((team: string) => {
     setSelectedTeams((prev) =>
       prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]
     )
-  }
+  }, [])
 
-  const handleCompetitionToggle = (competition: string) => {
+  const handleCompetitionToggle = useCallback((competition: string) => {
     setSelectedCompetitions((prev) =>
       prev.includes(competition) ? prev.filter((c) => c !== competition) : [...prev, competition]
     )
-  }
+  }, [])
 
-  const clearGamesFilters = () => {
+  const clearGamesFilters = useCallback(() => {
     setSelectedLeagues([])
     setSelectedSeasons([])
     setSelectedTeams([])
     setSelectedCompetitions([])
-  }
+  }, [])
 
   const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length + selectedCompetitions.length
 
@@ -214,16 +214,78 @@ export function ExploreV1() {
   const {
     filters,
     rangeFilters,
-    toggleFilter,
+    toggleFilter: baseToggleFilter,
     toggleAllInCategory,
     setFilter,
     setRangeFilter,
-    clearFilters,
+    clearFilters: baseClearFilters,
     filteredPlays,
     uniqueGames,
     activeFilterCount,
     isFiltering,
+    setFilters,
   } = useExploreFilters(allClipsDataset.plays)
+
+  // Sync shared filters (league, team, competition, season) from GamesFiltersModule state to FiltersModule state
+  useEffect(() => {
+    setFilters((prev: Record<string, Set<string>>) => {
+      const next = { ...prev }
+      
+      // Sync league
+      if (selectedLeagues.length > 0) {
+        next.league = new Set(selectedLeagues)
+      } else {
+        delete next.league
+      }
+      
+      // Sync team
+      if (selectedTeams.length > 0) {
+        next.team = new Set(selectedTeams)
+      } else {
+        delete next.team
+      }
+      
+      // Sync competition
+      if (selectedCompetitions.length > 0) {
+        next.competition = new Set(selectedCompetitions)
+      } else {
+        delete next.competition
+      }
+      
+      // Sync season
+      if (selectedSeasons.length > 0) {
+        next.season = new Set(selectedSeasons)
+      } else {
+        delete next.season
+      }
+      
+      return next
+    })
+  }, [selectedLeagues, selectedTeams, selectedCompetitions, selectedSeasons, setFilters])
+
+  // Wrap toggleFilter to also update shared state when toggling shared filters
+  const toggleFilter = useCallback((category: string, value: string) => {
+    // For shared filters, update both systems
+    if (category === "league") {
+      handleLeagueToggle(value as GameLeague)
+    } else if (category === "team") {
+      handleTeamToggle(value)
+    } else if (category === "competition") {
+      handleCompetitionToggle(value)
+    } else if (category === "season") {
+      handleSeasonToggle(value)
+    }
+    // Always update the clips filter state
+    baseToggleFilter(category, value)
+  }, [baseToggleFilter, handleLeagueToggle, handleTeamToggle, handleCompetitionToggle, handleSeasonToggle])
+
+  // Wrap clearFilters to handle both clearing modes
+  const clearFilters = useCallback(() => {
+    // Clear shared filters
+    clearGamesFilters()
+    // Clear all clips filters
+    baseClearFilters()
+  }, [clearGamesFilters, baseClearFilters])
 
   useEffect(() => {
     const count = activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? gamesFilterCount : activeFilterCount

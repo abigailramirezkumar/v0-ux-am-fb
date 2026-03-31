@@ -153,7 +153,7 @@ export const FILTER_SECTIONS: FilterSection[] = [
             groups: [
               [
                 { value: "NFL", label: "NFL" },
-                { value: "College", label: "College" },
+                { value: "College", label: "NCAA" },
                 { value: "HighSchool", label: "High School" },
               ],
             ],

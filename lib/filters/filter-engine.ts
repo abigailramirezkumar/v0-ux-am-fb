@@ -175,6 +175,14 @@ export function matchesSetFilters(
       )
     }
 
+    // Special handling for athlete filter - uses OR logic
+    // If any selected athlete is involved in the play, it matches
+    if (category === "athlete") {
+      const playAthleteIds = play.athleteIds || []
+      // OR logic: at least one selected athlete must be in the play
+      return Array.from(selectedValues).some(athleteId => playAthleteIds.includes(athleteId))
+    }
+
     const value = getValueForCategory(play, category)
     return selectedValues.has(String(value))
   })

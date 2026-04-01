@@ -11,6 +11,7 @@ export interface ExploreFilterState {
   seasons: string[]
   teams: string[]
   competitions: string[]
+  athletes: string[]
 }
 
 /** Represents an active filter for display as a chip */
@@ -50,6 +51,7 @@ const DEFAULT_FILTERS: ExploreFilterState = {
   seasons: [],
   teams: [],
   competitions: [],
+  athletes: [],
 }
 
 export function ExploreProvider({ children }: { children: ReactNode }) {
@@ -70,6 +72,7 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
       s: sharedFilters.seasons,
       t: sharedFilters.teams,
       c: sharedFilters.competitions,
+      a: sharedFilters.athletes,
     }
     // Only include non-empty arrays
     const filtered = Object.fromEntries(
@@ -89,6 +92,7 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
         seasons: decoded.s || [],
         teams: decoded.t || [],
         competitions: decoded.c || [],
+        athletes: decoded.a || [],
       }
     } catch {
       return DEFAULT_FILTERS

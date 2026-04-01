@@ -27,6 +27,7 @@ import type { Athlete } from "@/types/athlete"
 import { useExploreContext, type ExploreTab, type ExploreFilterState, type ActiveFilterChip } from "@/lib/explore-context"
 import { FilterChips } from "@/components/explore/filter-chips"
 import { FILTER_SECTIONS } from "@/lib/filter-config"
+import { athletes } from "@/lib/athletes-data"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -364,6 +365,11 @@ const {
       if (value === 'HighSchool') return 'High School'
       return value
     }
+    // Format athlete values (show name instead of ID)
+    if (category === 'athlete') {
+      const athlete = athletes.find(a => a.id === value)
+      return athlete?.name || value
+    }
     return value
   }, [])
 
@@ -373,6 +379,7 @@ const {
       league: 'League',
       season: 'Season',
       team: 'Team',
+      athlete: 'Athlete',
       competition: 'Competition',
       down: 'Down',
       hash: 'Hash',

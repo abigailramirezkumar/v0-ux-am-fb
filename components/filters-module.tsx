@@ -17,8 +17,10 @@ import {
   type SelectFilterDef,
   type DynamicTeamSelectFilterDef,
   type DynamicCompetitionSelectFilterDef,
+  type DynamicAthleteSelectFilterDef,
 } from "@/lib/filter-config"
 import { sportsData, type League } from "@/lib/sports-data"
+import { athletes } from "@/lib/athletes-data"
 import { ToggleGroup } from "@/components/filters/toggle-group"
 import { ToggleGroupWithRange } from "@/components/filters/toggle-group-with-range"
 import { RangeSlider } from "@/components/filters/range-slider"
@@ -421,6 +423,62 @@ function ConfigDrivenFilter({
       )
     }
 
+    case "dynamicAthleteSelect": {
+      const d = def as DynamicAthleteSelectFilterDef
+      // Get all athletes as options, filtered by selected leagues if any
+      const selectedLeagues = Array.from(filters.league || [])
+      
+      // Map filter league values to athlete league values
+      const leagueMapping: Record<string, string> = {
+        "NFL": "NFL",
+        "College": "College",
+        "HighSchool": "High School"
+      }
+      
+      // Filter athletes by selected leagues (or show all if none selected)
+      const filteredAthletes = selectedLeagues.length > 0
+        ? athletes.filter(a => selectedLeagues.some(l => leagueMapping[l] === a.league))
+        : athletes
+      
+      const athleteOptions = filteredAthletes
+        .map(a => ({ value: a.id, label: `${a.name} (${a.position} - ${a.team})` }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+      
+      // Get currently selected athletes (multi-select)
+      const selectedAthleteSet = filters.athlete
+      const selectedAthletes = selectedAthleteSet ? Array.from(selectedAthleteSet) : []
+      const allAthleteValues = athleteOptions.map(opt => opt.value)
+      
+      // Build display text for selected athletes
+      const getDisplayText = () => {
+        if (selectedAthletes.length === 0) return null
+        if (selectedAthletes.length === 1) {
+          const athlete = athletes.find(a => a.id === selectedAthletes[0])
+          return athlete?.name || selectedAthletes[0]
+        }
+        return `${selectedAthletes.length} athletes selected`
+      }
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category="athlete"
+          allValues={allAthleteValues}
+          filters={filters}
+          onToggleAll={onToggleAll}
+        >
+          <MultiSelectDropdown
+            options={athleteOptions}
+            selectedValues={selectedAthletes}
+            onToggle={(value) => onToggle("athlete", value)}
+            placeholder={d.placeholder}
+            displayText={getDisplayText()}
+          />
+        </FilterRow>
+      )
+    }
+
     case "select": {
       const d = def as SelectFilterDef
       // Check if this is the Season filter to make it multi-select
@@ -522,6 +580,9 @@ export function FiltersModule({
             return section.key
           }
           if (filter.type === 'dynamicCompetitionSelect' && category === 'competition') {
+            return section.key
+          }
+          if (filter.type === 'dynamicAthleteSelect' && category === 'athlete') {
             return section.key
           }
           if (filter.type === 'select' && filter.label === 'Season' && category === 'season') {

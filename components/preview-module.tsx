@@ -489,19 +489,7 @@ function PreviewVideoPlayer({
         <AngleMenu />
       </div>
 
-      {/* Bottom right: Open Clip button */}
-      <div className="absolute bottom-2 right-2 z-30">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenClip()
-          }}
-          className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Icon name="share" className="w-3 h-3" />
-          Open Clip
-        </button>
-      </div>
+
 
       {/* Hover controls */}
       <div
@@ -2854,9 +2842,9 @@ export function PreviewModule({
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-bold truncate">Clip {play.playNumber}</span>
-            <span className="text-muted-foreground text-sm shrink-0">|</span>
-            <span className="text-sm text-muted-foreground truncate">{formatGameLabel(play.game)}</span>
+            <span className="text-sm font-bold truncate">
+              {play.offensiveTeam} vs {play.defensiveTeam} · {formatGameLabel(play.game).split(" ")[0] || "Week"} · {score ? `${score} · ` : ""}Q{play.quarter} {(() => { const h = hashString(play.id); const clockMin = (h % 12) + 1; const clockSec = h % 60; return `${clockMin}:${clockSec.toString().padStart(2, "0")}`; })()}
+            </span>
           </div>
           <Button
             variant="ghost"
@@ -2913,6 +2901,25 @@ export function PreviewModule({
             <div className="px-4 pt-5 pb-3">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Play Summary</h4>
               <p className="text-sm leading-relaxed text-foreground">{summary}</p>
+            </div>
+
+            {/* Scheme */}
+            <div className="px-4 pt-4 pb-3">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Scheme</h4>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase">Front</span>
+                  <span className="text-foreground">{play.defFront}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase">Str</span>
+                  <span className="text-foreground">{play.defStr}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase">Cov</span>
+                  <span className="text-foreground">{play.coverage}</span>
+                </div>
+              </div>
             </div>
 
             {/* Offense on the field */}

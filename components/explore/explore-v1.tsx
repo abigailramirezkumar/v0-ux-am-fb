@@ -398,6 +398,15 @@ const {
     epaRange: 'EPA',
   }
 
+  // Mapping of toggle categories to their corresponding range categories
+  // These are paired filters where the toggle chips control the slider
+  const toggleToRangeMapping: Record<string, string> = {
+    distanceType: 'distanceRange',
+    yardsAfterContact: 'yardsAfterContactRange',
+    puntReturnYards: 'puntReturnRange',
+    kickoffReturnYards: 'kickoffReturnRange',
+  }
+
   // Generate active filter chips from current filter state
   const activeFilterChips = useMemo((): ActiveFilterChip[] => {
     const chips: ActiveFilterChip[] = []
@@ -448,8 +457,16 @@ const {
     } else {
       // For clips tab, use the detailed filters state
       // Group by category - one chip per category with comma-separated values
+      // Skip toggle categories that have a corresponding range filter active (they're unified)
       Object.entries(filters).forEach(([category, values]) => {
         if (values && values.size > 0) {
+          // Check if this toggle category has a corresponding range category
+          const correspondingRangeCategory = toggleToRangeMapping[category]
+          if (correspondingRangeCategory && rangeFilters[correspondingRangeCategory as keyof typeof rangeFilters]) {
+            // Skip - the range filter chip will represent this filter
+            return
+          }
+          
           const sectionKey = findSectionForCategory(category)
           const valuesArray = Array.from(values)
           const formattedValues = valuesArray.map(v => formatFilterValue(category, v))
@@ -481,7 +498,7 @@ const {
     }
     
     return chips
-  }, [activeTab, selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, filters, rangeFilters, findSectionForCategory, formatCategoryLabel, formatFilterValue, rangeFilterLabels])
+  }, [activeTab, selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, filters, rangeFilters, findSectionForCategory, formatCategoryLabel, formatFilterValue, rangeFilterLabels, toggleToRangeMapping])
 
   // Handle chip click - open filters panel and scroll to the filter
   const handleChipClick = useCallback((chip: ActiveFilterChip) => {
@@ -494,29 +511,45 @@ const {
   }, [setShowFilters, setHighlightedFilter])
 
   // Handle chip remove - clear all values in the category
+// Reverse mapping: range category -> toggle category
+  const rangeToToggleMapping: Record<string, string> = {
+    distanceRange: 'distanceType',
+    yardsAfterContactRange: 'yardsAfterContact',
+    puntReturnRange: 'puntReturnYards',
+    kickoffReturnRange: 'kickoffReturnYards',
+  }
+
   const handleChipRemove = useCallback((chip: ActiveFilterChip) => {
-    if (chip.isRange) {
-      // Clear range filter
-      clearRangeFilter(chip.category as RangeCategory)
-      return
+  if (chip.isRange) {
+  // Clear range filter
+  clearRangeFilter(chip.category as RangeCategory)
+  // Also clear corresponding toggle filter if it exists
+  const correspondingToggleCategory = rangeToToggleMapping[chip.category]
+  if (correspondingToggleCategory) {
+    const toggleValues = filters[correspondingToggleCategory as keyof typeof filters]
+    if (toggleValues && toggleValues.size > 0) {
+      toggleValues.forEach(v => toggleFilter(correspondingToggleCategory, v))
     }
-    
-    if (activeTab === 'games' || activeTab === 'teams' || activeTab === 'athletes') {
-      // Use the shared filter handlers - clear all values in this category
-      if (chip.category === 'league') {
-        chip.values.forEach(v => handleLeagueToggle(v as GameLeague))
-      } else if (chip.category === 'season') {
-        chip.values.forEach(v => handleSeasonToggle(v))
-      } else if (chip.category === 'team') {
-        chip.values.forEach(v => handleTeamToggle(v))
-      } else if (chip.category === 'competition') {
-        chip.values.forEach(v => handleCompetitionToggle(v))
-      }
-    } else {
-      // Use the clips filter toggle - clear all values in this category
-      chip.values.forEach(v => toggleFilter(chip.category, v))
-    }
-  }, [activeTab, handleLeagueToggle, handleSeasonToggle, handleTeamToggle, handleCompetitionToggle, toggleFilter, clearRangeFilter])
+  }
+  return
+  }
+  
+  if (activeTab === 'games' || activeTab === 'teams' || activeTab === 'athletes') {
+  // Use the shared filter handlers - clear all values in this category
+  if (chip.category === 'league') {
+  chip.values.forEach(v => handleLeagueToggle(v as GameLeague))
+  } else if (chip.category === 'season') {
+  chip.values.forEach(v => handleSeasonToggle(v))
+  } else if (chip.category === 'team') {
+  chip.values.forEach(v => handleTeamToggle(v))
+  } else if (chip.category === 'competition') {
+  chip.values.forEach(v => handleCompetitionToggle(v))
+  }
+  } else {
+  // Use the clips filter toggle - clear all values in this category
+  chip.values.forEach(v => toggleFilter(chip.category, v))
+  }
+  }, [activeTab, handleLeagueToggle, handleSeasonToggle, handleTeamToggle, handleCompetitionToggle, toggleFilter, clearRangeFilter, filters, rangeToToggleMapping])
   
   useEffect(() => {
   const count = activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? gamesFilterCount : activeFilterCount

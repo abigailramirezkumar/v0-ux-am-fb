@@ -25,8 +25,8 @@ export function FilterChips({ chips, onChipClick, onChipRemove }: FilterChipsPro
             key={chip.id}
             onClick={() => onChipClick(chip)}
             className={cn(
-              "group flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full transition-all duration-200",
-              "bg-primary/90 text-primary-foreground hover:bg-primary"
+              "group flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all duration-200",
+              "bg-[#0D2959] text-blue-100 border border-blue-600 hover:bg-[#0D2959]/80"
             )}
           >
             <span className="whitespace-nowrap">{chip.label}</span>

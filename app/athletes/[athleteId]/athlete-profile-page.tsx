@@ -19,6 +19,7 @@ import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { CreatePlaylistWithFiltersModal } from "@/components/create-playlist-with-filters-modal"
 import { Check } from "lucide-react"
 
 // ---------------------------------------------------------------------------
@@ -357,6 +358,9 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   
+  // State for create playlist with filters modal
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
+  
   // Handler for clicking on a key stat to open a playlist of clips for that stat
   const handleStatClick = (stat: { label: string; value: string; secondary?: string; note?: string }) => {
     // Clear game preview if open
@@ -623,7 +627,10 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                 <section>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base font-bold text-foreground">Playlists</h3>
-                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                    <button 
+                      onClick={() => setIsCreatePlaylistModalOpen(true)}
+                      className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                    >
                       Create Playlist
                     </button>
                   </div>
@@ -793,6 +800,15 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* Create Playlist with Filters Modal */}
+      <CreatePlaylistWithFiltersModal
+        open={isCreatePlaylistModalOpen}
+        onOpenChange={setIsCreatePlaylistModalOpen}
+        athleteId={athlete.id}
+        athleteName={athlete.name}
+        league={athlete.league}
+      />
     </div>
   )
 }

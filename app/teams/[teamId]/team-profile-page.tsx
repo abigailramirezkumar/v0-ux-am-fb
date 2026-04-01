@@ -16,12 +16,13 @@ import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import { nameToSlug } from "@/lib/athletes-data"
-import { Play, ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { Play, Check } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { CreatePlaylistWithFiltersModal } from "@/components/create-playlist-with-filters-modal"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,6 +146,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   
   // Build breadcrumb for watch app navigation
@@ -534,7 +536,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-foreground">Playlists</h2>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setIsCreatePlaylistModalOpen(true)}>
                   Create Playlist
                 </Button>
               </div>
@@ -701,6 +703,14 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* Create Playlist with Filters Modal */}
+      <CreatePlaylistWithFiltersModal
+        open={isCreatePlaylistModalOpen}
+        onOpenChange={setIsCreatePlaylistModalOpen}
+        teamId={team.id}
+        teamName={team.name}
+      />
     </div>
   )
 }

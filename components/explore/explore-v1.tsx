@@ -398,6 +398,33 @@ const {
     epaRange: 'EPA',
   }
 
+  // Plural labels for count display when > 5 values
+  const categoryPluralLabels: Record<string, string> = {
+    league: 'Leagues',
+    season: 'Seasons',
+    team: 'Teams',
+    competition: 'Competitions',
+    down: 'Downs',
+    hash: 'Hashes',
+    playType: 'Play Types',
+    passResult: 'Pass Results',
+    runDirection: 'Run Directions',
+    gainLoss: 'Rush Results',
+    personnelO: 'Personnel (O)',
+    personnelD: 'Personnel (D)',
+    formationName: 'Formations',
+  }
+
+  // Helper to format chip label - show count if > 5 values
+  const formatChipLabel = useCallback((category: string, values: string[], formattedValues: string[]): string => {
+    const categoryLabel = formatCategoryLabel(category)
+    if (values.length > 5) {
+      const pluralLabel = categoryPluralLabels[category] || `${categoryLabel}s`
+      return `${values.length} ${pluralLabel}`
+    }
+    return `${categoryLabel} > ${formattedValues.join(', ')}`
+  }, [formatCategoryLabel, categoryPluralLabels])
+
   // Mapping of toggle categories to their corresponding range categories
   // These are paired filters where the toggle chips control the slider
   const toggleToRangeMapping: Record<string, string> = {
@@ -420,7 +447,7 @@ const {
           id: 'league',
           category: 'league',
           values: selectedLeagues,
-          label: `${formatCategoryLabel('league')} > ${formattedValues.join(', ')}`,
+          label: formatChipLabel('league', selectedLeagues, formattedValues),
           sectionKey: 'scope',
         })
       }
@@ -430,7 +457,7 @@ const {
           id: 'season',
           category: 'season',
           values: selectedSeasons,
-          label: `${formatCategoryLabel('season')} > ${selectedSeasons.join(', ')}`,
+          label: formatChipLabel('season', selectedSeasons, selectedSeasons),
           sectionKey: 'scope',
         })
       }
@@ -440,7 +467,7 @@ const {
           id: 'team',
           category: 'team',
           values: selectedTeams,
-          label: `${formatCategoryLabel('team')} > ${selectedTeams.join(', ')}`,
+          label: formatChipLabel('team', selectedTeams, selectedTeams),
           sectionKey: 'scope',
         })
       }
@@ -450,7 +477,7 @@ const {
           id: 'competition',
           category: 'competition',
           values: selectedCompetitions,
-          label: `${formatCategoryLabel('competition')} > ${selectedCompetitions.join(', ')}`,
+          label: formatChipLabel('competition', selectedCompetitions, selectedCompetitions),
           sectionKey: 'scope',
         })
       }
@@ -474,7 +501,7 @@ const {
             id: category,
             category,
             values: valuesArray,
-            label: `${formatCategoryLabel(category)} > ${formattedValues.join(', ')}`,
+            label: formatChipLabel(category, valuesArray, formattedValues),
             sectionKey,
           })
         }
@@ -498,7 +525,7 @@ const {
     }
     
     return chips
-  }, [activeTab, selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, filters, rangeFilters, findSectionForCategory, formatCategoryLabel, formatFilterValue, rangeFilterLabels, toggleToRangeMapping])
+  }, [activeTab, selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, filters, rangeFilters, findSectionForCategory, formatChipLabel, formatFilterValue, rangeFilterLabels, toggleToRangeMapping])
 
   // Handle chip click - open filters panel and scroll to the filter
   const handleChipClick = useCallback((chip: ActiveFilterChip) => {

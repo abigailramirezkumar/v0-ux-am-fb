@@ -21,6 +21,7 @@ import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
+import type { WatchBreadcrumbItem } from "@/lib/library-context"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -158,6 +159,12 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
   const highlightsRef = useRef<HTMLDivElement>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Build breadcrumb for watch app navigation
+  const watchBreadcrumb: WatchBreadcrumbItem[] = useMemo(() => [
+    { label: "Teams", href: "/explore?tab=teams", icon: "explore" },
+    { label: team.name, href: `/teams/${team.id}` },
+  ], [team.id, team.name])
   
   // Control preview panel expansion/collapse
   useEffect(() => {
@@ -691,6 +698,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
               game={previewGame ?? undefined}
               playlist={previewPlaylist ?? undefined}
               onClose={handleClosePreview}
+              watchBreadcrumb={watchBreadcrumb}
             />
           )}
         </ResizablePanel>

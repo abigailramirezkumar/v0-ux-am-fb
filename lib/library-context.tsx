@@ -702,6 +702,16 @@ export interface RecentPlaylist {
   folderId: string | null
 }
 
+/** Breadcrumb item for watch app navigation */
+export interface WatchBreadcrumbItem {
+  /** Display label */
+  label: string
+  /** Navigation URL (optional - if not provided, item is not clickable) */
+  href?: string
+  /** Icon name to display (optional) */
+  icon?: "explore" | "search" | "library" | "athlete" | "team"
+}
+
 interface LibraryContextType {
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
@@ -730,6 +740,9 @@ interface LibraryContextType {
   pendingPlaylistClips: ClipData[]
   pendingPreviewClips: ClipData[]
   setPendingPreviewClips: (clips: ClipData[]) => void
+  /** Breadcrumb trail to display in the watch app (e.g., ["Athletes", "Patrick Mahomes", "Highlights"]) */
+  watchBreadcrumb: WatchBreadcrumbItem[]
+  setWatchBreadcrumb: (breadcrumb: WatchBreadcrumbItem[]) => void
   recentPlaylists: RecentPlaylist[]
   addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
@@ -815,6 +828,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
   const [onPlaylistCreatedCallback, setOnPlaylistCreatedCallback] = useState<((createdId: string) => void) | null>(null)
   const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
+  const [watchBreadcrumb, setWatchBreadcrumb] = useState<WatchBreadcrumbItem[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   // --- Segregated Data/Structure hooks ---
@@ -1633,6 +1647,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         pendingPlaylistClips,
         pendingPreviewClips,
         setPendingPreviewClips,
+        watchBreadcrumb,
+        setWatchBreadcrumb,
         recentPlaylists,
         addToPlaylist,
         setSort,

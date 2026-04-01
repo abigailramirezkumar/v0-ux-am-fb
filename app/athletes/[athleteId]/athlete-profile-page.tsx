@@ -18,6 +18,7 @@ import { findTeamById } from "@/lib/games-context"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
+import type { WatchBreadcrumbItem } from "@/lib/library-context"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -210,6 +211,12 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Build breadcrumb for watch app navigation
+  const watchBreadcrumb: WatchBreadcrumbItem[] = useMemo(() => [
+    { label: "Athletes", href: "/explore?tab=athletes", icon: "explore" },
+    { label: athlete.name, href: `/athletes/${athlete.id}` },
+  ], [athlete.id, athlete.name])
   
   // Control preview panel expansion/collapse
   useEffect(() => {
@@ -759,6 +766,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               game={previewGame ?? undefined}
               playlist={previewPlaylist ?? undefined}
               onClose={handleClosePreview}
+              watchBreadcrumb={watchBreadcrumb}
             />
           )}
         </ResizablePanel>

@@ -10,7 +10,7 @@ import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
 import { athletes, getAthleteByName } from "@/lib/athletes-data"
-import { useLibraryContext } from "@/lib/library-context"
+import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
 import { useExploreContextOptional } from "@/lib/explore-context"
 import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
@@ -1553,11 +1553,13 @@ interface PlaylistPreviewProps {
   onClose: () => void
   onNavigateToClip?: (play: PlayData) => void
   hideHeader?: boolean
+  /** Breadcrumb trail to display in watch app when opening this playlist */
+  watchBreadcrumb?: WatchBreadcrumbItem[]
 }
 
-function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: PlaylistPreviewProps) {
+function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader, watchBreadcrumb }: PlaylistPreviewProps) {
   const router = useRouter()
-  const { setPendingPreviewClips, openMoveModal } = useLibraryContext()
+  const { setPendingPreviewClips, openMoveModal, setWatchBreadcrumb } = useLibraryContext()
   
   // Track currently selected clip for video preview
   const [selectedClipIndex, setSelectedClipIndex] = useState(0)
@@ -1606,8 +1608,12 @@ function PlaylistPreview({ playlist, onClose, onNavigateToClip, hideHeader }: Pl
     if (playlist.clips && playlist.clips.length > 0) {
       setPendingPreviewClips(playlist.clips)
     }
+    // Set breadcrumb with playlist name appended
+    if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+      setWatchBreadcrumb([...watchBreadcrumb, { label: playlist.name }])
+    }
     router.push("/watch")
-  }, [playlist.clips, setPendingPreviewClips, router])
+  }, [playlist.clips, playlist.name, setPendingPreviewClips, setWatchBreadcrumb, watchBreadcrumb, router])
 
   // Handle "Save to Library" - open Move modal
   const handleSaveToLibrary = useCallback(() => {
@@ -2686,13 +2692,15 @@ interface PreviewModuleProps {
   onNavigateToClip?: (play: PlayData) => void
   // Hide the internal header (used when wrapped by breadcrumb navigation)
   hideHeader?: boolean
+  /** Breadcrumb trail to display in watch app when opening items from this preview */
+  watchBreadcrumb?: WatchBreadcrumbItem[]
 }
 
-export function PreviewModule({ 
-  play, 
-  game, 
-  team, 
-  athlete, 
+export function PreviewModule({
+  play,
+  game,
+  team,
+  athlete,
   playlist,
   onClose,
   onNavigateToTeam,
@@ -2700,10 +2708,11 @@ export function PreviewModule({
   onNavigateToGame,
   onNavigateToClip,
   hideHeader,
+  watchBreadcrumb,
 }: PreviewModuleProps) {
   // If playlist is provided, render PlaylistPreview
   if (playlist) {
-    return <PlaylistPreview playlist={playlist} onClose={onClose} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
+    return <PlaylistPreview playlist={playlist} onClose={onClose} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} watchBreadcrumb={watchBreadcrumb} />
   }
 
   // If athlete is provided, render AthletePreview

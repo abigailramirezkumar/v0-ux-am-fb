@@ -11,7 +11,7 @@ export interface ExploreFilterState {
   seasons: string[]
   teams: string[]
   competitions: string[]
-  athletes: string[]
+  athletes?: string[] // Optional - only used when applying saved filters from Clips tab
 }
 
 /** Represents an active filter for display as a chip */
@@ -76,7 +76,7 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
     }
     // Only include non-empty arrays
     const filtered = Object.fromEntries(
-      Object.entries(filterData).filter(([, v]) => v.length > 0)
+      Object.entries(filterData).filter(([, v]) => v && v.length > 0)
     )
     if (Object.keys(filtered).length === 0) return ""
     return encodeURIComponent(JSON.stringify(filtered))

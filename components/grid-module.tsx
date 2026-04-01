@@ -438,7 +438,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
     replaceUnsavedTab,
     updatePlay,
   } = useWatchContext()
-  const { openCreatePlaylistModal } = useLibraryContext()
+  const { openCreatePlaylistModal, openMoveModal, createPlaylist } = useLibraryContext()
   const lastSelectedGridIndexRef = useRef<number | null>(null)
 
   // Bridge: if clipsProp is provided, wrap it into a Dataset shape so the
@@ -496,6 +496,50 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
       setSortMode(mode)
     }
   }, [])
+
+  // Check if this is a game tab (opened from Explore game preview)
+  const isGameTab = activeDataset?.id?.startsWith("game-")
+
+  // Handle "Save to Library" for game tabs - creates a playlist and opens move modal
+  const handleSaveToLibrary = () => {
+    if (!activeDataset) return
+    
+    // Convert PlayData to ClipData
+    const clips: ClipData[] = activeDataset.plays.map((play) => ({
+      id: play.id,
+      playNumber: play.playNumber,
+      odk: play.odk,
+      quarter: play.quarter,
+      down: play.down,
+      distance: play.distance,
+      yardLine: play.yardLine,
+      hash: play.hash,
+      yards: play.yards,
+      result: play.result,
+      gainLoss: play.gainLoss,
+      defFront: play.defFront,
+      defStr: play.defStr,
+      coverage: play.coverage,
+      blitz: play.blitz,
+      game: play.game,
+      playType: play.playType,
+      passResult: play.passResult,
+      runDirection: play.runDirection,
+      personnelO: play.personnelO,
+      personnelD: play.personnelD,
+      isTouchdown: play.isTouchdown,
+      isFirstDown: play.isFirstDown,
+      isPenalty: play.isPenalty,
+      penaltyType: play.penaltyType,
+    }))
+    
+    // Create the playlist first, then open move modal to place it
+    const playlistId = createPlaylist(null, activeDataset.name, clips)
+    openMoveModal([{ id: playlistId, type: "item", name: activeDataset.name }])
+    
+    // Replace the unsaved tab with the newly saved playlist
+    replaceUnsavedTab(playlistId)
+  }
 
   const handleSaveAsPlaylist = () => {
     if (!activeDataset) return
@@ -625,8 +669,12 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
           <div className="flex items-center justify-between w-full">
             <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
             {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-              <Button size="sm" onClick={handleSaveAsPlaylist} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                Save Playlist
+              <Button 
+                size="sm" 
+                onClick={isGameTab ? handleSaveToLibrary : handleSaveAsPlaylist} 
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {isGameTab ? "Save to Library" : "Save Playlist"}
               </Button>
             )}
           </div>

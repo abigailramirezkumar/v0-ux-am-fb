@@ -363,6 +363,43 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  
+  // Handler for clicking on a key stat to open a playlist of clips for that stat
+  const handleStatClick = (stat: { label: string; value: string; secondary?: string; note?: string }) => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic number of clips based on stat value
+    const statValue = parseInt(stat.value.replace(/,/g, '')) || 50
+    const clipCount = Math.min(Math.max(Math.round(statValue / 10), 10), 100)
+    
+    // Generate mock clips for the stat playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(clipCount, 20) }, (_, i) => ({
+      id: `${athlete.id}-${stat.label}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: stat.label.toLowerCase().includes('pass') || stat.label.toLowerCase().includes('rec') 
+        ? "Pass" as const 
+        : stat.label.toLowerCase().includes('rush') || stat.label.toLowerCase().includes('run')
+        ? "Run" as const
+        : i % 2 === 0 ? "Pass" as const : "Run" as const,
+      game: `${athlete.team} vs OPP`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: `stat-${athlete.id}-${stat.label}`,
+      name: `${athlete.name} - ${stat.label}`,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
   
   // Get breadcrumb context for building navigation URLs
@@ -565,7 +602,14 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     <h3 className="text-base font-bold text-foreground mb-4">Key Stats</h3>
                     <div className="grid grid-cols-3 gap-3">
                       {keyStats.slice(0, 6).map((stat) => (
-                        <div key={stat.label} className="rounded-lg border border-border p-3">
+                        <button
+                          key={stat.label}
+                          onClick={() => handleStatClick(stat)}
+                          className={cn(
+                            "rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                            previewPlaylist?.id === `stat-${athlete.id}-${stat.label}` && "bg-primary/10 border-primary/30"
+                          )}
+                        >
                           <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
                           <div className="flex items-baseline gap-1">
                             <span className="text-xl font-bold text-primary">{stat.value}</span>
@@ -576,7 +620,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                           {stat.note && (
                             <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{stat.note}</p>
                           )}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </section>

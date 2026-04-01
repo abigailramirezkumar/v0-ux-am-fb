@@ -209,6 +209,38 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
     setPreviewGame(null)
     setPreviewPlaylist(null)
   }
+
+  // Handler for clicking on a key stat to open a playlist of clips for that stat
+  const handleStatClick = (statLabel: string, statValue: number, playType?: "Pass" | "Run") => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic number of clips based on stat value
+    const clipCount = Math.min(Math.max(Math.round(statValue), 10), 100)
+    
+    // Generate mock clips for the stat playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(clipCount, 20) }, (_, i) => ({
+      id: `${team.id}-${statLabel}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: playType || (i % 2 === 0 ? "Pass" as const : "Run" as const),
+      game: `${team.name} Game`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: `stat-${team.id}-${statLabel}`,
+      name: `${team.name} - ${statLabel}`,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
   
   // Get breadcrumb context for building navigation URLs
   const { from: breadcrumbFrom, entity, filters } = useBreadcrumbContext()
@@ -441,50 +473,86 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 <h2 className="text-base font-bold text-foreground mb-4">Key Stats</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Passing YPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Passing YPG", parseFloat(stats.passingYPG), "Pass")}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Passing YPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Passing YPG</p>
                     <p className="text-2xl font-bold text-foreground">{stats.passingYPG}</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.passingRank}</p>
-                  </div>
+                  </button>
                   {/* Rushing YPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Rushing YPG", parseFloat(stats.rushingYPG), "Run")}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Rushing YPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Rushing YPG</p>
                     <p className="text-2xl font-bold text-foreground">{stats.rushingYPG}</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.rushingRank}</p>
-                  </div>
+                  </button>
                   {/* 3rd Down % */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("3rd Down %", parseFloat(stats.thirdDownPct))}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-3rd Down %` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">3rd Down %</p>
                     <p className="text-2xl font-bold text-foreground">{stats.thirdDownPct}%</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.thirdDownRank}</p>
-                  </div>
+                  </button>
                   {/* Sacks */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Sacks", stats.sacks)}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Sacks` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Sacks</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.sacks}</p>
                       <p className="text-sm text-muted-foreground">{stats.sacksSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.sacksNote}</p>
-                  </div>
+                  </button>
                   {/* Turnovers */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Turnovers", stats.turnovers)}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Turnovers` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Turnovers</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.turnovers}</p>
                       <p className="text-sm text-muted-foreground">{stats.turnoversSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.turnoversNote}</p>
-                  </div>
+                  </button>
                   {/* PPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("PPG", parseFloat(stats.ppg))}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-PPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">PPG</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.ppg}</p>
                       <p className="text-sm text-muted-foreground">{stats.ppgSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.ppgNote}</p>
-                  </div>
+                  </button>
                 </div>
               </section>
             </div>

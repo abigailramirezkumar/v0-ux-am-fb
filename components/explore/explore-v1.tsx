@@ -76,9 +76,9 @@ function PreviewClipsButton() {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={handlePreview} className="flex items-center gap-1.5 text-sm">
-      <Icon name="play" className="w-3.5 h-3.5" />
-      Preview Clips
+    <Button variant="outline" size="sm" onClick={handlePreview} className="gap-2">
+      <Icon name="play" className="w-4 h-4" />
+      Watch Clips
     </Button>
   )
 }

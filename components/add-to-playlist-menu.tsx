@@ -141,7 +141,7 @@ export function AddToPlaylistMenu() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="outline" className="gap-2">
-          <Icon name="plus" className="w-4 h-4" />
+          <Icon name="playlistAdd" className="w-4 h-4" />
           Add to Playlist
         </Button>
       </PopoverTrigger>

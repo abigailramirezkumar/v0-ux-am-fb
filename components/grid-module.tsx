@@ -417,9 +417,11 @@ interface GridModuleProps {
   onDoubleClickPlay?: (play: PlayData) => void
   /** ID of the play currently being previewed (for active state styling). */
   activePlayId?: string | null
+  /** Grid variant: "watch" (default) shows all columns, "explore" hides number column and moves Game to first */
+  variant?: "watch" | "explore"
 }
 
-export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay, activePlayId }: GridModuleProps) {
+export function GridModule({ showTabs = true, selectionActions, dataset: datasetProp, clips: clipsProp, onClearFilters, editable = false, onClickPlay, onDoubleClickPlay, activePlayId, variant = "watch" }: GridModuleProps) {
   const { 
     tabs, 
     activeTabId, 
@@ -658,9 +660,11 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
         <Table>
           <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
-              <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
-                {/* Row number header - empty */}
-              </TableHead>
+              {variant === "watch" && (
+                <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
+                  {/* Row number header - empty */}
+                </TableHead>
+              )}
               <TableHead className="w-[40px] px-3 border-r border-border/50 bg-muted/30">
                 <div className="flex items-center justify-center">
                   <Checkbox
@@ -675,6 +679,9 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   />
                 </div>
               </TableHead>
+              {variant === "explore" && (
+                <SortableHeader label="Game" columnKey="game" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="min-w-[120px] border-r border-border/50" />
+              )}
               <TableHead className="w-[50px] text-left text-xs uppercase tracking-wider font-semibold text-foreground border-r border-border/50 bg-muted/30">
                 #
               </TableHead>
@@ -692,9 +699,11 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
               <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
               <SortableHeader label="League" columnKey="league" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
-              <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-foreground bg-muted/30">
-                Game
-              </TableHead>
+              {variant === "watch" && (
+                <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-foreground bg-muted/30">
+                  Game
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -719,9 +728,11 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                   }}
                   onDoubleClick={() => onDoubleClickPlay?.(play)}
                 >
-                  <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
-                    {rowIndex + 1}
-                  </TableCell>
+                  {variant === "watch" && (
+                    <TableCell className={cn("text-center py-1.5 text-xs text-muted-foreground border-r border-border/50", isPlaying ? "bg-[#0260bd]" : "bg-muted/30")}>
+                      {rowIndex + 1}
+                    </TableCell>
+                  )}
                   <TableCell
                     className="py-1.5 px-3 border-r border-border/50"
                     onClick={(e) => {
@@ -750,6 +761,9 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                       />
                     </div>
                   </TableCell>
+                  {variant === "explore" && (
+                    <TableCell className="py-1.5 text-xs border-r border-border/50">{play.game}</TableCell>
+                  )}
                   <TableCell className="font-medium py-1.5 border-r border-border/50">{play.playNumber}</TableCell>
                   <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="odk" value={play.odk} onCommit={updatePlay} isPlaying={isPlaying} /> : play.odk}
@@ -807,7 +821,9 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                       {play.league === "HighSchool" ? "HS" : play.league === "College" ? "NCAA" : play.league || "NFL"}
                     </span>
                   </TableCell>
-                  <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>
+                  {variant === "watch" && (
+                    <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>
+                  )}
                 </TableRow>
               )
             })}

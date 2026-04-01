@@ -673,6 +673,7 @@ const {
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden relative">
                       <GridModule
                         showTabs={false}
+                        variant="explore"
                         selectionActions={
                           <div className="flex items-center gap-1">
                             <AddToPlaylistMenu />

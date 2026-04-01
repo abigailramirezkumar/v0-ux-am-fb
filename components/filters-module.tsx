@@ -690,8 +690,8 @@ export function FiltersModule({
                           key={def.label}
                           data-filter-category={category}
                           className={cn(
-                            "transition-all duration-300 rounded-md",
-                            isHighlighted && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                            "transition-all duration-300 rounded-md p-2 -mx-2",
+                            isHighlighted && "ring-2 ring-primary ring-inset bg-primary/5"
                           )}
                         >
                           <ConfigDrivenFilter

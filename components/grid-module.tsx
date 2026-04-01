@@ -463,6 +463,8 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
           coverage: clip.coverage ?? "",
           blitz: clip.blitz ?? "",
           game: clip.game ?? "",
+          gameId: clip.gameId,
+          athleteIds: clip.athleteIds,
           playType: clip.playType ?? "Pass",
           passResult: clip.passResult,
           runDirection: clip.runDirection,

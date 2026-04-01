@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { VIDEO_POOL } from "@/lib/mock-datasets"
 import { athletes, getAthleteByName } from "@/lib/athletes-data"
 import { useLibraryContext } from "@/lib/library-context"
+import { useExploreContextOptional } from "@/lib/explore-context"
 import { useRouter } from "next/navigation"
 import type { PlayData } from "@/lib/mock-datasets"
 import type { Athlete } from "@/types/athlete"
@@ -1899,11 +1900,10 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
       {!hideHeader && (
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-bold truncate">{game.matchupDisplay}</span>
-            <span className="text-muted-foreground text-sm shrink-0">|</span>
-            <span className="text-sm text-muted-foreground truncate">
-              {game.gameType === "playoff" ? "Playoff" : `Week ${game.week}`}
+            <span className="text-sm font-bold truncate">
+              {game.status === "final" && game.score
+                ? `${homeTeam?.name || game.homeTeamId} ${game.score.home} \u2013 ${game.score.away} ${awayTeam?.name || game.awayTeamId}`
+                : `${homeTeam?.name || game.homeTeamId} vs. ${awayTeam?.name || game.awayTeamId}`}
             </span>
           </div>
           <Button
@@ -2248,7 +2248,18 @@ function generateTeamStats(teamId: string) {
 
 function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hideHeader }: TeamPreviewProps) {
   const router = useRouter()
-
+  const exploreContext = useExploreContextOptional()
+  
+  // Build profile URL with filters
+  const profileUrl = useMemo(() => {
+    const base = `/teams/${team.id}?from=explore&entity=teams`
+    if (exploreContext) {
+      const filters = exploreContext.encodeFiltersForUrl()
+      return filters ? `${base}&filters=${filters}` : base
+    }
+    return base
+  }, [team.id, exploreContext])
+  
   // Get team stats (deterministic mock data)
   const stats = useMemo(() => generateTeamStats(team.id), [team.id])
 
@@ -2518,7 +2529,7 @@ function TeamPreview({ team, onClose, onNavigateToAthlete, onNavigateToGame, hid
         </Button>
         <Button
           className="flex-1 font-semibold"
-          onClick={() => router.push(`/teams/${team.id}?from=explore&entity=teams`)}
+          onClick={() => router.push(profileUrl)}
         >
           View Full Profile
         </Button>
@@ -2543,6 +2554,7 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
   const teamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
   const athleteTeam = useMemo(() => findTeamById(athlete.team), [athlete.team])
   const router = useRouter()
+  const exploreContext = useExploreContextOptional()
 
   // Generate athlete slug for the full profile link
   const athleteSlug = athlete.name
@@ -2551,6 +2563,16 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim()
+
+  // Build profile URL with filters
+  const profileUrl = useMemo(() => {
+    const base = `/athletes/${athleteSlug}?from=explore&entity=athletes`
+    if (exploreContext) {
+      const filters = exploreContext.encodeFiltersForUrl()
+      return filters ? `${base}&filters=${filters}` : base
+    }
+    return base
+  }, [athleteSlug, exploreContext])
 
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden relative">
@@ -2671,7 +2693,7 @@ function AthletePreview({ athlete, onClose, hideHeader, onNavigateToTeam }: Athl
   </Button>
   <Button
   className="flex-1 font-semibold"
-  onClick={() => router.push(`/athletes/${athleteSlug}?from=explore&entity=athletes`)}
+  onClick={() => router.push(profileUrl)}
   >
   View Full Profile
   </Button>

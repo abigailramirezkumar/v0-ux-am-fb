@@ -79,6 +79,14 @@ export interface DynamicTeamSelectFilterDef {
   placeholder: string
 }
 
+/** A dynamic competition select filter that filters competitions based on selected league */
+export interface DynamicCompetitionSelectFilterDef {
+  type: "dynamicCompetitionSelect"
+  label: string
+  count?: number
+  placeholder: string
+}
+
 export type FilterDef =
   | ToggleFilterDef
   | ToggleWithRangeFilterDef
@@ -86,6 +94,7 @@ export type FilterDef =
   | BooleanFilterDef
   | SelectFilterDef
   | DynamicTeamSelectFilterDef
+  | DynamicCompetitionSelectFilterDef
 
 export interface FilterSubsection {
   subsectionLabel?: string
@@ -157,6 +166,11 @@ export const FILTER_SECTIONS: FilterSection[] = [
                 { value: "HighSchool", label: "High School" },
               ],
             ],
+          },
+          {
+            type: "dynamicCompetitionSelect",
+            label: "Competition",
+            placeholder: "Select competition",
           },
           {
             type: "select",

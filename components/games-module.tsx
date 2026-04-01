@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { mockGames, mockClips, findTeamById as getTeamById } from "@/lib/games-context"
+import { sportsData, type League } from "@/lib/sports-data"
 import { Input } from "@/components/ui/input"
 import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
@@ -16,8 +17,46 @@ interface GamesModuleProps {
   selectedLeagues: GameLeague[]
   selectedSeasons: string[]
   selectedTeams: string[]
+  selectedCompetitions: string[]
   onClickGame?: (game: Game) => void
   activeGameId?: string
+}
+
+// Map GameLeague to sports-data League key
+const leagueToSportsDataKey: Record<GameLeague, League> = {
+  NFL: "NFL",
+  College: "NCAA (FBS)",
+  HighSchool: "HighSchool",
+}
+
+// Helper to check if a team is in any of the selected competitions
+function isTeamInCompetitions(teamId: string, selectedCompetitions: string[]): boolean {
+  if (selectedCompetitions.length === 0) return true
+  
+  for (const leagueKey of Object.values(leagueToSportsDataKey)) {
+    const leagueData = sportsData[leagueKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // Check subdivisions (NFL divisions)
+      if (conference.subdivisions && conference.subdivisions.length > 0) {
+        for (const subdivision of conference.subdivisions) {
+          if (selectedCompetitions.includes(subdivision.id)) {
+            if (subdivision.teams.some(t => t.id === teamId)) {
+              return true
+            }
+          }
+        }
+      }
+      // Check conference teams directly (NCAA/HighSchool)
+      if (selectedCompetitions.includes(conference.id)) {
+        if (conference.teams.some(t => t.id === teamId)) {
+          return true
+        }
+      }
+    }
+  }
+  return false
 }
 
 interface GamesBySeasonAndLeague {
@@ -212,6 +251,7 @@ export function GamesModule({
   selectedLeagues,
   selectedSeasons,
   selectedTeams,
+  selectedCompetitions,
   onClickGame,
   activeGameId,
 }: GamesModuleProps) {
@@ -235,6 +275,14 @@ export function GamesModule({
     if (selectedTeams.length > 0) {
       filtered = filtered.filter((g) => 
         selectedTeams.includes(g.homeTeamId) || selectedTeams.includes(g.awayTeamId)
+      )
+    }
+
+    // Filter by selected competitions (if any)
+    if (selectedCompetitions.length > 0) {
+      filtered = filtered.filter((g) => 
+        isTeamInCompetitions(g.homeTeamId, selectedCompetitions) || 
+        isTeamInCompetitions(g.awayTeamId, selectedCompetitions)
       )
     }
 
@@ -292,7 +340,7 @@ export function GamesModule({
     })
 
     return result
-  }, [selectedLeagues, selectedSeasons, selectedTeams, searchQuery])
+  }, [selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, searchQuery])
 
   // Count total games
   const totalGames = organizedGames.reduce(

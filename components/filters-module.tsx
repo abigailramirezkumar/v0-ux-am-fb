@@ -16,6 +16,7 @@ import {
   type RangeFilterDef,
   type SelectFilterDef,
   type DynamicTeamSelectFilterDef,
+  type DynamicCompetitionSelectFilterDef,
 } from "@/lib/filter-config"
 import { sportsData, type League } from "@/lib/sports-data"
 import { ToggleGroup } from "@/components/filters/toggle-group"
@@ -36,7 +37,7 @@ const leagueFilterToSportsDataKey: Record<string, League> = {
 }
 
 // Helper to get all teams for given leagues (or all if none selected)
-function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: string }[] {
+function getTeamsForLeaguesAndCompetitions(selectedLeagues: string[], selectedCompetitions: string[]): { value: string; label: string }[] {
   const allTeams: { value: string; label: string }[] = []
   
   // If no leagues selected, show all teams
@@ -52,15 +53,25 @@ function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: 
     if (!leagueData) continue
     
     for (const conference of leagueData.conferences) {
-      // Add direct teams
-      for (const team of conference.teams) {
-        allTeams.push({ value: team.id, label: team.name })
+      // Check if conference is selected (when no competitions selected, include all)
+      const conferenceSelected = selectedCompetitions.length === 0 || selectedCompetitions.includes(conference.id)
+      
+      // Add direct teams if conference is selected
+      if (conferenceSelected) {
+        for (const team of conference.teams) {
+          allTeams.push({ value: team.id, label: team.name })
+        }
       }
+      
       // Add subdivision teams
       if (conference.subdivisions) {
         for (const subdivision of conference.subdivisions) {
-          for (const team of subdivision.teams) {
-            allTeams.push({ value: team.id, label: team.name })
+          // Check if subdivision is selected
+          const subdivisionSelected = selectedCompetitions.length === 0 || selectedCompetitions.includes(subdivision.id)
+          if (subdivisionSelected) {
+            for (const team of subdivision.teams) {
+              allTeams.push({ value: team.id, label: team.name })
+            }
           }
         }
       }
@@ -71,10 +82,49 @@ function getTeamsForLeagues(selectedLeagues: string[]): { value: string; label: 
   return allTeams.sort((a, b) => a.label.localeCompare(b.label))
 }
 
-// Helper to check if a team ID exists in the available teams for given leagues
-function isTeamInLeagues(teamId: string, selectedLeagues: string[]): boolean {
-  const availableTeams = getTeamsForLeagues(selectedLeagues)
+// Helper to check if a team ID exists in the available teams for given leagues and competitions
+function isTeamInLeaguesAndCompetitions(teamId: string, selectedLeagues: string[], selectedCompetitions: string[]): boolean {
+  const availableTeams = getTeamsForLeaguesAndCompetitions(selectedLeagues, selectedCompetitions)
   return availableTeams.some(team => team.value === teamId)
+}
+
+// Helper to get all competitions (conferences/divisions) for given leagues
+function getCompetitionsForLeagues(selectedLeagues: string[]): { value: string; label: string }[] {
+  const allCompetitions: { value: string; label: string }[] = []
+  
+  // If no leagues selected, show all competitions
+  const leaguesToShow = selectedLeagues.length > 0 
+    ? selectedLeagues 
+    : ["NFL", "College", "HighSchool"]
+  
+  for (const filterLeague of leaguesToShow) {
+    const sportsDataKey = leagueFilterToSportsDataKey[filterLeague]
+    if (!sportsDataKey) continue
+    
+    const leagueData = sportsData[sportsDataKey]
+    if (!leagueData) continue
+    
+    for (const conference of leagueData.conferences) {
+      // For NFL, we want the subdivisions (AFC North, NFC East, etc.)
+      if (conference.subdivisions && conference.subdivisions.length > 0) {
+        for (const subdivision of conference.subdivisions) {
+          allCompetitions.push({ value: subdivision.id, label: subdivision.name })
+        }
+      } else {
+        // For NCAA and HighSchool, we want the conferences directly
+        allCompetitions.push({ value: conference.id, label: conference.name })
+      }
+    }
+  }
+  
+  // Sort alphabetically by label
+  return allCompetitions.sort((a, b) => a.label.localeCompare(b.label))
+}
+
+// Helper to check if a competition ID exists in the available competitions for given leagues
+function isCompetitionInLeagues(competitionId: string, selectedLeagues: string[]): boolean {
+  const availableCompetitions = getCompetitionsForLeagues(selectedLeagues)
+  return availableCompetitions.some(comp => comp.value === competitionId)
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +228,7 @@ function ConfigDrivenFilter({
   onSetFilter,
   resetRange,
   teamFilterCleared,
+  competitionFilterCleared,
 }: {
   def: FilterDef
   filters: FilterState
@@ -188,6 +239,7 @@ function ConfigDrivenFilter({
   onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   resetRange: (category: RangeCategory, defaultRange: [number, number]) => void
   teamFilterCleared: boolean
+  competitionFilterCleared: boolean
 }) {
   switch (def.type) {
     case "boolean":
@@ -285,9 +337,10 @@ function ConfigDrivenFilter({
 
     case "dynamicTeamSelect": {
       const d = def as DynamicTeamSelectFilterDef
-      // Get selected leagues from filters to determine which teams to show
+      // Get selected leagues and competitions from filters to determine which teams to show
       const selectedLeagues = Array.from(filters.league || [])
-      const teamOptions = getTeamsForLeagues(selectedLeagues)
+      const selectedCompetitions = Array.from(filters.competition || [])
+      const teamOptions = getTeamsForLeaguesAndCompetitions(selectedLeagues, selectedCompetitions)
       
       // Get currently selected teams (multi-select)
       const selectedTeamSet = filters.team
@@ -320,6 +373,48 @@ function ConfigDrivenFilter({
             placeholder={d.placeholder}
             displayText={getDisplayText()}
             className={teamFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
+          />
+        </FilterRow>
+      )
+    }
+
+    case "dynamicCompetitionSelect": {
+      const d = def as DynamicCompetitionSelectFilterDef
+      // Get selected leagues from filters to determine which competitions to show
+      const selectedLeagues = Array.from(filters.league || [])
+      const competitionOptions = getCompetitionsForLeagues(selectedLeagues)
+      
+      // Get currently selected competitions (multi-select)
+      const selectedCompetitionSet = filters.competition
+      const selectedCompetitions = selectedCompetitionSet ? Array.from(selectedCompetitionSet) : []
+      const allCompetitionValues = competitionOptions.map(opt => opt.value)
+      
+      // Build display text for selected competitions
+      const getDisplayText = () => {
+        if (selectedCompetitions.length === 0) return null
+        if (selectedCompetitions.length === 1) {
+          const comp = competitionOptions.find(c => c.value === selectedCompetitions[0])
+          return comp?.label || selectedCompetitions[0]
+        }
+        return `${selectedCompetitions.length} competitions selected`
+      }
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category="competition"
+          allValues={allCompetitionValues}
+          filters={filters}
+          onToggleAll={onToggleAll}
+        >
+          <MultiSelectDropdown
+            options={competitionOptions}
+            selectedValues={selectedCompetitions}
+            onToggle={(value) => onToggle("competition", value)}
+            placeholder={d.placeholder}
+            displayText={getDisplayText()}
+            className={competitionFilterCleared ? "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30" : ""}
           />
         </FilterRow>
       )
@@ -402,38 +497,73 @@ export function FiltersModule({
   onClear,
   activeFilterCount,
 }: FiltersModuleProps) {
-  // Track team filter cleared state for visual feedback
+  // Track filter cleared state for visual feedback
   const [teamFilterCleared, setTeamFilterCleared] = useState(false)
+  const [competitionFilterCleared, setCompetitionFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
   
-  // Watch for league changes and clear teams that are no longer valid
+  // Watch for league changes and clear teams/competitions that are no longer valid
   useEffect(() => {
     const currentLeagues = Array.from(filters.league || [])
     const selectedTeamSet = filters.team
     const selectedTeams = selectedTeamSet ? Array.from(selectedTeamSet) : []
+    const selectedCompetitionSet = filters.competition
+    const selectedCompetitions = selectedCompetitionSet ? Array.from(selectedCompetitionSet) : []
     
-    // Only check if there are teams selected and leagues have changed
-    if (selectedTeams.length > 0 && currentLeagues.length > 0) {
-      const prevLeagues = prevLeaguesRef.current
-      const leaguesChanged = prevLeagues.length !== currentLeagues.length || 
-        !prevLeagues.every(l => currentLeagues.includes(l))
-      
-      if (leaguesChanged) {
-        // Find teams that are no longer valid
-        const invalidTeams = selectedTeams.filter(team => !isTeamInLeagues(team, currentLeagues))
+    const prevLeagues = prevLeaguesRef.current
+    const leaguesChanged = prevLeagues.length !== currentLeagues.length || 
+      !prevLeagues.every(l => currentLeagues.includes(l))
+    
+    if (leaguesChanged && currentLeagues.length > 0) {
+      // Check teams (against both leagues AND competitions)
+      if (selectedTeams.length > 0) {
+        const invalidTeams = selectedTeams.filter(team => !isTeamInLeaguesAndCompetitions(team, currentLeagues, selectedCompetitions))
         
         if (invalidTeams.length > 0) {
-          // Clear invalid teams one by one using toggle
           invalidTeams.forEach(team => onToggle("team", team))
-          // Show visual feedback
           setTeamFilterCleared(true)
           setTimeout(() => setTeamFilterCleared(false), 1500)
+        }
+      }
+      
+      // Check competitions
+      if (selectedCompetitions.length > 0) {
+        const invalidCompetitions = selectedCompetitions.filter(comp => !isCompetitionInLeagues(comp, currentLeagues))
+        
+        if (invalidCompetitions.length > 0) {
+          invalidCompetitions.forEach(comp => onToggle("competition", comp))
+          setCompetitionFilterCleared(true)
+          setTimeout(() => setCompetitionFilterCleared(false), 1500)
         }
       }
     }
     
     prevLeaguesRef.current = currentLeagues
-  }, [filters.league, filters.team, onToggle])
+  }, [filters.league, filters.team, filters.competition, onToggle])
+
+  // Watch for competition changes and clear teams that are no longer valid
+  const prevCompetitionsRef = useRef<string[]>([])
+  useEffect(() => {
+    const currentLeagues = Array.from(filters.league || [])
+    const selectedTeams = Array.from(filters.team || [])
+    const currentCompetitions = Array.from(filters.competition || [])
+    
+    const prevCompetitions = prevCompetitionsRef.current
+    const competitionsChanged = prevCompetitions.length !== currentCompetitions.length || 
+      !prevCompetitions.every(c => currentCompetitions.includes(c))
+    
+    if (competitionsChanged && currentCompetitions.length > 0 && selectedTeams.length > 0) {
+      const invalidTeams = selectedTeams.filter(team => !isTeamInLeaguesAndCompetitions(team, currentLeagues, currentCompetitions))
+      
+      if (invalidTeams.length > 0) {
+        invalidTeams.forEach(team => onToggle("team", team))
+        setTeamFilterCleared(true)
+        setTimeout(() => setTeamFilterCleared(false), 1500)
+      }
+    }
+    
+    prevCompetitionsRef.current = currentCompetitions
+  }, [filters.competition, filters.team, filters.league, onToggle])
   
   // Helper to reset a range filter to its default
   const resetRange = useCallback(
@@ -490,18 +620,19 @@ export function FiltersModule({
                       <SubsectionHeader label={sub.subsectionLabel} />
                     )}
                     {sub.filters.map((def) => (
-                      <ConfigDrivenFilter
-                        key={def.label}
-                        def={def}
-                        filters={filters}
-                        rangeFilters={rangeFilters}
-                        onToggle={onToggle}
-                        onToggleAll={onToggleAll}
-                        onRangeChange={onRangeChange}
-                        onSetFilter={onSetFilter}
-                        resetRange={resetRange}
-                        teamFilterCleared={teamFilterCleared}
-                      />
+<ConfigDrivenFilter
+                      key={def.label}
+                      def={def}
+                      filters={filters}
+                      rangeFilters={rangeFilters}
+                      onToggle={onToggle}
+                      onToggleAll={onToggleAll}
+                      onRangeChange={onRangeChange}
+                      onSetFilter={onSetFilter}
+                      resetRange={resetRange}
+                      teamFilterCleared={teamFilterCleared}
+                      competitionFilterCleared={competitionFilterCleared}
+                    />
                     ))}
                   </div>
                 ))}

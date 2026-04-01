@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useMemo } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { GridModule } from "@/components/grid-module"
 import { FiltersModule } from "@/components/filters-module"
@@ -24,7 +24,7 @@ import type { PlayData } from "@/lib/mock-datasets"
 import type { Game, GameLeague } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
-import { useExploreContext, type ExploreTab } from "@/lib/explore-context"
+import { useExploreContext, type ExploreTab, type ExploreFilterState } from "@/lib/explore-context"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -99,16 +99,37 @@ function EmptyTabState({ label }: { label: string }) {
  * Customize this version to implement breadcrumb navigation in the preview module.
  */
 export function ExploreV1() {
-  const { showFilters, setShowFilters, setActiveFilterCount, activeTab, setActiveTab } = useExploreContext()
+const { 
+    showFilters, 
+    setShowFilters, 
+    setActiveFilterCount, 
+    activeTab, 
+    setActiveTab,
+    sharedFilters,
+    setSharedFilters,
+    decodeFiltersFromUrl,
+  } = useExploreContext()
   const searchParams = useSearchParams()
   
-  // Sync activeTab with URL parameter on mount
+  // Sync activeTab and filters with URL parameters on mount
   useEffect(() => {
     const tabParam = searchParams.get("tab") as ExploreTab | null
     if (tabParam && ["clips", "games", "teams", "athletes"].includes(tabParam)) {
       setActiveTab(tabParam)
     }
-  }, [searchParams, setActiveTab])
+    
+    // Restore filters from URL if present
+    const filtersParam = searchParams.get("filters")
+    if (filtersParam) {
+      const decodedFilters = decodeFiltersFromUrl(filtersParam)
+      setSharedFilters(decodedFilters)
+      // Update local state from decoded filters
+      setSelectedLeagues(decodedFilters.leagues)
+      setSelectedSeasons(decodedFilters.seasons)
+      setSelectedTeams(decodedFilters.teams)
+      setSelectedCompetitions(decodedFilters.competitions)
+    }
+  }, []) // Only run on mount
   
   const [previewPlay, setPreviewPlay] = useState<PlayData | null>(null)
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
@@ -116,37 +137,55 @@ export function ExploreV1() {
   const [previewAthlete, setPreviewAthlete] = useState<(Athlete & { id: string }) | null>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   const filterPanelRef = useRef<ImperativePanelHandle>(null)
+  
+  // Games/Athletes/Teams tab filter state - initialize from context
+  const [selectedLeagues, setSelectedLeagues] = useState<GameLeague[]>(sharedFilters.leagues)
+  const [selectedSeasons, setSelectedSeasons] = useState<string[]>(sharedFilters.seasons)
+  const [selectedTeams, setSelectedTeams] = useState<string[]>(sharedFilters.teams)
+  const [selectedCompetitions, setSelectedCompetitions] = useState<string[]>(sharedFilters.competitions)
+  
+  // Sync local state to context whenever it changes
+  useEffect(() => {
+    setSharedFilters({
+      leagues: selectedLeagues,
+      seasons: selectedSeasons,
+      teams: selectedTeams,
+      competitions: selectedCompetitions,
+    })
+  }, [selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, setSharedFilters])
 
-  // Games/Athletes/Teams tab filter state
-  const [selectedLeagues, setSelectedLeagues] = useState<GameLeague[]>([])
-  const [selectedSeasons, setSelectedSeasons] = useState<string[]>([])
-  const [selectedTeams, setSelectedTeams] = useState<string[]>([])
-
-  const handleLeagueToggle = (league: GameLeague) => {
+  const handleLeagueToggle = useCallback((league: GameLeague) => {
     setSelectedLeagues((prev) =>
       prev.includes(league) ? prev.filter((l) => l !== league) : [...prev, league]
     )
-  }
+  }, [])
 
-  const handleSeasonToggle = (season: string) => {
+  const handleSeasonToggle = useCallback((season: string) => {
     setSelectedSeasons((prev) =>
       prev.includes(season) ? prev.filter((s) => s !== season) : [...prev, season]
     )
-  }
+  }, [])
 
-  const handleTeamToggle = (team: string) => {
+  const handleTeamToggle = useCallback((team: string) => {
     setSelectedTeams((prev) =>
       prev.includes(team) ? prev.filter((t) => t !== team) : [...prev, team]
     )
-  }
+  }, [])
 
-  const clearGamesFilters = () => {
+  const handleCompetitionToggle = useCallback((competition: string) => {
+    setSelectedCompetitions((prev) =>
+      prev.includes(competition) ? prev.filter((c) => c !== competition) : [...prev, competition]
+    )
+  }, [])
+
+  const clearGamesFilters = useCallback(() => {
     setSelectedLeagues([])
     setSelectedSeasons([])
     setSelectedTeams([])
-  }
+    setSelectedCompetitions([])
+  }, [])
 
-  const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length
+  const gamesFilterCount = selectedLeagues.length + selectedSeasons.length + selectedTeams.length + selectedCompetitions.length
 
   useEffect(() => {
     if (previewPlay || previewGame || previewTeam || previewAthlete) {
@@ -206,16 +245,78 @@ export function ExploreV1() {
   const {
     filters,
     rangeFilters,
-    toggleFilter,
+    toggleFilter: baseToggleFilter,
     toggleAllInCategory,
     setFilter,
     setRangeFilter,
-    clearFilters,
+    clearFilters: baseClearFilters,
     filteredPlays,
     uniqueGames,
     activeFilterCount,
     isFiltering,
+    setFilters,
   } = useExploreFilters(allClipsDataset.plays)
+
+  // Sync shared filters (league, team, competition, season) from GamesFiltersModule state to FiltersModule state
+  useEffect(() => {
+    setFilters((prev: Record<string, Set<string>>) => {
+      const next = { ...prev }
+      
+      // Sync league
+      if (selectedLeagues.length > 0) {
+        next.league = new Set(selectedLeagues)
+      } else {
+        delete next.league
+      }
+      
+      // Sync team
+      if (selectedTeams.length > 0) {
+        next.team = new Set(selectedTeams)
+      } else {
+        delete next.team
+      }
+      
+      // Sync competition
+      if (selectedCompetitions.length > 0) {
+        next.competition = new Set(selectedCompetitions)
+      } else {
+        delete next.competition
+      }
+      
+      // Sync season
+      if (selectedSeasons.length > 0) {
+        next.season = new Set(selectedSeasons)
+      } else {
+        delete next.season
+      }
+      
+      return next
+    })
+  }, [selectedLeagues, selectedTeams, selectedCompetitions, selectedSeasons, setFilters])
+
+  // Wrap toggleFilter to also update shared state when toggling shared filters
+  const toggleFilter = useCallback((category: string, value: string) => {
+    // For shared filters, update both systems
+    if (category === "league") {
+      handleLeagueToggle(value as GameLeague)
+    } else if (category === "team") {
+      handleTeamToggle(value)
+    } else if (category === "competition") {
+      handleCompetitionToggle(value)
+    } else if (category === "season") {
+      handleSeasonToggle(value)
+    }
+    // Always update the clips filter state
+    baseToggleFilter(category, value)
+  }, [baseToggleFilter, handleLeagueToggle, handleTeamToggle, handleCompetitionToggle, handleSeasonToggle])
+
+  // Wrap clearFilters to handle both clearing modes
+  const clearFilters = useCallback(() => {
+    // Clear shared filters
+    clearGamesFilters()
+    // Clear all clips filters
+    baseClearFilters()
+  }, [clearGamesFilters, baseClearFilters])
 
   useEffect(() => {
     const count = activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? gamesFilterCount : activeFilterCount
@@ -248,11 +349,14 @@ export function ExploreV1() {
                   selectedLeagues={selectedLeagues}
                   selectedSeasons={selectedSeasons}
                   selectedTeams={selectedTeams}
+                  selectedCompetitions={selectedCompetitions}
                   onLeagueToggle={handleLeagueToggle}
                   onSeasonToggle={handleSeasonToggle}
                   onTeamToggle={handleTeamToggle}
+                  onCompetitionToggle={handleCompetitionToggle}
                   onClear={clearGamesFilters}
                   hideTeamFilter={activeTab === "teams"}
+                  hideSeasonFilter={activeTab === "teams"}
                 />
               ) : (
                 <FiltersModule
@@ -330,6 +434,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickGame={handleGameClick}
                         activeGameId={previewGame?.id}
                       />
@@ -340,6 +445,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickTeam={handleTeamClick}
                         activeTeamId={previewTeam?.id}
                       />
@@ -350,6 +456,7 @@ export function ExploreV1() {
                         selectedLeagues={selectedLeagues}
                         selectedSeasons={selectedSeasons}
                         selectedTeams={selectedTeams}
+                        selectedCompetitions={selectedCompetitions}
                         onClickAthlete={handleAthleteClick}
                         activeAthleteId={previewAthlete?.id}
                       />

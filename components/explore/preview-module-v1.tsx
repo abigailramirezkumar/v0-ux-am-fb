@@ -17,6 +17,7 @@ import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { MediaItemData } from "@/types/library"
+import { findTeamById } from "@/lib/games-context"
 
 // Import the individual preview components from the main preview module
 import { PreviewModule } from "@/components/preview-module"
@@ -74,8 +75,21 @@ function getBreadcrumbLabel(item: BreadcrumbItem): string {
   switch (item.type) {
     case "clip":
       return `Clip ${(item.data as PlayData).playNumber}`
-    case "game":
-      return (item.data as Game).name || "Game"
+    case "game": {
+      const game = item.data as Game
+      const homeTeam = findTeamById(game.homeTeamId)
+      const awayTeam = findTeamById(game.awayTeamId)
+      const homeTeamName = homeTeam?.name || game.homeTeamId
+      const awayTeamName = awayTeam?.name || game.awayTeamId
+      
+      // If game is final, show score: "Team A 24 - 17 Team B"
+      if (game.status === "final" && game.score) {
+        return `${homeTeamName} ${game.score.home} \u2013 ${game.score.away} ${awayTeamName}`
+      }
+      
+      // If game is in progress or upcoming, show "Team A vs. Team B"
+      return `${homeTeamName} vs. ${awayTeamName}`
+    }
     case "team":
       return (item.data as Team).name || "Team"
     case "athlete":

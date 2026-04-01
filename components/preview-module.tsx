@@ -1834,7 +1834,7 @@ interface GamePreviewProps {
   
 function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader, watchBreadcrumb }: GamePreviewProps) {
   const router = useRouter()
-  const { setWatchBreadcrumb, setPendingPreviewGame } = useLibraryContext()
+  const { setWatchBreadcrumb, setPendingPreviewGame, createPlaylist, openMoveModal } = useLibraryContext()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
   
@@ -1906,11 +1906,33 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
   }
   }, [router, onNavigateToGame, game, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam, setPendingPreviewGame])
 
-  // Handle Download action
-  const handleDownload = useCallback(() => {
-    // Placeholder for download functionality
-    console.log("Download game:", game.id)
-  }, [game.id])
+// Handle Save to Library action - creates a playlist from game clips and opens move modal
+  const handleSaveToLibrary = useCallback(() => {
+    // Convert game clips to ClipData format
+    const clips: ClipData[] = gameClips.map((clip, idx) => ({
+      id: clip.id,
+      playNumber: idx + 1,
+      odk: clip.passing ? "O" : clip.rushing ? "O" : "K" as "O" | "D" | "K",
+      quarter: clip.quarter,
+      down: clip.down,
+      distance: clip.distance,
+      yardLine: `${clip.yardLine > 50 ? "+" : "-"}${clip.yardLine > 50 ? 100 - clip.yardLine : clip.yardLine}`,
+      hash: ({ "Left": "L", "Right": "R", "Middle": "M" } as const)[clip.hash] || "M",
+      yards: Math.abs(clip.gain),
+      result: clip.passing?.result || clip.rushing?.attempt || "Play",
+      gainLoss: clip.gain >= 0 ? "Gn" : "Ls" as "Gn" | "Ls",
+      defFront: clip.defense.front,
+      defStr: "Strong",
+      coverage: clip.defense.coverageScheme,
+      blitz: clip.defense.isBlitz ? "Yes" : "No",
+      game: clip.matchup,
+    }))
+    
+    // Create the playlist and open move modal to let user place it
+    const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
+    const playlistId = createPlaylist(null, gameName, clips)
+    openMoveModal([{ id: playlistId, type: "item", name: gameName }])
+  }, [game, gameClips, homeTeam, awayTeam, createPlaylist, openMoveModal])
 
   // Determine winner
   const homeWon = game.score && game.score.home > game.score.away
@@ -2131,14 +2153,14 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
 
       {/* Fixed Footer */}
       <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
-        <Button
-          variant="outline"
-          className="flex-1 font-semibold"
-          onClick={handleDownload}
-        >
-          <Icon name="download" className="w-4 h-4 mr-2" />
-          Download
-        </Button>
+<Button
+  variant="outline"
+  className="flex-1 font-semibold"
+  onClick={handleSaveToLibrary}
+  >
+  <Icon name="folder" className="w-4 h-4 mr-2" />
+  Save to Library
+  </Button>
         <Button
           className="flex-1 font-semibold"
           onClick={handleViewFullGame}

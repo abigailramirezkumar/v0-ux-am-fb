@@ -72,7 +72,7 @@ type SortDirection = "asc" | "desc"
 const LEAGUE_MAP: Record<string, GameLeague> = {
   NFL: "NFL",
   College: "College",
-  "High School": "High School",
+  HighSchool: "HighSchool",
 }
 
 // ---------------------------------------------------------------------------

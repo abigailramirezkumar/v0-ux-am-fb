@@ -629,7 +629,7 @@ export function FiltersModule({
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Filters</span>
           {activeFilterCount > 0 && (
@@ -662,14 +662,17 @@ export function FiltersModule({
             <AccordionItem
               key={section.key}
               value={section.key}
-              className={sIdx < FILTER_SECTIONS.length - 1 ? "border-b border-border" : "border-b-0"}
+              className={cn(
+                sIdx < FILTER_SECTIONS.length - 1 ? "border-b border-border" : "border-b-0",
+                "py-1"
+              )}
             >
-              <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+              <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
                 {section.title}
               </AccordionTrigger>
-              <AccordionContent className="pb-4 space-y-3">
+              <AccordionContent className="pb-5 space-y-4">
                 {section.subsections.map((sub, subIdx) => (
-                  <div key={subIdx} className="space-y-3">
+                  <div key={subIdx} className="space-y-4">
                     {sub.subsectionLabel && (
                       <SubsectionHeader label={sub.subsectionLabel} />
                     )}

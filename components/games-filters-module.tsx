@@ -386,7 +386,7 @@ export function GamesFiltersModule({
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Filters</span>
           {activeFilterCount > 0 && (
@@ -415,11 +415,11 @@ export function GamesFiltersModule({
           className="px-4"
         >
           {/* Scope Section */}
-          <AccordionItem value="scope" className="border-b-0">
-            <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+          <AccordionItem value="scope" className="border-b-0 py-1">
+            <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
               Scope
             </AccordionTrigger>
-            <AccordionContent className="pb-4 space-y-3">
+            <AccordionContent className="pb-5 space-y-4">
               {/* League Filter */}
               <div 
                 data-games-filter-category="league"

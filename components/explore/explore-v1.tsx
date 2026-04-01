@@ -604,6 +604,7 @@ const {
     chips={activeFilterChips}
     onChipClick={handleChipClick}
     onChipRemove={handleChipRemove}
+    onClearAll={clearFilters}
   />
   </div>
 

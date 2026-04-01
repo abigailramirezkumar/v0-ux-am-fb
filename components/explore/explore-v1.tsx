@@ -682,6 +682,7 @@ const {
   onTeamToggle={handleTeamToggle}
   onCompetitionToggle={handleCompetitionToggle}
   onClear={clearGamesFilters}
+  onApplySavedFilter={applySavedFilter}
   hideTeamFilter={activeTab === "teams"}
   hideSeasonFilter={activeTab === "teams"}
   highlightedFilter={highlightedFilter}

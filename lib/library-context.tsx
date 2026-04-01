@@ -7,6 +7,7 @@ import type { LibraryItemData } from "@/components/library-item"
 import { useMediaItems } from "@/hooks/use-media-items"
 import type { ClipData, MediaItemData } from "@/types/library"
 import { copyClipsWithNewIds } from "@/types/library"
+import type { Game } from "@/lib/mock-games"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -740,6 +741,9 @@ interface LibraryContextType {
   pendingPlaylistClips: ClipData[]
   pendingPreviewClips: ClipData[]
   setPendingPreviewClips: (clips: ClipData[]) => void
+  /** Game to open in watch app from preview */
+  pendingPreviewGame: Game | null
+  setPendingPreviewGame: (game: Game | null) => void
   /** Breadcrumb trail to display in the watch app (e.g., ["Athletes", "Patrick Mahomes", "Highlights"]) */
   watchBreadcrumb: WatchBreadcrumbItem[]
   setWatchBreadcrumb: (breadcrumb: WatchBreadcrumbItem[]) => void
@@ -828,6 +832,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
   const [onPlaylistCreatedCallback, setOnPlaylistCreatedCallback] = useState<((createdId: string) => void) | null>(null)
   const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
+  const [pendingPreviewGame, setPendingPreviewGame] = useState<Game | null>(null)
   const [watchBreadcrumb, setWatchBreadcrumb] = useState<WatchBreadcrumbItem[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
@@ -1647,6 +1652,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         pendingPlaylistClips,
         pendingPreviewClips,
         setPendingPreviewClips,
+        pendingPreviewGame,
+        setPendingPreviewGame,
         watchBreadcrumb,
         setWatchBreadcrumb,
         recentPlaylists,

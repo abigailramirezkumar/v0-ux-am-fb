@@ -1834,7 +1834,7 @@ interface GamePreviewProps {
   
 function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader, watchBreadcrumb }: GamePreviewProps) {
   const router = useRouter()
-  const { setWatchBreadcrumb } = useLibraryContext()
+  const { setWatchBreadcrumb, setPendingPreviewGame } = useLibraryContext()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
   
@@ -1878,29 +1878,33 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
     })
   }, [game.date])
 
-  // Handle "Open Game" action from video player
+// Handle "Open Game" action from video player
   const handleOpenGame = useCallback(() => {
-    // Set breadcrumb with game name appended
-    if (watchBreadcrumb && watchBreadcrumb.length > 0) {
-      const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
-      setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
-    }
-    router.push("/watch")
-  }, [router, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam, game])
+  // Set breadcrumb with game name appended
+  if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+  const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
+  setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
+  }
+  // Set the game to be played in the watch app
+  setPendingPreviewGame(game)
+  router.push("/watch")
+  }, [router, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam, game, setPendingPreviewGame])
 
-  // Handle View Full Game action - uses onNavigateToGame callback if provided
+// Handle View Full Game action - uses onNavigateToGame callback if provided
   const handleViewFullGame = useCallback(() => {
-    if (onNavigateToGame) {
-      onNavigateToGame(game)
-    } else {
-      // Set breadcrumb with game name appended
-      if (watchBreadcrumb && watchBreadcrumb.length > 0) {
-        const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
-        setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
-      }
-      router.push("/watch")
-    }
-  }, [router, onNavigateToGame, game, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam])
+  if (onNavigateToGame) {
+  onNavigateToGame(game)
+  } else {
+  // Set breadcrumb with game name appended
+  if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+  const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
+  setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
+  }
+  // Set the game to be played in the watch app
+  setPendingPreviewGame(game)
+  router.push("/watch")
+  }
+  }, [router, onNavigateToGame, game, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam, setPendingPreviewGame])
 
   // Handle Download action
   const handleDownload = useCallback(() => {

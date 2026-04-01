@@ -173,9 +173,9 @@ function WatchContent() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </div>
+        </div>
 
-      {/* RHS Toolbar */}
+        {/* RHS Toolbar */}
         <WatchToolbar />
       </div>
     </div>

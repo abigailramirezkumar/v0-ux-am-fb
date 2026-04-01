@@ -205,12 +205,12 @@ function GameTile({
       </div>
 
       {/* Far Right: Clip Count and Library Badge */}
-      <div className="w-[80px] shrink-0 text-right flex flex-col items-end gap-0.5 pl-2">
+      <div className="w-[100px] shrink-0 text-right flex flex-col items-end gap-1 pl-2">
         <span className="text-xs text-muted-foreground">{clipCount} clips</span>
         {isInLibrary && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-md border border-primary/20">
             <Check className="w-3 h-3" />
-            In Library
+            Saved
           </span>
         )}
       </div>

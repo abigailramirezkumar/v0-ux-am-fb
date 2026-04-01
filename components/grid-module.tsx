@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useWatchContext } from "@/components/watch/watch-context"
 import { useLibraryContext } from "@/lib/library-context"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,7 +18,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { EllipsisVertical } from "lucide-react"
+import { EllipsisVertical, Check } from "lucide-react"
 import type { LibraryItemData } from "@/components/library-item"
 import type { PlayData, Dataset } from "@/lib/mock-datasets"
 import type { ClipData } from "@/types/library"
@@ -438,8 +438,19 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
     replaceUnsavedTab,
     updatePlay,
   } = useWatchContext()
-  const { openCreatePlaylistModal, openMoveModal, createPlaylist } = useLibraryContext()
+  const { openCreatePlaylistModal, openMoveModal, createPlaylist, mediaItems } = useLibraryContext()
   const lastSelectedGridIndexRef = useRef<number | null>(null)
+  
+  // Get set of clip IDs that exist in library playlists (for "Saved" badge in explore view)
+  const libraryClipIds = useMemo(() => {
+    const clipIds = new Set<string>()
+    mediaItems.forEach((item) => {
+      item.clips?.forEach((clip) => {
+        clipIds.add(clip.id)
+      })
+    })
+    return clipIds
+  }, [mediaItems])
 
   // Bridge: if clipsProp is provided, wrap it into a Dataset shape so the
   // rest of the component works unchanged. This decouples GridModule from
@@ -757,6 +768,11 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
               <SortableHeader label="Coverage" columnKey="coverage" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[80px] border-r border-border/50" />
               <SortableHeader label="Blitz" columnKey="blitz" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
               <SortableHeader label="League" columnKey="league" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
+              {variant === "explore" && (
+                <TableHead className="w-[60px] text-xs uppercase tracking-wider font-semibold text-foreground bg-muted/30 text-center">
+                  Saved
+                </TableHead>
+              )}
               {variant === "watch" && (
                 <TableHead className="min-w-[120px] text-xs uppercase tracking-wider font-semibold text-foreground bg-muted/30">
                   Game
@@ -886,6 +902,15 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                       {play.league === "HighSchool" ? "HS" : play.league === "College" ? "NCAA" : play.league || "NFL"}
                     </span>
                   </TableCell>
+                  {variant === "explore" && (
+                    <TableCell className="py-1.5 text-center">
+                      {libraryClipIds.has(play.id) && (
+                        <span className="inline-flex items-center justify-center w-5 h-5 bg-primary/10 text-primary rounded-full">
+                          <Check className="w-3 h-3" />
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
                   {variant === "watch" && (
                     <TableCell className="py-1.5 text-xs opacity-70">{play.game}</TableCell>
                   )}

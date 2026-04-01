@@ -16,12 +16,12 @@ import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import { nameToSlug } from "@/lib/athletes-data"
-import { Play, ChevronRight, ChevronLeft } from "lucide-react"
+import { Play, ChevronRight, ChevronLeft, Check } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
-import type { WatchBreadcrumbItem } from "@/lib/library-context"
+import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -227,6 +227,16 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
 
   // Get playlists
   const playlists = useMemo(() => generateTeamPlaylists(team.id), [team.id])
+  
+  // Get library items to check if playlists are saved
+  const { mediaItems } = useLibraryContext()
+  const savedPlaylistNames = useMemo(() => {
+    const names = new Set<string>()
+    mediaItems.forEach((item) => {
+      names.add(item.name.toLowerCase())
+    })
+    return names
+  }, [mediaItems])
 
   // Get top players with position-specific stats
   const topPlayers = useMemo(() => {
@@ -559,6 +569,12 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                     <Icon name="playlist" className="w-3.5 h-3.5 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">{playlist.name}</span>
                     <span className="text-sm text-muted-foreground">{playlist.clips} clips</span>
+                    {savedPlaylistNames.has(playlist.name.toLowerCase()) && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-md border border-primary/20">
+                        <Check className="w-3 h-3" />
+                        Saved
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>

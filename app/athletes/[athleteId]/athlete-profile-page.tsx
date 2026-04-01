@@ -19,6 +19,7 @@ import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { CreatePlaylistWithFiltersModal } from "@/components/create-playlist-with-filters-modal"
 import { Check } from "lucide-react"
 
 // ---------------------------------------------------------------------------
@@ -74,14 +75,7 @@ const TEAM_TYPE_LABELS: Record<string, string> = {
 
 const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
 
-// Mock data for Athlete Highlights
-const MOCK_HIGHLIGHTS = [
-  { id: "1", title: "Game-winning TD vs Ravens", reactions: 24, views: 1200, date: "Jan 12 2025" },
-  { id: "2", title: "Career-high 180 yards", reactions: 18, views: 890, date: "Jan 05 2025" },
-  { id: "3", title: "Incredible one-handed catch", reactions: 45, views: 2100, date: "Dec 29 2024" },
-  { id: "4", title: "Breakaway 65-yard run", reactions: 32, views: 1500, date: "Dec 22 2024" },
-  { id: "5", title: "Clutch 4th quarter drive", reactions: 12, views: 650, date: "Dec 15 2024" },
-]
+
 
 // Mock data for Playlists
 const MOCK_PLAYLISTS = [
@@ -363,6 +357,46 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   
   const keyStats = useMemo(() => getKeyStatsForAthlete(athlete), [athlete])
   const currentTeamName = TEAM_FULL_NAMES[athlete.team] || athlete.team
+  
+  // State for create playlist with filters modal
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
+  
+  // Handler for clicking on a key stat to open a playlist of clips for that stat
+  const handleStatClick = (stat: { label: string; value: string; secondary?: string; note?: string }) => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic number of clips based on stat value
+    const statValue = parseInt(stat.value.replace(/,/g, '')) || 50
+    const clipCount = Math.min(Math.max(Math.round(statValue / 10), 10), 100)
+    
+    // Generate mock clips for the stat playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(clipCount, 20) }, (_, i) => ({
+      id: `${athlete.id}-${stat.label}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: stat.label.toLowerCase().includes('pass') || stat.label.toLowerCase().includes('rec') 
+        ? "Pass" as const 
+        : stat.label.toLowerCase().includes('rush') || stat.label.toLowerCase().includes('run')
+        ? "Run" as const
+        : i % 2 === 0 ? "Pass" as const : "Run" as const,
+      game: `${athlete.team} vs OPP`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: `stat-${athlete.id}-${stat.label}`,
+      name: `${athlete.name} - ${stat.label}`,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
   const teamInfo = useMemo(() => getTeamForAthlete(athlete.id), [athlete.id])
   
   // Get breadcrumb context for building navigation URLs
@@ -565,7 +599,14 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     <h3 className="text-base font-bold text-foreground mb-4">Key Stats</h3>
                     <div className="grid grid-cols-3 gap-3">
                       {keyStats.slice(0, 6).map((stat) => (
-                        <div key={stat.label} className="rounded-lg border border-border p-3">
+                        <button
+                          key={stat.label}
+                          onClick={() => handleStatClick(stat)}
+                          className={cn(
+                            "rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                            previewPlaylist?.id === `stat-${athlete.id}-${stat.label}` && "bg-primary/10 border-primary/30"
+                          )}
+                        >
                           <p className="text-xs font-medium text-foreground mb-1">{stat.label}</p>
                           <div className="flex items-baseline gap-1">
                             <span className="text-xl font-bold text-primary">{stat.value}</span>
@@ -576,49 +617,20 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                           {stat.note && (
                             <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{stat.note}</p>
                           )}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </section>
                 </div>
 
-                {/* Athlete Highlights Section */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-foreground">Athlete Highlights</h3>
-                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
-                      View All
-                    </button>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {MOCK_HIGHLIGHTS.map((highlight) => (
-                      <div key={highlight.id} className="flex-shrink-0 w-44">
-                        <div className="aspect-video rounded-lg bg-primary/20 mb-2 overflow-hidden relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/60 flex items-center justify-center">
-                            <Icon name="play" className="w-8 h-8 text-white/80" />
-                          </div>
-                        </div>
-                        <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-0.5">
-                            <span className="text-orange-500">*</span>
-                            {highlight.reactions}
-                          </span>
-                          <span>{"·"}</span>
-                          <span>{highlight.views} views</span>
-                          <span>{"·"}</span>
-                          <span>{highlight.date}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
                 {/* Playlists Section */}
                 <section>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-base font-bold text-foreground">Playlists</h3>
-                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
+                    <button 
+                      onClick={() => setIsCreatePlaylistModalOpen(true)}
+                      className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                    >
                       Create Playlist
                     </button>
                   </div>
@@ -788,6 +800,15 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* Create Playlist with Filters Modal */}
+      <CreatePlaylistWithFiltersModal
+        open={isCreatePlaylistModalOpen}
+        onOpenChange={setIsCreatePlaylistModalOpen}
+        athleteId={athlete.id}
+        athleteName={athlete.name}
+        league={athlete.league}
+      />
     </div>
   )
 }

@@ -16,12 +16,13 @@ import { getAthletesForTeam } from "@/lib/mock-teams"
 import { mockGames } from "@/lib/mock-games"
 import { findTeamById } from "@/lib/games-context"
 import { nameToSlug } from "@/lib/athletes-data"
-import { Play, ChevronRight, ChevronLeft, Check } from "lucide-react"
+import { Play, Check } from "lucide-react"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { CreatePlaylistWithFiltersModal } from "@/components/create-playlist-with-filters-modal"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,19 +86,7 @@ function generateTeamStats(teamId: string) {
   }
 }
 
-/** Generate deterministic mock highlights for team */
-function generateTeamHighlights(teamId: string) {
-  const h = hashString(teamId)
-  const opponents = ["Texas A&M", "Purdue", "Minnesota", "Michigan", "UMBC", "Ohio State", "Alabama", "Georgia"]
-  return Array.from({ length: 5 }, (_, i) => ({
-    id: `highlight-${teamId}-${i}`,
-    title: `Double Double vs ${opponents[(h + i) % opponents.length]}`,
-    reactions: (h + i) % 2 === 0 ? `${1 + ((h + i) % 3)} reacted` : null,
-    views: `${10 + ((h + i * 3) % 30)} views`,
-    date: `Jan ${(3 + i * 2) % 28 || 1} 2025`,
-    thumbnail: `/placeholder.svg?height=120&width=200`,
-  }))
-}
+
 
 /** Generate deterministic mock playlists for team */
 function generateTeamPlaylists(teamId: string) {
@@ -157,7 +146,7 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
-  const highlightsRef = useRef<HTMLDivElement>(null)
+  const [isCreatePlaylistModalOpen, setIsCreatePlaylistModalOpen] = useState(false)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   
   // Build breadcrumb for watch app navigation
@@ -209,6 +198,38 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
     setPreviewGame(null)
     setPreviewPlaylist(null)
   }
+
+  // Handler for clicking on a key stat to open a playlist of clips for that stat
+  const handleStatClick = (statLabel: string, statValue: number, playType?: "Pass" | "Run") => {
+    // Clear game preview if open
+    setPreviewGame(null)
+    
+    // Generate deterministic number of clips based on stat value
+    const clipCount = Math.min(Math.max(Math.round(statValue), 10), 100)
+    
+    // Generate mock clips for the stat playlist
+    const clips: ClipData[] = Array.from({ length: Math.min(clipCount, 20) }, (_, i) => ({
+      id: `${team.id}-${statLabel}-clip-${i}`,
+      playNumber: i + 1,
+      quarter: (i % 4) + 1,
+      down: (i % 4) + 1,
+      distance: 5 + (i % 10),
+      playType: playType || (i % 2 === 0 ? "Pass" as const : "Run" as const),
+      game: `${team.name} Game`,
+      yards: 3 + (i % 15),
+    }))
+    
+    const playlistData: MediaItemData = {
+      id: `stat-${team.id}-${statLabel}`,
+      name: `${team.name} - ${statLabel}`,
+      type: "playlist",
+      parentId: null,
+      clips,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+    }
+    setPreviewPlaylist(playlistData)
+  }
   
   // Get breadcrumb context for building navigation URLs
   const { from: breadcrumbFrom, entity, filters } = useBreadcrumbContext()
@@ -221,9 +242,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
 
   // Get all athletes for this team
   const teamAthletes = useMemo(() => getAthletesForTeam(team.id), [team.id])
-
-  // Get highlights
-  const highlights = useMemo(() => generateTeamHighlights(team.id), [team.id])
 
   // Get playlists
   const playlists = useMemo(() => generateTeamPlaylists(team.id), [team.id])
@@ -313,17 +331,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
       league: team.id.startsWith("hs-") ? "High School Football" : team.id.length > 3 ? "NCAA Division 1 Football" : "NFL",
     }
   }, [team.id])
-
-  // Scroll handlers for highlights carousel
-  const scrollHighlights = (direction: "left" | "right") => {
-    if (highlightsRef.current) {
-      const scrollAmount = 220
-      highlightsRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      })
-    }
-  }
 
   return (
     <div className="h-full flex flex-col bg-sidebar">
@@ -441,118 +448,95 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 <h2 className="text-base font-bold text-foreground mb-4">Key Stats</h2>
                 <div className="grid grid-cols-3 gap-3">
                   {/* Passing YPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Passing YPG", parseFloat(stats.passingYPG), "Pass")}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Passing YPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Passing YPG</p>
                     <p className="text-2xl font-bold text-foreground">{stats.passingYPG}</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.passingRank}</p>
-                  </div>
+                  </button>
                   {/* Rushing YPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Rushing YPG", parseFloat(stats.rushingYPG), "Run")}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Rushing YPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Rushing YPG</p>
                     <p className="text-2xl font-bold text-foreground">{stats.rushingYPG}</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.rushingRank}</p>
-                  </div>
+                  </button>
                   {/* 3rd Down % */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("3rd Down %", parseFloat(stats.thirdDownPct))}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-3rd Down %` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">3rd Down %</p>
                     <p className="text-2xl font-bold text-foreground">{stats.thirdDownPct}%</p>
                     <p className="text-xs text-muted-foreground mt-1">{stats.thirdDownRank}</p>
-                  </div>
+                  </button>
                   {/* Sacks */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Sacks", stats.sacks)}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Sacks` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Sacks</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.sacks}</p>
                       <p className="text-sm text-muted-foreground">{stats.sacksSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.sacksNote}</p>
-                  </div>
+                  </button>
                   {/* Turnovers */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("Turnovers", stats.turnovers)}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-Turnovers` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">Turnovers</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.turnovers}</p>
                       <p className="text-sm text-muted-foreground">{stats.turnoversSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.turnoversNote}</p>
-                  </div>
+                  </button>
                   {/* PPG */}
-                  <div className="rounded-lg border border-border p-4">
+                  <button
+                    onClick={() => handleStatClick("PPG", parseFloat(stats.ppg))}
+                    className={cn(
+                      "rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted/50 hover:border-primary/30 cursor-pointer",
+                      previewPlaylist?.id === `stat-${team.id}-PPG` && "bg-primary/10 border-primary/30"
+                    )}
+                  >
                     <p className="text-xs font-semibold text-primary mb-1">PPG</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-2xl font-bold text-foreground">{stats.ppg}</p>
                       <p className="text-sm text-muted-foreground">{stats.ppgSecondary}</p>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{stats.ppgNote}</p>
-                  </div>
+                  </button>
                 </div>
               </section>
             </div>
-
-            {/* Team Highlights */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-foreground">Team Highlights</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => scrollHighlights("left")}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => scrollHighlights("right")}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <Button variant="outline" size="sm" className="ml-2">
-                    View All
-                  </Button>
-                </div>
-              </div>
-              <div
-                ref={highlightsRef}
-                className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              >
-                {highlights.map((highlight) => (
-                  <div key={highlight.id} className="shrink-0 w-52">
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-muted mb-3 group cursor-pointer">
-                      <img
-                        src={highlight.thumbnail}
-                        alt={highlight.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="w-5 h-5 text-foreground fill-foreground ml-0.5" />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                      {highlight.reactions && (
-                        <>
-                          <span className="text-amber-500">{"*"}</span>
-                          <span>{highlight.reactions}</span>
-                          <span>{"·"}</span>
-                        </>
-                      )}
-                      <span>{highlight.views}</span>
-                      <span>{"·"}</span>
-                      <span>{highlight.date}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
 
             {/* Playlists */}
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold text-foreground">Playlists</h2>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setIsCreatePlaylistModalOpen(true)}>
                   Create Playlist
                 </Button>
               </div>
@@ -719,6 +703,14 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
           )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      
+      {/* Create Playlist with Filters Modal */}
+      <CreatePlaylistWithFiltersModal
+        open={isCreatePlaylistModalOpen}
+        onOpenChange={setIsCreatePlaylistModalOpen}
+        teamId={team.id}
+        teamName={team.name}
+      />
     </div>
   )
 }

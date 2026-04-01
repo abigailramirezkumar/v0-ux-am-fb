@@ -680,14 +680,19 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                 </div>
               </TableHead>
               {variant === "explore" && (
-                <SortableHeader label="Game" columnKey="game" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="min-w-[120px] border-r border-border/50" />
+                <>
+                  <SortableHeader label="Off" columnKey="offensiveTeam" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
+                  <SortableHeader label="Def" columnKey="defensiveTeam" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[70px] border-r border-border/50" />
+                </>
               )}
               {variant === "watch" && (
                 <TableHead className="w-[50px] text-left text-xs uppercase tracking-wider font-semibold text-foreground border-r border-border/50 bg-muted/30">
                   #
                 </TableHead>
               )}
-              <SortableHeader label="ODK" columnKey="odk" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
+              {variant === "watch" && (
+                <SortableHeader label="ODK" columnKey="odk" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
+              )}
               <SortableHeader label="Qtr" columnKey="quarter" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
               <SortableHeader label="Dn" columnKey="down" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[50px] border-r border-border/50" />
               <SortableHeader label="Dist" columnKey="distance" activeColumn={sortColumn} activeMode={sortMode} onSort={handleSort} className="w-[60px] border-r border-border/50" />
@@ -764,14 +769,19 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
                     </div>
                   </TableCell>
                   {variant === "explore" && (
-                    <TableCell className="py-1.5 text-xs border-r border-border/50">{play.game}</TableCell>
+                    <>
+                      <TableCell className="py-1.5 text-xs border-r border-border/50">{play.offensiveTeam}</TableCell>
+                      <TableCell className="py-1.5 text-xs border-r border-border/50">{play.defensiveTeam}</TableCell>
+                    </>
                   )}
                   {variant === "watch" && (
                     <TableCell className="font-medium py-1.5 border-r border-border/50">{play.playNumber}</TableCell>
                   )}
-                  <TableCell className="py-1.5 border-r border-border/50">
-                    {editable ? <EditableCell play={play} columnKey="odk" value={play.odk} onCommit={updatePlay} isPlaying={isPlaying} /> : play.odk}
-                  </TableCell>
+                  {variant === "watch" && (
+                    <TableCell className="py-1.5 border-r border-border/50">
+                      {editable ? <EditableCell play={play} columnKey="odk" value={play.odk} onCommit={updatePlay} isPlaying={isPlaying} /> : play.odk}
+                    </TableCell>
+                  )}
                   <TableCell className="py-1.5 border-r border-border/50">
                     {editable ? <EditableCell play={play} columnKey="quarter" value={play.quarter} onCommit={updatePlay} isPlaying={isPlaying} /> : play.quarter}
                   </TableCell>

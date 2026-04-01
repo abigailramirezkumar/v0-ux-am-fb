@@ -39,6 +39,10 @@ export interface ClipData {
   coverage?: string
   blitz?: string
   game?: string
+  /** The team on offense for this play */
+  offensiveTeam?: string
+  /** The team on defense for this play */
+  defensiveTeam?: string
   playType?: "Pass" | "Run" | "Special Teams"
   passResult?: "Complete" | "Incomplete" | "Sack" | "Interception" | "Throwaway"
   runDirection?: "Left" | "Middle" | "Right"

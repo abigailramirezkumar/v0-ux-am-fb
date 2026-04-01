@@ -18,6 +18,8 @@ import { findTeamById } from "@/lib/games-context"
 import type { Athlete } from "@/types/athlete"
 import type { Game } from "@/types/game"
 import type { MediaItemData, ClipData } from "@/types/library"
+import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { Check } from "lucide-react"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -210,6 +212,22 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
+  const { mediaItems } = useLibraryContext()
+  
+  // Build breadcrumb for watch app navigation
+  const watchBreadcrumb: WatchBreadcrumbItem[] = useMemo(() => [
+    { label: "Athletes", href: "/explore?tab=athletes", icon: "explore" },
+    { label: athlete.name, href: `/athletes/${athlete.id}` },
+  ], [athlete.id, athlete.name])
+  
+  // Check if a playlist name is saved in the library (simple name-based match for mock data)
+  const savedPlaylistNames = useMemo(() => {
+    const names = new Set<string>()
+    mediaItems.forEach((item) => {
+      names.add(item.name.toLowerCase())
+    })
+    return names
+  }, [mediaItems])
   
   // Control preview panel expansion/collapse
   useEffect(() => {
@@ -617,10 +635,16 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                           <Icon name="playlist" className="w-4 h-4 text-muted-foreground" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground truncate">{playlist.name}</p>
                           <p className="text-xs text-muted-foreground">{playlist.clips} clips</p>
                         </div>
+                        {savedPlaylistNames.has(playlist.name.toLowerCase()) && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-md border border-primary/20 shrink-0">
+                            <Check className="w-3 h-3" />
+                            Saved
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -759,6 +783,7 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
               game={previewGame ?? undefined}
               playlist={previewPlaylist ?? undefined}
               onClose={handleClosePreview}
+              watchBreadcrumb={watchBreadcrumb}
             />
           )}
         </ResizablePanel>

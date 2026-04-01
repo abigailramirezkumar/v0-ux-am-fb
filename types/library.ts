@@ -39,6 +39,10 @@ export interface ClipData {
   coverage?: string
   blitz?: string
   game?: string
+  /** The team on offense for this play */
+  offensiveTeam?: string
+  /** The team on defense for this play */
+  defensiveTeam?: string
   playType?: "Pass" | "Run" | "Special Teams"
   passResult?: "Complete" | "Incomplete" | "Sack" | "Interception" | "Throwaway"
   runDirection?: "Left" | "Middle" | "Right"
@@ -62,12 +66,14 @@ export interface ClipData {
 export interface MediaItemData {
   id: string
   name: string
-  type: "video" | "playlist"
+  type: "video" | "playlist" | "game"
   /** Folder this item belongs to. null = library root. */
   parentId: string | null
   clips: ClipData[]
   createdAt: string
   modifiedAt: string
+  /** Reference to the original game ID (for game type items) */
+  gameId?: string
 }
 
 // ---------------------------------------------------------------------------

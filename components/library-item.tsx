@@ -30,7 +30,7 @@ export interface LibraryItemData {
   id: string
   name: string
   thumbnailUrl?: string
-  type: "video" | "pdf" | "image" | "audio" | "document" | "playlist"
+  type: "video" | "pdf" | "image" | "audio" | "document" | "playlist" | "game"
   dateModified?: string
   hasData?: boolean
   itemCount?: number
@@ -40,6 +40,8 @@ export interface LibraryItemData {
   angles?: number
   comments?: number
   items?: LibraryItemData[]
+  /** Reference to the original game ID (for game type items) */
+  gameId?: string
 }
 
 interface LibraryItemProps {

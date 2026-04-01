@@ -18,6 +18,7 @@ import type { Game } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { MediaItemData } from "@/types/library"
 import { findTeamById } from "@/lib/games-context"
+import type { WatchBreadcrumbItem } from "@/lib/library-context"
 
 // Import the individual preview components from the main preview module
 import { PreviewModule } from "@/components/preview-module"
@@ -41,6 +42,8 @@ interface PreviewModuleV1Props {
   athlete?: Athlete & { id?: string }
   playlist?: MediaItemData
   onClose: () => void
+  /** Breadcrumb trail to display in watch app when opening items from this preview */
+  watchBreadcrumb?: WatchBreadcrumbItem[]
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +202,7 @@ export function PreviewModuleV1({
   athlete, 
   playlist,
   onClose,
+  watchBreadcrumb,
 }: PreviewModuleV1Props) {
   // Back history stack - items we can go back to
   const [backStack, setBackStack] = useState<BreadcrumbItem[]>([])
@@ -354,6 +358,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToTeam={handleNavigateToTeam}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "team":
@@ -364,6 +369,7 @@ export function PreviewModuleV1({
             onNavigateToAthlete={handleNavigateToAthlete}
             onNavigateToGame={handleNavigateToGame}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "athlete":
@@ -373,6 +379,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToTeam={handleNavigateToTeam}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "clip":
@@ -382,6 +389,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToAthlete={handleNavigateToAthlete}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "playlist":
@@ -391,6 +399,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToClip={handleNavigateToClip}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       default:
@@ -407,6 +416,19 @@ export function PreviewModuleV1({
       data: currentPreview.data
     }
   }, [currentPreview])
+
+  // Build the full breadcrumb trail for watch app navigation
+  // This combines the incoming watchBreadcrumb with the navigation stack
+  const currentWatchBreadcrumb: WatchBreadcrumbItem[] = useMemo(() => {
+    const base = watchBreadcrumb || []
+    
+    // Add items from the back stack (navigation history)
+    const stackItems: WatchBreadcrumbItem[] = backStack.map(item => ({
+      label: getBreadcrumbLabel(item),
+    }))
+    
+    return [...base, ...stackItems]
+  }, [watchBreadcrumb, backStack])
 
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">

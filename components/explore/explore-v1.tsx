@@ -14,7 +14,7 @@ import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import { useExploreFilters, type RangeCategory } from "@/hooks/use-explore-filters"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
-import { useLibraryContext } from "@/lib/library-context"
+import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Icon } from "@/components/icon"
@@ -588,6 +588,46 @@ const {
     [allClipsDataset, filteredPlays]
   )
 
+  // Build breadcrumb for watch app navigation based on current preview
+  const watchBreadcrumb: WatchBreadcrumbItem[] = useMemo(() => {
+    const baseBreadcrumb: WatchBreadcrumbItem[] = [
+      { label: "Explore", href: "/explore", icon: "explore" },
+    ]
+    
+    if (previewGame) {
+      // If previewing a game, add game to breadcrumb
+      return [
+        ...baseBreadcrumb,
+        { label: "Games", href: "/explore?tab=games" },
+      ]
+    }
+    
+    if (previewTeam) {
+      return [
+        ...baseBreadcrumb,
+        { label: "Teams", href: "/explore?tab=teams" },
+        { label: previewTeam.name, href: `/teams/${previewTeam.id}` },
+      ]
+    }
+    
+    if (previewAthlete) {
+      return [
+        ...baseBreadcrumb,
+        { label: "Athletes", href: "/explore?tab=athletes" },
+        { label: previewAthlete.name, href: `/athletes/${previewAthlete.id}` },
+      ]
+    }
+    
+    if (previewPlay) {
+      return [
+        ...baseBreadcrumb,
+        { label: "Clips", href: "/explore?tab=clips" },
+      ]
+    }
+    
+    return baseBreadcrumb
+  }, [previewGame, previewTeam, previewAthlete, previewPlay])
+
   return (
     <WatchProvider initialTabs={[allClipsDataset]}>
       <div className="flex flex-col h-full w-full bg-sidebar">
@@ -673,6 +713,7 @@ const {
                     <div className="flex-1 bg-background rounded-b-lg overflow-hidden relative">
                       <GridModule
                         showTabs={false}
+                        variant="explore"
                         selectionActions={
                           <div className="flex items-center gap-1">
                             <AddToPlaylistMenu />
@@ -751,13 +792,14 @@ const {
               >
                 <div className="h-full pr-3 py-3 pl-0">
                   {(previewPlay || previewGame || previewTeam || previewAthlete) && (
-                    <PreviewModuleV1
-                      play={previewPlay || undefined}
-                      game={previewGame || undefined}
-                      team={previewTeam || undefined}
-                      athlete={previewAthlete || undefined}
-                      onClose={handleClosePreview}
-                    />
+<PreviewModuleV1
+  play={previewPlay || undefined}
+  game={previewGame || undefined}
+  team={previewTeam || undefined}
+  athlete={previewAthlete || undefined}
+  onClose={handleClosePreview}
+  watchBreadcrumb={watchBreadcrumb}
+  />
                   )}
                 </div>
               </ResizablePanel>

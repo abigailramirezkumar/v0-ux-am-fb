@@ -8,6 +8,7 @@ import { ReportsModule } from "@/components/reports-module"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { WatchProvider, useWatchContext } from "@/components/watch/watch-context"
 import { WatchToolbar } from "@/components/watch/watch-toolbar"
+import { WatchBreadcrumb } from "@/components/watch/watch-breadcrumb"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 
@@ -63,9 +64,13 @@ function WatchContent() {
   }, [visibleModules.reports])
 
   return (
-    <div className="flex h-full w-full">
-      {/* Main Resizable Area — horizontal split: content | reports */}
-      <div className="flex-1 min-w-0 bg-sidebar">
+    <div className="flex flex-col h-full w-full">
+      {/* Breadcrumb navigation */}
+      <WatchBreadcrumb />
+      
+      <div className="flex flex-1 min-h-0">
+        {/* Main Resizable Area — horizontal split: content | reports */}
+        <div className="flex-1 min-w-0 bg-sidebar">
         <ResizablePanelGroup
           direction="horizontal"
           className="[&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out"
@@ -168,10 +173,11 @@ function WatchContent() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-      </div>
+        </div>
 
-      {/* RHS Toolbar */}
-      <WatchToolbar />
+        {/* RHS Toolbar */}
+        <WatchToolbar />
+      </div>
     </div>
   )
 }

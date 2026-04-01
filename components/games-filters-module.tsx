@@ -424,8 +424,8 @@ export function GamesFiltersModule({
               <div 
                 data-games-filter-category="league"
                 className={cn(
-                  "space-y-2 transition-all duration-300 rounded-md",
-                  isHighlighted("league") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                  "space-y-2 transition-all duration-300 rounded-md p-2 -mx-2",
+                  isHighlighted("league") && "ring-2 ring-primary ring-inset bg-primary/5"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -461,8 +461,8 @@ export function GamesFiltersModule({
               <div 
                 data-games-filter-category="competition"
                 className={cn(
-                  "space-y-2 transition-all duration-300 rounded-md",
-                  isHighlighted("competition") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                  "space-y-2 transition-all duration-300 rounded-md p-2 -mx-2",
+                  isHighlighted("competition") && "ring-2 ring-primary ring-inset bg-primary/5"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -502,11 +502,11 @@ export function GamesFiltersModule({
               {/* Season Filter */}
               {!hideSeasonFilter && (
                 <div 
-                  data-games-filter-category="season"
-                  className={cn(
-                    "space-y-2 transition-all duration-300 rounded-md",
-                    isHighlighted("season") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
-                  )}
+data-games-filter-category="season"
+                className={cn(
+                  "space-y-2 transition-all duration-300 rounded-md p-2 -mx-2",
+                  isHighlighted("season") && "ring-2 ring-primary ring-inset bg-primary/5"
+                )}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -545,11 +545,11 @@ export function GamesFiltersModule({
               {/* Team Filter */}
               {!hideTeamFilter && (
                 <div 
-                  data-games-filter-category="team"
-                  className={cn(
-                    "space-y-2 transition-all duration-300 rounded-md",
-                    isHighlighted("team") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
-                  )}
+data-games-filter-category="team"
+                className={cn(
+                  "space-y-2 transition-all duration-300 rounded-md p-2 -mx-2",
+                  isHighlighted("team") && "ring-2 ring-primary ring-inset bg-primary/5"
+                )}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

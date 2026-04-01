@@ -6,8 +6,9 @@ import { sportsData, type League } from "@/lib/sports-data"
 import { Input } from "@/components/ui/input"
 import { TeamLogo } from "@/components/team-logo"
 import { cn } from "@/lib/utils"
-import { Search } from "lucide-react"
+import { Search, Check } from "lucide-react"
 import type { Game, GameLeague } from "@/types/game"
+import { useLibraryContext } from "@/lib/library-context"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -116,11 +117,13 @@ function TeamBadge({ teamId, className }: { teamId: string; className?: string }
 function GameTile({ 
   game, 
   onClick, 
-  isActive 
+  isActive,
+  isInLibrary,
 }: { 
   game: Game
   onClick?: () => void
-  isActive?: boolean 
+  isActive?: boolean
+  isInLibrary?: boolean
 }) {
   const homeTeam = getTeamById(game.homeTeamId)
   const awayTeam = getTeamById(game.awayTeamId)
@@ -201,9 +204,15 @@ function GameTile({
         )}
       </div>
 
-      {/* Far Right: Clip Count */}
-      <div className="w-[60px] shrink-0 text-right text-xs text-muted-foreground pl-2">
-        {clipCount} clips
+      {/* Far Right: Clip Count and Library Badge */}
+      <div className="w-[100px] shrink-0 text-right flex flex-col items-end gap-1 pl-2">
+        <span className="text-xs text-muted-foreground">{clipCount} clips</span>
+        {isInLibrary && (
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-md border border-primary/20">
+            <Check className="w-3 h-3" />
+            Saved
+          </span>
+        )}
       </div>
     </div>
   )
@@ -217,11 +226,13 @@ function LeagueSection({
   games,
   onClickGame,
   activeGameId,
+  libraryGameIds,
 }: { 
   league: GameLeague
   games: Game[]
   onClickGame?: (game: Game) => void
   activeGameId?: string
+  libraryGameIds: Set<string>
 }) {
   const leagueLabel = league === "HighSchool" ? "High School" : league
 
@@ -237,6 +248,7 @@ function LeagueSection({
             game={game} 
             onClick={() => onClickGame?.(game)}
             isActive={game.id === activeGameId}
+            isInLibrary={libraryGameIds.has(game.id)}
           />
         ))}
       </div>
@@ -256,6 +268,18 @@ export function GamesModule({
   activeGameId,
 }: GamesModuleProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const { mediaItems } = useLibraryContext()
+  
+  // Get set of game IDs that are in the library
+  const libraryGameIds = useMemo(() => {
+    const gameIds = new Set<string>()
+    mediaItems.forEach((item) => {
+      if (item.gameId) {
+        gameIds.add(item.gameId)
+      }
+    })
+    return gameIds
+  }, [mediaItems])
 
   // Filter and organize games
   const organizedGames = useMemo(() => {
@@ -392,6 +416,7 @@ export function GamesModule({
                       games={leagueGroup.games}
                       onClickGame={onClickGame}
                       activeGameId={activeGameId}
+                      libraryGameIds={libraryGameIds}
                     />
                   ))}
                 </div>

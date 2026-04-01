@@ -7,6 +7,7 @@ import type { LibraryItemData } from "@/components/library-item"
 import { useMediaItems } from "@/hooks/use-media-items"
 import type { ClipData, MediaItemData } from "@/types/library"
 import { copyClipsWithNewIds } from "@/types/library"
+import type { Game } from "@/lib/mock-games"
 
 export type SortDirection = "asc" | "desc" | null
 
@@ -702,6 +703,16 @@ export interface RecentPlaylist {
   folderId: string | null
 }
 
+/** Breadcrumb item for watch app navigation */
+export interface WatchBreadcrumbItem {
+  /** Display label */
+  label: string
+  /** Navigation URL (optional - if not provided, item is not clickable) */
+  href?: string
+  /** Icon name to display (optional) */
+  icon?: "explore" | "search" | "library" | "athlete" | "team"
+}
+
 interface LibraryContextType {
   columns: Column[]
   sort: { columnId: string; direction: SortDirection }
@@ -730,6 +741,12 @@ interface LibraryContextType {
   pendingPlaylistClips: ClipData[]
   pendingPreviewClips: ClipData[]
   setPendingPreviewClips: (clips: ClipData[]) => void
+  /** Game to open in watch app from preview */
+  pendingPreviewGame: Game | null
+  setPendingPreviewGame: (game: Game | null) => void
+  /** Breadcrumb trail to display in the watch app (e.g., ["Athletes", "Patrick Mahomes", "Highlights"]) */
+  watchBreadcrumb: WatchBreadcrumbItem[]
+  setWatchBreadcrumb: (breadcrumb: WatchBreadcrumbItem[]) => void
   recentPlaylists: RecentPlaylist[]
   addToPlaylist: (playlistId: string, clipIds: string[]) => void
   setSort: (columnId: string) => void
@@ -763,7 +780,7 @@ interface LibraryContextType {
   onPlaylistCreatedCallback: ((createdId: string) => void) | null
   openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[], options?: { type?: "video" | "playlist" | "game"; gameId?: string }) => string
   clearPendingPlaylistItems: () => void
 
   // --- Segregated Data/Structure model ---
@@ -815,6 +832,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [pendingPlaylistClips, setPendingPlaylistClips] = useState<ClipData[]>([])
   const [onPlaylistCreatedCallback, setOnPlaylistCreatedCallback] = useState<((createdId: string) => void) | null>(null)
   const [pendingPreviewClips, setPendingPreviewClips] = useState<ClipData[]>([])
+  const [pendingPreviewGame, setPendingPreviewGame] = useState<Game | null>(null)
+  const [watchBreadcrumb, setWatchBreadcrumb] = useState<WatchBreadcrumbItem[]>([])
   const [recentPlaylists, setRecentPlaylists] = useState<RecentPlaylist[]>([])
 
   // --- Segregated Data/Structure hooks ---
@@ -1443,7 +1462,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setOnPlaylistCreatedCallback(null)
   }
 
-  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
+  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[], options?: { type?: "video" | "playlist" | "game"; gameId?: string }) => {
     // Determine which clips to seed: explicit initialClips > pendingPlaylistClips > pendingPlaylistItems (converted) > empty
     const seedClips: ClipData[] = initialClips
       ? initialClips
@@ -1458,14 +1477,15 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
           : []
 
     // Create via the flat media-items list (copy-on-add happens inside the hook)
-    const created = createMediaItem(name, targetFolderId, seedClips)
+    const created = createMediaItem(name, targetFolderId, seedClips, options)
 
     // Also insert a matching LibraryItemData into the folder/root tree so the
     // existing folder UI continues to render it alongside static data.
+    const itemType = options?.type || "playlist"
     const newPlaylist: LibraryItemData = {
       id: created.id,
       name: name,
-      type: "playlist",
+      type: itemType === "game" ? "game" : "playlist",
       createdDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       dateModified: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       itemCount: seedClips.length,
@@ -1633,6 +1653,10 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         pendingPlaylistClips,
         pendingPreviewClips,
         setPendingPreviewClips,
+        pendingPreviewGame,
+        setPendingPreviewGame,
+        watchBreadcrumb,
+        setWatchBreadcrumb,
         recentPlaylists,
         addToPlaylist,
         setSort,

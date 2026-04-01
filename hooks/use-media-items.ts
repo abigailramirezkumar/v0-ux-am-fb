@@ -12,18 +12,24 @@ import { copyClipsWithNewIds } from "@/types/library"
 export function useMediaItems() {
   const [mediaItems, setMediaItems] = useState<MediaItemData[]>([])
 
-  /** Create a new media item (playlist or video). Returns the created item. */
+  /** Create a new media item (playlist, video, or game). Returns the created item. */
   const createMediaItem = useCallback(
-    (name: string, parentId: string | null, initialClips: ClipData[] = []): MediaItemData => {
+    (
+      name: string, 
+      parentId: string | null, 
+      initialClips: ClipData[] = [],
+      options?: { type?: "video" | "playlist" | "game"; gameId?: string }
+    ): MediaItemData => {
       const now = new Date().toISOString()
       const newItem: MediaItemData = {
         id: `media-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         name,
-        type: "playlist",
+        type: options?.type || "playlist",
         parentId,
         clips: copyClipsWithNewIds(initialClips),
         createdAt: now,
         modifiedAt: now,
+        gameId: options?.gameId,
       }
       setMediaItems((prev) => [...prev, newItem])
       return newItem

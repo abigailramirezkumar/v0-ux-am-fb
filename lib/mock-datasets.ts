@@ -18,6 +18,10 @@ export interface PlayData {
   coverage: string
   blitz: string
   game: string
+  /** The team on offense for this play */
+  offensiveTeam: string
+  /** The team on defense for this play */
+  defensiveTeam: string
   /** League: NFL, College, or HighSchool */
   league?: "NFL" | "College" | "HighSchool"
   /** Foreign key to Game.id from mock-games.ts */
@@ -106,9 +110,44 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
   const runGaps = ["A-Gap", "B-Gap", "C-Gap", "D-Gap", "Outside"]
   const passLocs = ["Left Sideline", "Left Numbers", "Middle", "Right Numbers", "Right Sideline"]
 
+  // Parse team names from game string (e.g., "BUF vs LA 01.01.26" -> ["BUF", "LA"])
+  // Or "GB @ CHI" -> ["GB", "CHI"]
+  const parseTeams = (game: string): [string, string] => {
+    const vsMatch = game.match(/^(\w+)\s+(?:vs|@)\s+(\w+)/i)
+    if (vsMatch) {
+      return [vsMatch[1], vsMatch[2]]
+    }
+    // Fallback for other formats
+    return ["Team A", "Team B"]
+  }
+  const [team1, team2] = parseTeams(gameName)
+
   return Array.from({ length: count }).map((_, i) => {
     const gain = Math.floor(random() * 20) - 5
     const odk = random() > 0.5 ? "O" : random() > 0.5 ? "D" : "K"
+    
+    // Derive offensive/defensive teams based on odk:
+    // "O" = our team (team1) is on offense
+    // "D" = our team (team1) is on defense, so opponent (team2) is on offense
+    // "K" = special teams, assign based on random for variety
+    let offensiveTeam: string
+    let defensiveTeam: string
+    if (odk === "O") {
+      offensiveTeam = team1
+      defensiveTeam = team2
+    } else if (odk === "D") {
+      offensiveTeam = team2
+      defensiveTeam = team1
+    } else {
+      // For kicks, randomly assign
+      if (random() > 0.5) {
+        offensiveTeam = team1
+        defensiveTeam = team2
+      } else {
+        offensiveTeam = team2
+        defensiveTeam = team1
+      }
+    }
     const playType: PlayData["playType"] = odk === "K" ? "Special Teams" : random() > 0.5 ? "Pass" : "Run"
     const distance = Math.floor(random() * 10) + 1
     const isPenalty = random() > 0.9
@@ -137,6 +176,8 @@ const generatePlays = (count: number, gameName: string): PlayData[] => {
       coverage: ["Cov 1", "Cov 2", "Cov 3", "Quarters"][Math.floor(random() * 4)],
       blitz: random() > 0.8 ? "Yes" : "No",
       game: gameName,
+      offensiveTeam,
+      defensiveTeam,
       
       // Pro Fields
       epa: parseFloat(epa.toFixed(2)),
@@ -181,7 +222,7 @@ export function getDatasetForItem(itemId: string | null): Dataset {
 export function getAllUniqueClips(): Dataset {
   // Lazy load to avoid circular dependencies
   const { mockClips } = require("./mock-clips") as { mockClips: Clip[] }
-  const { getGameById } = require("./mock-games") as { getGameById: (id: string) => { league?: string } | undefined }
+  const { getGameById } = require("./mock-games") as { getGameById: (id: string) => { league?: string; homeTeamId?: string; awayTeamId?: string } | undefined }
   
   // Convert detailed clips from mock-clips.ts to PlayData format
   // This ensures we use the rich clip data with game/league/athlete information
@@ -193,10 +234,34 @@ export function getAllUniqueClips(): Dataset {
     // Map hash format from Clip to PlayData
     const hashMap: Record<string, "L" | "R" | "M"> = { "Left": "L", "Right": "R", "Middle": "M" }
     
+    // Determine which play type this is
+    const odk: "O" | "D" | "K" = clip.passing ? "O" : clip.rushing ? "O" : "K"
+    
+    // Derive offensive and defensive teams from game data
+    // homeTeamId is our team, awayTeamId is opponent
+    // When ODK is "O", our team is on offense
+    // When ODK is "D", opponent is on offense
+    const homeTeam = game?.homeTeamId?.toUpperCase() || "HOME"
+    const awayTeam = game?.awayTeamId?.toUpperCase() || "AWAY"
+    
+    let offensiveTeam: string
+    let defensiveTeam: string
+    if (odk === "O") {
+      offensiveTeam = homeTeam
+      defensiveTeam = awayTeam
+    } else if (odk === "D") {
+      offensiveTeam = awayTeam
+      defensiveTeam = homeTeam
+    } else {
+      // For special teams, use the first possession (alternates)
+      offensiveTeam = index % 2 === 0 ? homeTeam : awayTeam
+      defensiveTeam = index % 2 === 0 ? awayTeam : homeTeam
+    }
+    
     return {
       id: clip.id,
       playNumber: index + 1,
-      odk: clip.passing ? "O" : clip.rushing ? "O" : "K" as "O" | "D" | "K",
+      odk,
       quarter: clip.quarter,
       down: clip.down,
       distance: clip.distance,
@@ -211,6 +276,8 @@ export function getAllUniqueClips(): Dataset {
       coverage: clip.defense.coverageScheme,
       blitz: clip.defense.isBlitz ? "Yes" : "No",
       game: clip.matchup,
+      offensiveTeam,
+      defensiveTeam,
       league,
       gameId: clip.gameId,
       athleteIds: clip.athleteIds,

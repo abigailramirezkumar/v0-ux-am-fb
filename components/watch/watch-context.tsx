@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react"
 import { useLibraryContext } from "@/lib/library-context"
 import { getDatasetForItem, getRandomVideoUrl, type PlayData } from "@/lib/mock-datasets"
+import { mockClips } from "@/lib/mock-clips"
 
 import { useRouter } from "next/navigation"
 
@@ -92,7 +93,7 @@ export function WatchProvider({
   consumeLibraryEvents?: boolean
 }) {
   const router = useRouter()
-  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem, mediaItems, pendingPreviewClips, setPendingPreviewClips } = useLibraryContext()
+  const { activeWatchItemId, activeWatchItems, folders, rootItems, getMediaItem, setWatchItem, mediaItems, pendingPreviewClips, setPendingPreviewClips, pendingPreviewGame, setPendingPreviewGame } = useLibraryContext()
 
   // Stable refs so useEffects don't re-fire when these change
   const foldersRef = useRef(folders)
@@ -413,6 +414,71 @@ export function WatchProvider({
     // Clear pending so it doesn't re-trigger
     setPendingPreviewClips([])
   }, [setPendingPreviewClips])
+
+  // On mount, if there is a pending preview game from the Explore page,
+  // create a tab for that game and collapse the library.
+  const pendingPreviewGameRef = useRef(pendingPreviewGame)
+  pendingPreviewGameRef.current = pendingPreviewGame
+  const hasMountedGame = useRef(false)
+
+  useEffect(() => {
+    if (!consumeLibraryEvents) return
+    if (hasMountedGame.current) return
+    const game = pendingPreviewGameRef.current
+    if (!game) return
+    hasMountedGame.current = true
+
+    // Get clips for this game and convert to plays
+    const gameClips = mockClips.filter((clip) => clip.gameId === game.id)
+    const plays: PlayData[] = gameClips.map((clip, idx) => ({
+      id: clip.id,
+      playNumber: idx + 1,
+      odk: clip.passing ? "O" : clip.rushing ? "O" : "K" as "O" | "D" | "K",
+      quarter: clip.quarter,
+      down: clip.down,
+      distance: clip.distance,
+      yardLine: `${clip.yardLine > 50 ? "+" : "-"}${clip.yardLine > 50 ? 100 - clip.yardLine : clip.yardLine}`,
+      yardLineNumeric: clip.yardLine > 50 ? 100 - clip.yardLine : clip.yardLine,
+      hash: ({ "Left": "L", "Right": "R", "Middle": "M" } as const)[clip.hash] || "M",
+      yards: Math.abs(clip.gain),
+      result: clip.passing?.result || clip.rushing?.attempt || "Play",
+      gainLoss: clip.gain >= 0 ? "Gn" : "Ls" as "Gn" | "Ls",
+      defFront: clip.defense.front,
+      defStr: "Strong",
+      coverage: clip.defense.coverageScheme,
+      blitz: clip.defense.isBlitz ? "Yes" : "No",
+      game: clip.matchup,
+      offensiveTeam: game.homeTeamId.toUpperCase(),
+      defensiveTeam: game.awayTeamId.toUpperCase(),
+      epa: 0,
+      successRate: false,
+      explosivePlay: false,
+      formationName: "",
+      isShotgun: false,
+      isTwoMinuteDrill: false,
+      offenseIds: [],
+      defenseIds: [],
+      playType: clip.passing ? "Pass" : clip.rushing ? "Run" : "Special Teams",
+    }))
+
+    // Create a game tab with the converted plays
+    const gameTab: Dataset = {
+      id: `game-${game.id}`,
+      name: `${game.homeTeamId.toUpperCase()} vs ${game.awayTeamId.toUpperCase()}`,
+      plays,
+      isUnsaved: true,
+    }
+    setTabs((prev) => [gameTab, ...prev])
+    setActiveTabId(gameTab.id)
+    setPlayingTabId(gameTab.id)
+    if (gameTab.plays.length > 0) {
+      setVideoUrl((prev) => getRandomVideoUrl(prev))
+      setCurrentPlay(gameTab.plays[0])
+    }
+    setVisibleModules((prev) => ({ ...prev, library: false }))
+    // Clear pending so it doesn't re-trigger
+    setPendingPreviewGame(null)
+  }, [setPendingPreviewGame])
 
   // Keep open playlist tabs in sync with the mediaItems store so that
   // clips added via "Add to Playlist" are reflected in the Grid Module.

@@ -61,7 +61,7 @@ function hashString(str: string): number {
   return Math.abs(hash)
 }
 
-/** Generate a game context label for a clip: "OFF vs DEF · Week · Score · Q# MM:SS" */
+/** Generate a game context label for a clip: "OFF vs DEF · Week X YY/YY · Score · Q# MM:SS" */
 function getClipContextLabel(play: PlayData): string {
   const h = hashString(play.id)
   
@@ -69,6 +69,11 @@ function getClipContextLabel(play: PlayData): string {
   const clockMin = (h % 12) + 1
   const clockSec = h % 60
   const clock = `${clockMin}:${clockSec.toString().padStart(2, "0")}`
+  
+  // Generate week number (1-18) and season (e.g., "25/26")
+  const weekNum = (h % 18) + 1
+  const seasonStart = 25 + (h % 3) // 25, 26, or 27
+  const weekSeason = `Week ${weekNum} ${seasonStart}/${seasonStart + 1}`
   
   // Generate score (only for games, not practice/scout)
   const g = play.game.toLowerCase()
@@ -84,10 +89,7 @@ function getClipContextLabel(play: PlayData): string {
     scorePart = `${team1} ${score1} - ${score2} · `
   }
   
-  // Extract week/context from game string
-  const gameContext = play.game.split(" ")[0] || "Week"
-  
-  return `${play.offensiveTeam} vs ${play.defensiveTeam} · ${gameContext} · ${scorePart}Q${play.quarter} ${clock}`
+  return `${play.offensiveTeam} vs ${play.defensiveTeam} · ${weekSeason} · ${scorePart}Q${play.quarter} ${clock}`
 }
 
 // ---------------------------------------------------------------------------

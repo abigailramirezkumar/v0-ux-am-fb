@@ -74,14 +74,7 @@ const TEAM_TYPE_LABELS: Record<string, string> = {
 
 const PROFILE_TABS = ["Overview", "Games", "Events", "Career", "Report"] as const
 
-// Mock data for Athlete Highlights
-const MOCK_HIGHLIGHTS = [
-  { id: "1", title: "Game-winning TD vs Ravens", reactions: 24, views: 1200, date: "Jan 12 2025" },
-  { id: "2", title: "Career-high 180 yards", reactions: 18, views: 890, date: "Jan 05 2025" },
-  { id: "3", title: "Incredible one-handed catch", reactions: 45, views: 2100, date: "Dec 29 2024" },
-  { id: "4", title: "Breakaway 65-yard run", reactions: 32, views: 1500, date: "Dec 22 2024" },
-  { id: "5", title: "Clutch 4th quarter drive", reactions: 12, views: 650, date: "Dec 15 2024" },
-]
+
 
 // Mock data for Playlists
 const MOCK_PLAYLISTS = [
@@ -625,38 +618,6 @@ export function AthleteProfilePage({ athlete }: AthleteProfilePageProps) {
                     </div>
                   </section>
                 </div>
-
-                {/* Athlete Highlights Section */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-foreground">Athlete Highlights</h3>
-                    <button className="px-3 py-1.5 text-xs font-medium text-foreground border border-border rounded-md hover:bg-muted transition-colors">
-                      View All
-                    </button>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2">
-                    {MOCK_HIGHLIGHTS.map((highlight) => (
-                      <div key={highlight.id} className="flex-shrink-0 w-44">
-                        <div className="aspect-video rounded-lg bg-primary/20 mb-2 overflow-hidden relative">
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/60 flex items-center justify-center">
-                            <Icon name="play" className="w-8 h-8 text-white/80" />
-                          </div>
-                        </div>
-                        <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                          <span className="flex items-center gap-0.5">
-                            <span className="text-orange-500">*</span>
-                            {highlight.reactions}
-                          </span>
-                          <span>{"·"}</span>
-                          <span>{highlight.views} views</span>
-                          <span>{"·"}</span>
-                          <span>{highlight.date}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
 
                 {/* Playlists Section */}
                 <section>

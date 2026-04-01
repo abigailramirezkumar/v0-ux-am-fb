@@ -85,19 +85,7 @@ function generateTeamStats(teamId: string) {
   }
 }
 
-/** Generate deterministic mock highlights for team */
-function generateTeamHighlights(teamId: string) {
-  const h = hashString(teamId)
-  const opponents = ["Texas A&M", "Purdue", "Minnesota", "Michigan", "UMBC", "Ohio State", "Alabama", "Georgia"]
-  return Array.from({ length: 5 }, (_, i) => ({
-    id: `highlight-${teamId}-${i}`,
-    title: `Double Double vs ${opponents[(h + i) % opponents.length]}`,
-    reactions: (h + i) % 2 === 0 ? `${1 + ((h + i) % 3)} reacted` : null,
-    views: `${10 + ((h + i * 3) % 30)} views`,
-    date: `Jan ${(3 + i * 2) % 28 || 1} 2025`,
-    thumbnail: `/placeholder.svg?height=120&width=200`,
-  }))
-}
+
 
 /** Generate deterministic mock playlists for team */
 function generateTeamPlaylists(teamId: string) {
@@ -157,7 +145,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   const [selectedSeason, setSelectedSeason] = useState<string>("All Seasons")
   const [previewGame, setPreviewGame] = useState<Game | null>(null)
   const [previewPlaylist, setPreviewPlaylist] = useState<MediaItemData | null>(null)
-  const highlightsRef = useRef<HTMLDivElement>(null)
   const previewPanelRef = useRef<ImperativePanelHandle>(null)
   
   // Build breadcrumb for watch app navigation
@@ -254,9 +241,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
   // Get all athletes for this team
   const teamAthletes = useMemo(() => getAthletesForTeam(team.id), [team.id])
 
-  // Get highlights
-  const highlights = useMemo(() => generateTeamHighlights(team.id), [team.id])
-
   // Get playlists
   const playlists = useMemo(() => generateTeamPlaylists(team.id), [team.id])
   
@@ -345,17 +329,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
       league: team.id.startsWith("hs-") ? "High School Football" : team.id.length > 3 ? "NCAA Division 1 Football" : "NFL",
     }
   }, [team.id])
-
-  // Scroll handlers for highlights carousel
-  const scrollHighlights = (direction: "left" | "right") => {
-    if (highlightsRef.current) {
-      const scrollAmount = 220
-      highlightsRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      })
-    }
-  }
 
   return (
     <div className="h-full flex flex-col bg-sidebar">
@@ -556,65 +529,6 @@ export function TeamProfilePage({ team }: TeamProfilePageProps) {
                 </div>
               </section>
             </div>
-
-            {/* Team Highlights */}
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-foreground">Team Highlights</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => scrollHighlights("left")}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => scrollHighlights("right")}
-                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <Button variant="outline" size="sm" className="ml-2">
-                    View All
-                  </Button>
-                </div>
-              </div>
-              <div
-                ref={highlightsRef}
-                className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-              >
-                {highlights.map((highlight) => (
-                  <div key={highlight.id} className="shrink-0 w-52">
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-muted mb-3 group cursor-pointer">
-                      <img
-                        src={highlight.thumbnail}
-                        alt={highlight.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="w-5 h-5 text-foreground fill-foreground ml-0.5" />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm font-medium text-foreground truncate">{highlight.title}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                      {highlight.reactions && (
-                        <>
-                          <span className="text-amber-500">{"*"}</span>
-                          <span>{highlight.reactions}</span>
-                          <span>{"·"}</span>
-                        </>
-                      )}
-                      <span>{highlight.views}</span>
-                      <span>{"·"}</span>
-                      <span>{highlight.date}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
 
             {/* Playlists */}
             <section>

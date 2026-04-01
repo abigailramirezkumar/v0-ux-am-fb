@@ -11,7 +11,7 @@ import { AthletesModule } from "@/components/athletes-module"
 import { PreviewModuleV1 } from "@/components/explore/preview-module-v1"
 import { getAllUniqueClips } from "@/lib/mock-datasets"
 import { AddToPlaylistMenu } from "@/components/add-to-playlist-menu"
-import { useExploreFilters, type RangeCategory } from "@/hooks/use-explore-filters"
+import { useExploreFilters, type RangeCategory, type FilterState, type RangeFilterState } from "@/hooks/use-explore-filters"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import type { ImperativePanelHandle } from "react-resizable-panels"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
@@ -27,6 +27,7 @@ import type { Athlete } from "@/types/athlete"
 import { useExploreContext, type ExploreTab, type ExploreFilterState, type ActiveFilterChip } from "@/lib/explore-context"
 import { FilterChips } from "@/components/explore/filter-chips"
 import { FILTER_SECTIONS } from "@/lib/filter-config"
+import { athletes } from "@/lib/athletes-data"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -257,10 +258,30 @@ const {
     clearRangeFilter,
     filteredPlays,
     uniqueGames,
-    activeFilterCount,
-    isFiltering,
-    setFilters,
-  } = useExploreFilters(allClipsDataset.plays)
+  activeFilterCount,
+  isFiltering,
+  setFilters,
+  setRangeFilters,
+} = useExploreFilters(allClipsDataset.plays)
+
+  // Apply a saved filter set
+  const applySavedFilter = useCallback((savedFilters: FilterState, savedRangeFilters: RangeFilterState) => {
+    // Set both filter states
+    setFilters(savedFilters)
+    setRangeFilters(savedRangeFilters)
+    
+    // Also sync shared filters for the shared state system (excluding athletes which is clips-only)
+    const newLeagues = savedFilters.league ? Array.from(savedFilters.league) as GameLeague[] : []
+    const newTeams = savedFilters.team ? Array.from(savedFilters.team) : []
+    const newCompetitions = savedFilters.competition ? Array.from(savedFilters.competition) : []
+    const newSeasons = savedFilters.season ? Array.from(savedFilters.season) : []
+    
+    // Update local state which will sync to shared filters via useEffect
+    setSelectedLeagues(newLeagues)
+    setSelectedTeams(newTeams)
+    setSelectedCompetitions(newCompetitions)
+    setSelectedSeasons(newSeasons)
+  }, [setFilters, setRangeFilters])
 
   // Sync shared filters (league, team, competition, season) from GamesFiltersModule state to FiltersModule state
   useEffect(() => {
@@ -364,6 +385,11 @@ const {
       if (value === 'HighSchool') return 'High School'
       return value
     }
+    // Format athlete values (show name instead of ID)
+    if (category === 'athlete') {
+      const athlete = athletes.find(a => a.id === value)
+      return athlete?.name || value
+    }
     return value
   }, [])
 
@@ -373,6 +399,7 @@ const {
       league: 'League',
       season: 'Season',
       team: 'Team',
+      athlete: 'Athlete',
       competition: 'Competition',
       down: 'Down',
       hash: 'Hash',
@@ -655,6 +682,7 @@ const {
   onTeamToggle={handleTeamToggle}
   onCompetitionToggle={handleCompetitionToggle}
   onClear={clearGamesFilters}
+  onApplySavedFilter={applySavedFilter}
   hideTeamFilter={activeTab === "teams"}
   hideSeasonFilter={activeTab === "teams"}
   highlightedFilter={highlightedFilter}
@@ -668,6 +696,7 @@ const {
   onRangeChange={setRangeFilter}
   onSetFilter={setFilter}
   onClear={clearFilters}
+  onApplySavedFilter={applySavedFilter}
   uniqueGames={uniqueGames}
   activeFilterCount={activeFilterCount}
   totalCount={allClipsDataset.plays.length}

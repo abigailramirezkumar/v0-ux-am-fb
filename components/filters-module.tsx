@@ -17,8 +17,10 @@ import {
   type SelectFilterDef,
   type DynamicTeamSelectFilterDef,
   type DynamicCompetitionSelectFilterDef,
+  type DynamicAthleteSelectFilterDef,
 } from "@/lib/filter-config"
 import { sportsData, type League } from "@/lib/sports-data"
+import { athletes } from "@/lib/athletes-data"
 import { ToggleGroup } from "@/components/filters/toggle-group"
 import { ToggleGroupWithRange } from "@/components/filters/toggle-group-with-range"
 import { RangeSlider } from "@/components/filters/range-slider"
@@ -26,8 +28,10 @@ import { FilterRow } from "@/components/filters/filter-row"
 import { SubsectionHeader } from "@/components/filters/subsection-header"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Check, ChevronDown } from "lucide-react"
+import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useSavedFilters, type SavedFilter } from "@/hooks/use-saved-filters"
+import { Input } from "@/components/ui/input"
 
 // Map filter league values to sportsData league keys
 const leagueFilterToSportsDataKey: Record<string, League> = {
@@ -209,6 +213,7 @@ interface FiltersModuleProps {
   onRangeChange: (category: RangeCategory, value: [number, number], defaultRange: [number, number]) => void
   onSetFilter: (category: AnyFilterCategory, value: string | null) => void
   onClear: () => void
+  onApplySavedFilter?: (filters: FilterState, rangeFilters: RangeFilterState) => void
   uniqueGames: string[]
   activeFilterCount: number
   totalCount: number
@@ -421,6 +426,62 @@ function ConfigDrivenFilter({
       )
     }
 
+    case "dynamicAthleteSelect": {
+      const d = def as DynamicAthleteSelectFilterDef
+      // Get all athletes as options, filtered by selected leagues if any
+      const selectedLeagues = Array.from(filters.league || [])
+      
+      // Map filter league values to athlete league values
+      const leagueMapping: Record<string, string> = {
+        "NFL": "NFL",
+        "College": "College",
+        "HighSchool": "High School"
+      }
+      
+      // Filter athletes by selected leagues (or show all if none selected)
+      const filteredAthletes = selectedLeagues.length > 0
+        ? athletes.filter(a => selectedLeagues.some(l => leagueMapping[l] === a.league))
+        : athletes
+      
+      const athleteOptions = filteredAthletes
+        .map(a => ({ value: a.id, label: `${a.name} (${a.position} - ${a.team})` }))
+        .sort((a, b) => a.label.localeCompare(b.label))
+      
+      // Get currently selected athletes (multi-select)
+      const selectedAthleteSet = filters.athlete
+      const selectedAthletes = selectedAthleteSet ? Array.from(selectedAthleteSet) : []
+      const allAthleteValues = athleteOptions.map(opt => opt.value)
+      
+      // Build display text for selected athletes
+      const getDisplayText = () => {
+        if (selectedAthletes.length === 0) return null
+        if (selectedAthletes.length === 1) {
+          const athlete = athletes.find(a => a.id === selectedAthletes[0])
+          return athlete?.name || selectedAthletes[0]
+        }
+        return `${selectedAthletes.length} athletes selected`
+      }
+      
+      return (
+        <FilterRow
+          label={d.label}
+          count={d.count}
+          category="athlete"
+          allValues={allAthleteValues}
+          filters={filters}
+          onToggleAll={onToggleAll}
+        >
+          <MultiSelectDropdown
+            options={athleteOptions}
+            selectedValues={selectedAthletes}
+            onToggle={(value) => onToggle("athlete", value)}
+            placeholder={d.placeholder}
+            displayText={getDisplayText()}
+          />
+        </FilterRow>
+      )
+    }
+
     case "select": {
       const d = def as SelectFilterDef
       // Check if this is the Season filter to make it multi-select
@@ -496,6 +557,7 @@ export function FiltersModule({
   onRangeChange,
   onSetFilter,
   onClear,
+  onApplySavedFilter,
   activeFilterCount,
   highlightedFilter,
 }: FiltersModuleProps) {
@@ -504,7 +566,16 @@ export function FiltersModule({
   const [competitionFilterCleared, setCompetitionFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const [openSections, setOpenSections] = useState<string[]>(DEFAULT_OPEN_SECTIONS)
+  const [openSections, setOpenSections] = useState<string[]>(["saved-filters", ...DEFAULT_OPEN_SECTIONS])
+  
+  // Saved filters state
+  const { savedFilters, saveFilter, deleteFilter, renameFilter } = useSavedFilters()
+  const [isNamingFilter, setIsNamingFilter] = useState(false)
+  const [newFilterName, setNewFilterName] = useState("")
+  const [editingFilterId, setEditingFilterId] = useState<string | null>(null)
+  const [editingFilterName, setEditingFilterName] = useState("")
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const editInputRef = useRef<HTMLInputElement>(null)
   
   // Helper to find which section a filter category belongs to
   const findSectionForCategory = useCallback((category: string): string => {
@@ -524,6 +595,9 @@ export function FiltersModule({
           if (filter.type === 'dynamicCompetitionSelect' && category === 'competition') {
             return section.key
           }
+          if (filter.type === 'dynamicAthleteSelect' && category === 'athlete') {
+            return section.key
+          }
           if (filter.type === 'select' && filter.label === 'Season' && category === 'season') {
             return section.key
           }
@@ -531,6 +605,54 @@ export function FiltersModule({
       }
     }
     return 'scope'
+  }, [])
+
+  // Handle saving a new filter
+  const handleSaveClick = useCallback(() => {
+    setIsNamingFilter(true)
+    setNewFilterName("")
+    // Focus the input after it renders
+    setTimeout(() => nameInputRef.current?.focus(), 50)
+  }, [])
+
+  const handleSaveConfirm = useCallback(() => {
+    if (newFilterName.trim()) {
+      saveFilter(newFilterName.trim(), filters, rangeFilters)
+      setIsNamingFilter(false)
+      setNewFilterName("")
+    }
+  }, [newFilterName, filters, rangeFilters, saveFilter])
+
+  const handleSaveCancel = useCallback(() => {
+    setIsNamingFilter(false)
+    setNewFilterName("")
+  }, [])
+
+  // Handle applying a saved filter
+  const handleApplyFilter = useCallback((savedFilter: SavedFilter) => {
+    if (onApplySavedFilter) {
+      onApplySavedFilter(savedFilter.filters, savedFilter.rangeFilters)
+    }
+  }, [onApplySavedFilter])
+
+  // Handle renaming a saved filter
+  const handleStartRename = useCallback((sf: SavedFilter) => {
+    setEditingFilterId(sf.id)
+    setEditingFilterName(sf.name)
+    setTimeout(() => editInputRef.current?.focus(), 50)
+  }, [])
+
+  const handleRenameConfirm = useCallback(() => {
+    if (editingFilterId && editingFilterName.trim()) {
+      renameFilter(editingFilterId, editingFilterName.trim())
+    }
+    setEditingFilterId(null)
+    setEditingFilterName("")
+  }, [editingFilterId, editingFilterName, renameFilter])
+
+  const handleRenameCancel = useCallback(() => {
+    setEditingFilterId(null)
+    setEditingFilterName("")
   }, [])
 
   // Handle highlighted filter - expand section and scroll to filter
@@ -639,14 +761,24 @@ export function FiltersModule({
           )}
         </div>
         {activeFilterCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Clear all
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveClick}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Save
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear all
+            </Button>
+          </div>
         )}
       </div>
 
@@ -658,6 +790,112 @@ export function FiltersModule({
           onValueChange={setOpenSections}
           className="px-4"
         >
+          {/* Saved Filters Section */}
+          <AccordionItem
+            value="saved-filters"
+            className="border-b border-border py-1"
+          >
+            <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+              Saved Filters
+            </AccordionTrigger>
+            <AccordionContent className="pb-5">
+              {/* Naming input when saving a new filter */}
+              {isNamingFilter && (
+                <div className="flex items-center gap-2 mb-3">
+                  <Input
+                    ref={nameInputRef}
+                    value={newFilterName}
+                    onChange={(e) => setNewFilterName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveConfirm()
+                      if (e.key === "Escape") handleSaveCancel()
+                    }}
+                    placeholder="Filter name"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveConfirm}
+                    disabled={!newFilterName.trim()}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSaveCancel}
+                    className="h-8 px-2 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+              
+              {savedFilters.length === 0 && !isNamingFilter ? (
+                <p className="text-sm text-muted-foreground">
+                  Save any combination of active filters for quick access.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {savedFilters.map((sf) => (
+                    <div
+                      key={sf.id}
+                      className="group flex items-center justify-between px-2 py-2 -mx-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => editingFilterId !== sf.id && handleApplyFilter(sf)}
+                    >
+                      {editingFilterId === sf.id ? (
+                        <Input
+                          ref={editInputRef}
+                          value={editingFilterName}
+                          onChange={(e) => setEditingFilterName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameConfirm()
+                            if (e.key === "Escape") handleRenameCancel()
+                          }}
+                          onBlur={handleRenameConfirm}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 text-sm flex-1 mr-2"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="text-sm text-foreground">{sf.name}</span>
+                      )}
+                      
+                      {editingFilterId !== sf.id && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStartRename(sf)
+                            }}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteFilter(sf.id)
+                            }}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
           {FILTER_SECTIONS.map((section, sIdx) => (
             <AccordionItem
               key={section.key}
@@ -682,6 +920,7 @@ export function FiltersModule({
                         'rangeCategory' in def ? def.rangeCategory :
                         def.type === 'dynamicTeamSelect' ? 'team' :
                         def.type === 'dynamicCompetitionSelect' ? 'competition' :
+                        def.type === 'dynamicAthleteSelect' ? 'athlete' :
                         def.type === 'select' && def.label === 'Season' ? 'season' : undefined
                       const isHighlighted = highlightedFilter && category && highlightedFilter.startsWith(`${category}:`)
                       

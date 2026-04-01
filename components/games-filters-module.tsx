@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useEffect, useRef } from "react"
+import { useMemo, useState, useEffect, useRef, useCallback } from "react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -9,9 +9,12 @@ import type { GameLeague } from "@/types/game"
 import { ToggleButton } from "@/components/filters/toggle-button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Check, ChevronDown } from "lucide-react"
+import { Check, ChevronDown, Pencil, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { sportsData, type League } from "@/lib/sports-data"
+import { useSavedFilters, type SavedFilter } from "@/hooks/use-saved-filters"
+import { Input } from "@/components/ui/input"
+import type { FilterState, RangeFilterState } from "@/types/filters"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,6 +30,7 @@ interface GamesFiltersModuleProps {
   onTeamToggle: (team: string) => void
   onCompetitionToggle: (competition: string) => void
   onClear: () => void
+  onApplySavedFilter?: (filters: FilterState, rangeFilters: RangeFilterState) => void
   hideTeamFilter?: boolean
   hideSeasonFilter?: boolean
   highlightedFilter?: string | null // category:value format to highlight and scroll to
@@ -217,6 +221,7 @@ export function GamesFiltersModule({
   onTeamToggle,
   onCompetitionToggle,
   onClear,
+  onApplySavedFilter,
   hideTeamFilter = false,
   hideSeasonFilter = false,
   highlightedFilter,
@@ -226,6 +231,16 @@ export function GamesFiltersModule({
   const [competitionFilterCleared, setCompetitionFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [openSections, setOpenSections] = useState<string[]>(["saved-filters", "scope"])
+  
+  // Saved filters state
+  const { savedFilters, saveFilter, deleteFilter, renameFilter } = useSavedFilters()
+  const [isNamingFilter, setIsNamingFilter] = useState(false)
+  const [newFilterName, setNewFilterName] = useState("")
+  const [editingFilterId, setEditingFilterId] = useState<string | null>(null)
+  const [editingFilterName, setEditingFilterName] = useState("")
+  const nameInputRef = useRef<HTMLInputElement>(null)
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   // Handle highlighted filter - scroll to the filter
   useEffect(() => {
@@ -358,6 +373,64 @@ export function GamesFiltersModule({
     prevCompetitionsRef.current = [...selectedCompetitions]
   }, [selectedCompetitions, selectedTeams, selectedLeagues, onTeamToggle])
 
+  // Build current filter state from the simple filters (for saving)
+  const getCurrentFiltersState = useCallback((): FilterState => {
+    const filters: FilterState = {}
+    if (selectedLeagues.length > 0) filters.league = new Set(selectedLeagues)
+    if (selectedSeasons.length > 0) filters.season = new Set(selectedSeasons)
+    if (selectedTeams.length > 0) filters.team = new Set(selectedTeams)
+    if (selectedCompetitions.length > 0) filters.competition = new Set(selectedCompetitions)
+    return filters
+  }, [selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions])
+
+  // Handle saving a new filter
+  const handleSaveClick = useCallback(() => {
+    setIsNamingFilter(true)
+    setNewFilterName("")
+    setTimeout(() => nameInputRef.current?.focus(), 50)
+  }, [])
+
+  const handleSaveConfirm = useCallback(() => {
+    if (newFilterName.trim()) {
+      const currentFilters = getCurrentFiltersState()
+      saveFilter(newFilterName.trim(), currentFilters, {})
+      setIsNamingFilter(false)
+      setNewFilterName("")
+    }
+  }, [newFilterName, getCurrentFiltersState, saveFilter])
+
+  const handleSaveCancel = useCallback(() => {
+    setIsNamingFilter(false)
+    setNewFilterName("")
+  }, [])
+
+  // Handle applying a saved filter
+  const handleApplyFilter = useCallback((savedFilter: SavedFilter) => {
+    if (onApplySavedFilter) {
+      onApplySavedFilter(savedFilter.filters, savedFilter.rangeFilters)
+    }
+  }, [onApplySavedFilter])
+
+  // Handle renaming a saved filter
+  const handleStartRename = useCallback((sf: SavedFilter) => {
+    setEditingFilterId(sf.id)
+    setEditingFilterName(sf.name)
+    setTimeout(() => editInputRef.current?.focus(), 50)
+  }, [])
+
+  const handleRenameConfirm = useCallback(() => {
+    if (editingFilterId && editingFilterName.trim()) {
+      renameFilter(editingFilterId, editingFilterName.trim())
+    }
+    setEditingFilterId(null)
+    setEditingFilterName("")
+  }, [editingFilterId, editingFilterName, renameFilter])
+
+  const handleRenameCancel = useCallback(() => {
+    setEditingFilterId(null)
+    setEditingFilterName("")
+  }, [])
+
   // Display text helpers
   const getSeasonDisplayText = () => {
     if (selectedSeasons.length === 0) return null
@@ -396,14 +469,24 @@ export function GamesFiltersModule({
           )}
         </div>
         {activeFilterCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            Clear all
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSaveClick}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Save
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear all
+            </Button>
+          </div>
         )}
       </div>
 
@@ -411,9 +494,116 @@ export function GamesFiltersModule({
       <ScrollArea className="flex-1 overflow-hidden" ref={scrollAreaRef}>
         <Accordion
           type="multiple"
-          defaultValue={["scope"]}
+          value={openSections}
+          onValueChange={setOpenSections}
           className="px-4"
         >
+          {/* Saved Filters Section */}
+          <AccordionItem
+            value="saved-filters"
+            className="border-b border-border py-1"
+          >
+            <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+              Saved Filters
+            </AccordionTrigger>
+            <AccordionContent className="pb-5">
+              {/* Naming input when saving a new filter */}
+              {isNamingFilter && (
+                <div className="flex items-center gap-2 mb-3">
+                  <Input
+                    ref={nameInputRef}
+                    value={newFilterName}
+                    onChange={(e) => setNewFilterName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveConfirm()
+                      if (e.key === "Escape") handleSaveCancel()
+                    }}
+                    placeholder="Filter name"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveConfirm}
+                    disabled={!newFilterName.trim()}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleSaveCancel}
+                    className="h-8 px-2 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+              
+              {savedFilters.length === 0 && !isNamingFilter ? (
+                <p className="text-sm text-muted-foreground">
+                  Save any combination of active filters for quick access.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {savedFilters.map((sf) => (
+                    <div
+                      key={sf.id}
+                      className="group flex items-center justify-between px-2 py-2 -mx-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => editingFilterId !== sf.id && handleApplyFilter(sf)}
+                    >
+                      {editingFilterId === sf.id ? (
+                        <Input
+                          ref={editInputRef}
+                          value={editingFilterName}
+                          onChange={(e) => setEditingFilterName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRenameConfirm()
+                            if (e.key === "Escape") handleRenameCancel()
+                          }}
+                          onBlur={handleRenameConfirm}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 text-sm flex-1 mr-2"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="text-sm text-foreground">{sf.name}</span>
+                      )}
+                      
+                      {editingFilterId !== sf.id && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleStartRename(sf)
+                            }}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteFilter(sf.id)
+                            }}
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
           {/* Scope Section */}
           <AccordionItem value="scope" className="border-b-0 py-1">
             <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">

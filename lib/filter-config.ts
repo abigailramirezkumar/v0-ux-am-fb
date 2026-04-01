@@ -87,6 +87,14 @@ export interface DynamicCompetitionSelectFilterDef {
   placeholder: string
 }
 
+/** A dynamic athlete select filter for filtering clips by players involved */
+export interface DynamicAthleteSelectFilterDef {
+  type: "dynamicAthleteSelect"
+  label: string
+  count?: number
+  placeholder: string
+}
+
 export type FilterDef =
   | ToggleFilterDef
   | ToggleWithRangeFilterDef
@@ -95,6 +103,7 @@ export type FilterDef =
   | SelectFilterDef
   | DynamicTeamSelectFilterDef
   | DynamicCompetitionSelectFilterDef
+  | DynamicAthleteSelectFilterDef
 
 export interface FilterSubsection {
   subsectionLabel?: string
@@ -188,6 +197,11 @@ export const FILTER_SECTIONS: FilterSection[] = [
             type: "dynamicTeamSelect",
             label: "Team",
             placeholder: "Select team",
+          },
+          {
+            type: "dynamicAthleteSelect",
+            label: "Athlete",
+            placeholder: "Search athletes",
           },
         ],
       },

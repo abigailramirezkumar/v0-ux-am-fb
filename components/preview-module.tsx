@@ -2891,7 +2891,6 @@ export function PreviewModule({
 
       {/* Fixed Footer */}
       <div className="absolute bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-3.5 flex items-center gap-2 shrink-0">
-        <AddToPlaylistButton play={play} />
         <Button
           variant="outline"
           className="flex-1 font-semibold"
@@ -2899,6 +2898,7 @@ export function PreviewModule({
         >
           View Full Game
         </Button>
+        <AddToPlaylistButton play={play} />
       </div>
     </div>
   )

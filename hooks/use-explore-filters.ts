@@ -133,6 +133,15 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilters({})
   }, [])
 
+  // Clear a specific range filter
+  const clearRangeFilter = useCallback((category: RangeCategory) => {
+    setRangeFilters((prev) => {
+      if (!prev[category]) return prev
+      const { [category]: _, ...rest } = prev
+      return rest
+    })
+  }, [])
+
   // Delegate to the pure filter engine.  Uses the deferred snapshots so
   // this expensive computation yields to urgent UI updates (filter clicks).
   const filteredPlays = useMemo(
@@ -147,8 +156,26 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     return Array.from(games)
   }, [initialPlays])
 
+  // Mapping of toggle categories to their corresponding range categories
+  // These paired filters should count as ONE filter, not two
+  const toggleToRangeMapping: Record<string, string> = {
+    distanceType: 'distanceRange',
+    yardsAfterContact: 'yardsAfterContactRange',
+    puntReturnYards: 'puntReturnRange',
+    kickoffReturnYards: 'kickoffReturnRange',
+  }
+
   const activeFilterCount = useMemo(() => {
-    const setCount = Object.values(filters).reduce((acc, set) => acc + set.size, 0)
+    // Count set filters, but skip toggle categories that have a corresponding active range filter
+    let setCount = 0
+    for (const [category, set] of Object.entries(filters)) {
+      const correspondingRangeCategory = toggleToRangeMapping[category]
+      // If this toggle has a corresponding range filter active, skip counting it
+      if (correspondingRangeCategory && rangeFilters[correspondingRangeCategory as keyof typeof rangeFilters]) {
+        continue
+      }
+      setCount += set.size
+    }
     const rangeCount = Object.keys(rangeFilters).length
     return setCount + rangeCount
   }, [filters, rangeFilters])
@@ -162,6 +189,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilter,
     setFilters,
     clearFilters,
+    clearRangeFilter,
     filteredPlays,
     uniqueGames,
     activeFilterCount,

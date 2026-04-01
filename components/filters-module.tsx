@@ -213,6 +213,7 @@ interface FiltersModuleProps {
   activeFilterCount: number
   totalCount: number
   filteredCount: number
+  highlightedFilter?: string | null // category:value format to highlight and scroll to
 }
 
 // ---------------------------------------------------------------------------
@@ -496,11 +497,63 @@ export function FiltersModule({
   onSetFilter,
   onClear,
   activeFilterCount,
+  highlightedFilter,
 }: FiltersModuleProps) {
   // Track filter cleared state for visual feedback
   const [teamFilterCleared, setTeamFilterCleared] = useState(false)
   const [competitionFilterCleared, setCompetitionFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [openSections, setOpenSections] = useState<string[]>(DEFAULT_OPEN_SECTIONS)
+  
+  // Helper to find which section a filter category belongs to
+  const findSectionForCategory = useCallback((category: string): string => {
+    for (const section of FILTER_SECTIONS) {
+      for (const subsection of section.subsections) {
+        for (const filter of subsection.filters) {
+          if ('category' in filter && filter.category === category) {
+            return section.key
+          }
+          // Check for range filters
+          if ('rangeCategory' in filter && filter.rangeCategory === category) {
+            return section.key
+          }
+          if (filter.type === 'dynamicTeamSelect' && category === 'team') {
+            return section.key
+          }
+          if (filter.type === 'dynamicCompetitionSelect' && category === 'competition') {
+            return section.key
+          }
+          if (filter.type === 'select' && filter.label === 'Season' && category === 'season') {
+            return section.key
+          }
+        }
+      }
+    }
+    return 'scope'
+  }, [])
+
+  // Handle highlighted filter - expand section and scroll to filter
+  useEffect(() => {
+    if (!highlightedFilter) return
+    
+    const [category] = highlightedFilter.split(':')
+    const sectionKey = findSectionForCategory(category)
+    
+    // Expand the section if not already open
+    setOpenSections((prev) => {
+      if (prev.includes(sectionKey)) return prev
+      return [...prev, sectionKey]
+    })
+    
+    // Scroll to the filter after a short delay to allow accordion to expand
+    setTimeout(() => {
+      const filterElement = document.querySelector(`[data-filter-category="${category}"]`)
+      if (filterElement && scrollAreaRef.current) {
+        filterElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 150)
+  }, [highlightedFilter, findSectionForCategory])
   
   // Watch for league changes and clear teams/competitions that are no longer valid
   useEffect(() => {
@@ -576,7 +629,7 @@ export function FiltersModule({
   return (
     <div className="h-full flex flex-col bg-background rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-foreground">Filters</span>
           {activeFilterCount > 0 && (
@@ -598,42 +651,64 @@ export function FiltersModule({
       </div>
 
       {/* Filter Sections — data-driven */}
-      <ScrollArea className="flex-1 overflow-hidden">
+      <ScrollArea className="flex-1 overflow-hidden" ref={scrollAreaRef}>
         <Accordion
           type="multiple"
-          defaultValue={DEFAULT_OPEN_SECTIONS}
+          value={openSections}
+          onValueChange={setOpenSections}
           className="px-4"
         >
           {FILTER_SECTIONS.map((section, sIdx) => (
             <AccordionItem
               key={section.key}
               value={section.key}
-              className={sIdx < FILTER_SECTIONS.length - 1 ? "border-b border-border" : "border-b-0"}
+              className={cn(
+                sIdx < FILTER_SECTIONS.length - 1 ? "border-b border-border" : "border-b-0",
+                "py-1"
+              )}
             >
-              <AccordionTrigger className="py-3 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
+              <AccordionTrigger className="py-4 hover:no-underline text-sm font-semibold text-foreground [&>svg]:text-muted-foreground">
                 {section.title}
               </AccordionTrigger>
-              <AccordionContent className="pb-4 space-y-3">
+              <AccordionContent className="pb-5 space-y-4">
                 {section.subsections.map((sub, subIdx) => (
-                  <div key={subIdx} className="space-y-3">
+                  <div key={subIdx} className="space-y-4">
                     {sub.subsectionLabel && (
                       <SubsectionHeader label={sub.subsectionLabel} />
                     )}
-                    {sub.filters.map((def) => (
-<ConfigDrivenFilter
-                      key={def.label}
-                      def={def}
-                      filters={filters}
-                      rangeFilters={rangeFilters}
-                      onToggle={onToggle}
-                      onToggleAll={onToggleAll}
-                      onRangeChange={onRangeChange}
-                      onSetFilter={onSetFilter}
-                      resetRange={resetRange}
-                      teamFilterCleared={teamFilterCleared}
-                      competitionFilterCleared={competitionFilterCleared}
-                    />
-                    ))}
+                    {sub.filters.map((def) => {
+                      // Get category for data attribute (including range filters)
+                      const category = 'category' in def ? def.category : 
+                        'rangeCategory' in def ? def.rangeCategory :
+                        def.type === 'dynamicTeamSelect' ? 'team' :
+                        def.type === 'dynamicCompetitionSelect' ? 'competition' :
+                        def.type === 'select' && def.label === 'Season' ? 'season' : undefined
+                      const isHighlighted = highlightedFilter && category && highlightedFilter.startsWith(`${category}:`)
+                      
+                      return (
+                        <div 
+                          key={def.label}
+                          data-filter-category={category}
+                          className={cn(
+                            "transition-all duration-300 rounded-md",
+                            isHighlighted && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                          )}
+                        >
+                          <ConfigDrivenFilter
+                            def={def}
+                            filters={filters}
+                            rangeFilters={rangeFilters}
+                            onToggle={onToggle}
+                            onToggleAll={onToggleAll}
+                            onRangeChange={onRangeChange}
+                            onSetFilter={onSetFilter}
+                            resetRange={resetRange}
+                            teamFilterCleared={teamFilterCleared}
+                            competitionFilterCleared={competitionFilterCleared}
+                          />
+                        </div>
+                      )
+                    })}
                   </div>
                 ))}
               </AccordionContent>

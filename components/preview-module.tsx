@@ -2105,40 +2105,6 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
           </div>
         )}
 
-        {/* Clips in this game */}
-        <div className="px-4 pt-4 pb-6">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-            Clips ({gameClips.length})
-          </h4>
-          {gameClips.length > 0 ? (
-            <div className="space-y-2">
-              {gameClips.slice(0, 5).map((clip) => (
-                <div
-                  key={clip.id}
-                  className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => onNavigateToClip?.(clipToPlayData(clip))}
-                >
-                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                    <Icon name="play" className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{clip.matchup}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Q{clip.quarter} • {clip.down && `${clip.down}${clip.down === 1 ? "st" : clip.down === 2 ? "nd" : clip.down === 3 ? "rd" : "th"} & ${clip.distance}`}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {gameClips.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center pt-1">
-                  +{gameClips.length - 5} more clips
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No clips available for this game.</p>
-          )}
-        </div>
       </div>
 
       {/* Fixed Footer */}

@@ -2843,7 +2843,7 @@ export function PreviewModule({
           <div className="flex items-center gap-2 min-w-0">
             <Icon name="play" className="w-4 h-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-bold truncate">
-              {play.offensiveTeam} vs {play.defensiveTeam} · Q{play.quarter} · {play.down === 1 ? "1st" : play.down === 2 ? "2nd" : play.down === 3 ? "3rd" : "4th"} & {play.distance}
+              {play.offensiveTeam} vs {play.defensiveTeam} · {formatGameLabel(play.game).split(" ")[0] || "Week"} · {score ? `${score} · ` : ""}Q{play.quarter} {(() => { const h = hashString(play.id); const clockMin = (h % 12) + 1; const clockSec = h % 60; return `${clockMin}:${clockSec.toString().padStart(2, "0")}`; })()}
             </span>
           </div>
           <Button
@@ -2867,13 +2867,6 @@ export function PreviewModule({
             score={score}
             onOpenClip={handleOpenClip}
           />
-        </div>
-
-        {/* Game Context Strip */}
-        <div className="px-4 pt-2">
-          <p className="text-xs text-muted-foreground truncate">
-            {play.offensiveTeam} vs {play.defensiveTeam} · {formatGameLabel(play.game).split(" ")[0] || "Week"} · {score || ""}{score ? " · " : ""}Q{play.quarter} {(() => { const h = hashString(play.id); const clockMin = (h % 12) + 1; const clockSec = h % 60; return `${clockMin}:${clockSec.toString().padStart(2, "0")}`; })()}
-          </p>
         </div>
 
         {/* Tabs */}

@@ -533,8 +533,11 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
       penaltyType: play.penaltyType,
     }))
     
-    // Create the playlist first, then open move modal to place it
-    const playlistId = createPlaylist(null, activeDataset.name, clips)
+    // Extract the original game ID from the tab ID (format: "game-{gameId}")
+    const gameId = activeDataset.id?.replace("game-", "")
+    
+    // Create the game item, then open move modal to place it
+    const playlistId = createPlaylist(null, activeDataset.name, clips, { type: "game", gameId })
     openMoveModal([{ id: playlistId, type: "item", name: activeDataset.name }])
     
     // Replace the unsaved tab with the newly saved playlist

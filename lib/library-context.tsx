@@ -780,7 +780,7 @@ interface LibraryContextType {
   onPlaylistCreatedCallback: ((createdId: string) => void) | null
   openCreatePlaylistModal: (initialItems?: LibraryItemData[], initialClips?: ClipData[], onCreated?: (createdId: string) => void) => void
   closeCreatePlaylistModal: () => void
-  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => string
+  createPlaylist: (targetFolderId: string | null, name: string, initialClips?: ClipData[], options?: { type?: "video" | "playlist" | "game"; gameId?: string }) => string
   clearPendingPlaylistItems: () => void
 
   // --- Segregated Data/Structure model ---
@@ -1462,7 +1462,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setOnPlaylistCreatedCallback(null)
   }
 
-  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[]) => {
+  const createPlaylist = (targetFolderId: string | null, name: string, initialClips?: ClipData[], options?: { type?: "video" | "playlist" | "game"; gameId?: string }) => {
     // Determine which clips to seed: explicit initialClips > pendingPlaylistClips > pendingPlaylistItems (converted) > empty
     const seedClips: ClipData[] = initialClips
       ? initialClips
@@ -1477,14 +1477,15 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
           : []
 
     // Create via the flat media-items list (copy-on-add happens inside the hook)
-    const created = createMediaItem(name, targetFolderId, seedClips)
+    const created = createMediaItem(name, targetFolderId, seedClips, options)
 
     // Also insert a matching LibraryItemData into the folder/root tree so the
     // existing folder UI continues to render it alongside static data.
+    const itemType = options?.type || "playlist"
     const newPlaylist: LibraryItemData = {
       id: created.id,
       name: name,
-      type: "playlist",
+      type: itemType === "game" ? "game" : "playlist",
       createdDate: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       dateModified: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
       itemCount: seedClips.length,

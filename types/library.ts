@@ -66,12 +66,14 @@ export interface ClipData {
 export interface MediaItemData {
   id: string
   name: string
-  type: "video" | "playlist"
+  type: "video" | "playlist" | "game"
   /** Folder this item belongs to. null = library root. */
   parentId: string | null
   clips: ClipData[]
   createdAt: string
   modifiedAt: string
+  /** Reference to the original game ID (for game type items) */
+  gameId?: string
 }
 
 // ---------------------------------------------------------------------------

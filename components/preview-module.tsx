@@ -1928,9 +1928,9 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
       game: clip.matchup,
     }))
     
-    // Create the playlist and open move modal to let user place it
+    // Create the game item and open move modal to let user place it
     const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
-    const playlistId = createPlaylist(null, gameName, clips)
+    const playlistId = createPlaylist(null, gameName, clips, { type: "game", gameId: game.id })
     openMoveModal([{ id: playlistId, type: "item", name: gameName }])
   }, [game, gameClips, homeTeam, awayTeam, createPlaylist, openMoveModal])
 

@@ -13,6 +13,15 @@ export interface ExploreFilterState {
   competitions: string[]
 }
 
+/** Represents an active filter for display as a chip */
+export interface ActiveFilterChip {
+  id: string // Unique identifier for the chip (e.g., "league:NFL" or "down:3")
+  category: string // Filter category (e.g., "league", "down")
+  value: string // Filter value (e.g., "NFL", "3")
+  label: string // Display label (e.g., "League > NFL", "Down > 3rd")
+  sectionKey: string // Which accordion section this filter belongs to (e.g., "scope", "game-context")
+}
+
 interface ExploreContextValue {
   showFilters: boolean
   setShowFilters: (show: boolean) => void
@@ -28,6 +37,9 @@ interface ExploreContextValue {
   encodeFiltersForUrl: () => string
   // Helper to decode filters from URL
   decodeFiltersFromUrl: (encoded: string) => ExploreFilterState
+  // Highlighted filter for scrolling/highlighting in filter panel
+  highlightedFilter: string | null // category:value format
+  setHighlightedFilter: (filter: string | null) => void
 }
 
 const ExploreContext = createContext<ExploreContextValue | null>(null)
@@ -44,6 +56,7 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
   const [activeFilterCount, setActiveFilterCount] = useState(0)
   const [activeTab, setActiveTab] = useState<ExploreTab>("clips")
   const [sharedFilters, setSharedFilters] = useState<ExploreFilterState>(DEFAULT_FILTERS)
+  const [highlightedFilter, setHighlightedFilter] = useState<string | null>(null)
 
   const toggleFilters = useCallback(() => {
     setShowFilters((prev) => !prev)
@@ -95,6 +108,8 @@ export function ExploreProvider({ children }: { children: ReactNode }) {
         setSharedFilters,
         encodeFiltersForUrl,
         decodeFiltersFromUrl,
+        highlightedFilter,
+        setHighlightedFilter,
       }}
     >
       {children}

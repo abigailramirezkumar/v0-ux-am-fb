@@ -24,7 +24,9 @@ import type { PlayData } from "@/lib/mock-datasets"
 import type { Game, GameLeague } from "@/types/game"
 import type { Team } from "@/lib/sports-data"
 import type { Athlete } from "@/types/athlete"
-import { useExploreContext, type ExploreTab, type ExploreFilterState } from "@/lib/explore-context"
+import { useExploreContext, type ExploreTab, type ExploreFilterState, type ActiveFilterChip } from "@/lib/explore-context"
+import { FilterChips } from "@/components/explore/filter-chips"
+import { FILTER_SECTIONS } from "@/lib/filter-config"
 
 const exploreTabs = [
   { value: "clips", label: "Clips" },
@@ -108,6 +110,8 @@ const {
     sharedFilters,
     setSharedFilters,
     decodeFiltersFromUrl,
+    highlightedFilter,
+    setHighlightedFilter,
   } = useExploreContext()
   const searchParams = useSearchParams()
   
@@ -310,17 +314,170 @@ const {
     baseToggleFilter(category, value)
   }, [baseToggleFilter, handleLeagueToggle, handleTeamToggle, handleCompetitionToggle, handleSeasonToggle])
 
-  // Wrap clearFilters to handle both clearing modes
+// Wrap clearFilters to handle both clearing modes
   const clearFilters = useCallback(() => {
-    // Clear shared filters
-    clearGamesFilters()
-    // Clear all clips filters
-    baseClearFilters()
+  // Clear shared filters
+  clearGamesFilters()
+  // Clear all clips filters
+  baseClearFilters()
   }, [clearGamesFilters, baseClearFilters])
 
+  // Helper function to find which section a filter category belongs to
+  const findSectionForCategory = useCallback((category: string): string => {
+    for (const section of FILTER_SECTIONS) {
+      for (const subsection of section.subsections) {
+        for (const filter of subsection.filters) {
+          if ('category' in filter && filter.category === category) {
+            return section.key
+          }
+          // Check for special filter types
+          if (filter.type === 'dynamicTeamSelect' && category === 'team') {
+            return section.key
+          }
+          if (filter.type === 'dynamicCompetitionSelect' && category === 'competition') {
+            return section.key
+          }
+          if (filter.type === 'select' && filter.label === 'Season' && category === 'season') {
+            return section.key
+          }
+        }
+      }
+    }
+    return 'scope' // default
+  }, [])
+
+  // Helper to format filter value for display
+  const formatFilterValue = useCallback((category: string, value: string): string => {
+    // Format down values
+    if (category === 'down') {
+      const suffixes: Record<string, string> = { '1': '1st', '2': '2nd', '3': '3rd', '4': '4th' }
+      return suffixes[value] || value
+    }
+    // Format league values
+    if (category === 'league') {
+      if (value === 'College') return 'NCAA'
+      if (value === 'HighSchool') return 'High School'
+      return value
+    }
+    return value
+  }, [])
+
+  // Helper to format category label for display
+  const formatCategoryLabel = useCallback((category: string): string => {
+    const labels: Record<string, string> = {
+      league: 'League',
+      season: 'Season',
+      team: 'Team',
+      competition: 'Competition',
+      down: 'Down',
+      hash: 'Hash',
+      distanceType: 'Distance',
+      playType: 'Play Type',
+      passResult: 'Pass Result',
+      runDirection: 'Run Direction',
+      gainLoss: 'Rush Result',
+      personnelO: 'Personnel (O)',
+      personnelD: 'Personnel (D)',
+      formationName: 'Formation',
+    }
+    return labels[category] || category.charAt(0).toUpperCase() + category.slice(1)
+  }, [])
+
+  // Generate active filter chips from current filter state
+  const activeFilterChips = useMemo((): ActiveFilterChip[] => {
+    const chips: ActiveFilterChip[] = []
+    
+    // For non-clips tabs, use shared filters (league, season, team, competition)
+    if (activeTab === 'games' || activeTab === 'teams' || activeTab === 'athletes') {
+      selectedLeagues.forEach(league => {
+        chips.push({
+          id: `league:${league}`,
+          category: 'league',
+          value: league,
+          label: `${formatCategoryLabel('league')} > ${formatFilterValue('league', league)}`,
+          sectionKey: 'scope',
+        })
+      })
+      selectedSeasons.forEach(season => {
+        chips.push({
+          id: `season:${season}`,
+          category: 'season',
+          value: season,
+          label: `${formatCategoryLabel('season')} > ${season}`,
+          sectionKey: 'scope',
+        })
+      })
+      selectedTeams.forEach(team => {
+        chips.push({
+          id: `team:${team}`,
+          category: 'team',
+          value: team,
+          label: `${formatCategoryLabel('team')} > ${team}`,
+          sectionKey: 'scope',
+        })
+      })
+      selectedCompetitions.forEach(comp => {
+        chips.push({
+          id: `competition:${comp}`,
+          category: 'competition',
+          value: comp,
+          label: `${formatCategoryLabel('competition')} > ${comp}`,
+          sectionKey: 'scope',
+        })
+      })
+    } else {
+      // For clips tab, use the detailed filters state
+      Object.entries(filters).forEach(([category, values]) => {
+        if (values && values.size > 0) {
+          const sectionKey = findSectionForCategory(category)
+          values.forEach(value => {
+            chips.push({
+              id: `${category}:${value}`,
+              category,
+              value,
+              label: `${formatCategoryLabel(category)} > ${formatFilterValue(category, value)}`,
+              sectionKey,
+            })
+          })
+        }
+      })
+    }
+    
+    return chips
+  }, [activeTab, selectedLeagues, selectedSeasons, selectedTeams, selectedCompetitions, filters, findSectionForCategory, formatCategoryLabel, formatFilterValue])
+
+  // Handle chip click - open filters panel and scroll to the filter
+  const handleChipClick = useCallback((chip: ActiveFilterChip) => {
+    // Open the filters panel if not already open
+    setShowFilters(true)
+    // Set the highlighted filter so the filter module can scroll to it
+    setHighlightedFilter(chip.id)
+    // Clear the highlight after a delay
+    setTimeout(() => setHighlightedFilter(null), 2000)
+  }, [setShowFilters, setHighlightedFilter])
+
+  // Handle chip remove - clear the specific filter
+  const handleChipRemove = useCallback((chip: ActiveFilterChip) => {
+    if (activeTab === 'games' || activeTab === 'teams' || activeTab === 'athletes') {
+      // Use the shared filter handlers
+      if (chip.category === 'league') {
+        handleLeagueToggle(chip.value as GameLeague)
+      } else if (chip.category === 'season') {
+        handleSeasonToggle(chip.value)
+      } else if (chip.category === 'team') {
+        handleTeamToggle(chip.value)
+      } else if (chip.category === 'competition') {
+        handleCompetitionToggle(chip.value)
+      }
+    } else {
+      // Use the clips filter toggle
+      toggleFilter(chip.category, chip.value)
+    }
+  }, [activeTab, handleLeagueToggle, handleSeasonToggle, handleTeamToggle, handleCompetitionToggle, toggleFilter])
+  
   useEffect(() => {
-    const count = activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? gamesFilterCount : activeFilterCount
-    setActiveFilterCount(count)
+  const count = activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? gamesFilterCount : activeFilterCount
+  setActiveFilterCount(count)
   }, [activeFilterCount, gamesFilterCount, activeTab, setActiveFilterCount])
 
   const filteredDataset = useMemo(
@@ -345,33 +502,35 @@ const {
           >
             <div className="h-full pl-3 py-3">
               {activeTab === "games" || activeTab === "teams" || activeTab === "athletes" ? (
-                <GamesFiltersModule
-                  selectedLeagues={selectedLeagues}
-                  selectedSeasons={selectedSeasons}
-                  selectedTeams={selectedTeams}
-                  selectedCompetitions={selectedCompetitions}
-                  onLeagueToggle={handleLeagueToggle}
-                  onSeasonToggle={handleSeasonToggle}
-                  onTeamToggle={handleTeamToggle}
-                  onCompetitionToggle={handleCompetitionToggle}
-                  onClear={clearGamesFilters}
-                  hideTeamFilter={activeTab === "teams"}
-                  hideSeasonFilter={activeTab === "teams"}
-                />
+<GamesFiltersModule
+  selectedLeagues={selectedLeagues}
+  selectedSeasons={selectedSeasons}
+  selectedTeams={selectedTeams}
+  selectedCompetitions={selectedCompetitions}
+  onLeagueToggle={handleLeagueToggle}
+  onSeasonToggle={handleSeasonToggle}
+  onTeamToggle={handleTeamToggle}
+  onCompetitionToggle={handleCompetitionToggle}
+  onClear={clearGamesFilters}
+  hideTeamFilter={activeTab === "teams"}
+  hideSeasonFilter={activeTab === "teams"}
+  highlightedFilter={highlightedFilter}
+  />
               ) : (
-                <FiltersModule
-                  filters={filters}
-                  rangeFilters={rangeFilters}
-                  onToggle={toggleFilter}
-                  onToggleAll={toggleAllInCategory}
-                  onRangeChange={setRangeFilter}
-                  onSetFilter={setFilter}
-                  onClear={clearFilters}
-                  uniqueGames={uniqueGames}
-                  activeFilterCount={activeFilterCount}
-                  totalCount={allClipsDataset.plays.length}
-                  filteredCount={filteredPlays.length}
-                />
+<FiltersModule
+  filters={filters}
+  rangeFilters={rangeFilters}
+  onToggle={toggleFilter}
+  onToggleAll={toggleAllInCategory}
+  onRangeChange={setRangeFilter}
+  onSetFilter={setFilter}
+  onClear={clearFilters}
+  uniqueGames={uniqueGames}
+  activeFilterCount={activeFilterCount}
+  totalCount={allClipsDataset.plays.length}
+  filteredCount={filteredPlays.length}
+  highlightedFilter={highlightedFilter}
+  />
               )}
             </div>
           </ResizablePanel>
@@ -382,23 +541,28 @@ const {
             <ResizablePanelGroup direction="horizontal" className="h-full [&>div]:transition-all [&>div]:duration-300 [&>div]:ease-in-out">
               <ResizablePanel defaultSize={100} minSize={40} id="explore-main-v1" order={1}>
                 <div className={cn("h-full flex flex-col py-3", !previewPlay && !previewGame && !previewTeam && !previewAthlete && "pr-3")}>
-                  {/* Tabs */}
-                  <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg">
-                    {exploreTabs.map((tab) => (
-                      <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn(
-                          "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200",
-                          activeTab === tab.value
-                            ? "bg-foreground text-background shadow-sm"
-                            : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
+{/* Tabs + Filter Chips */}
+  <div className="flex items-center gap-2 px-3 pt-3 pb-2 bg-background rounded-t-lg overflow-x-auto">
+  {exploreTabs.map((tab) => (
+  <button
+  key={tab.value}
+  onClick={() => setActiveTab(tab.value)}
+  className={cn(
+  "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 shrink-0",
+  activeTab === tab.value
+  ? "bg-foreground text-background shadow-sm"
+  : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+  )}
+  >
+  {tab.label}
+  </button>
+  ))}
+  <FilterChips 
+    chips={activeFilterChips}
+    onChipClick={handleChipClick}
+    onChipRemove={handleChipRemove}
+  />
+  </div>
 
                   {/* Tab Content */}
                   {activeTab === "clips" ? (

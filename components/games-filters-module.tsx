@@ -29,6 +29,7 @@ interface GamesFiltersModuleProps {
   onClear: () => void
   hideTeamFilter?: boolean
   hideSeasonFilter?: boolean
+  highlightedFilter?: string | null // category:value format to highlight and scroll to
 }
 
 // Map filter league values to sportsData league keys
@@ -218,11 +219,33 @@ export function GamesFiltersModule({
   onClear,
   hideTeamFilter = false,
   hideSeasonFilter = false,
+  highlightedFilter,
 }: GamesFiltersModuleProps) {
   // Track filter cleared state for visual feedback
   const [teamFilterCleared, setTeamFilterCleared] = useState(false)
   const [competitionFilterCleared, setCompetitionFilterCleared] = useState(false)
   const prevLeaguesRef = useRef<string[]>([])
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // Handle highlighted filter - scroll to the filter
+  useEffect(() => {
+    if (!highlightedFilter) return
+    
+    const [category] = highlightedFilter.split(':')
+    
+    // Scroll to the filter after a short delay
+    setTimeout(() => {
+      const filterElement = document.querySelector(`[data-games-filter-category="${category}"]`)
+      if (filterElement && scrollAreaRef.current) {
+        filterElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }, 150)
+  }, [highlightedFilter])
+  
+  // Helper to check if a category is highlighted
+  const isHighlighted = (category: string) => {
+    return highlightedFilter && highlightedFilter.startsWith(`${category}:`)
+  }
   
   // Calculate active filter count (exclude hidden filters)
   const activeFilterCount = selectedLeagues.length + 
@@ -385,7 +408,7 @@ export function GamesFiltersModule({
       </div>
 
       {/* Filter Sections — using Accordion like FiltersModule */}
-      <ScrollArea className="flex-1 overflow-hidden">
+      <ScrollArea className="flex-1 overflow-hidden" ref={scrollAreaRef}>
         <Accordion
           type="multiple"
           defaultValue={["scope"]}
@@ -398,7 +421,13 @@ export function GamesFiltersModule({
             </AccordionTrigger>
             <AccordionContent className="pb-4 space-y-3">
               {/* League Filter */}
-              <div className="space-y-2">
+              <div 
+                data-games-filter-category="league"
+                className={cn(
+                  "space-y-2 transition-all duration-300 rounded-md",
+                  isHighlighted("league") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                )}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
@@ -429,7 +458,13 @@ export function GamesFiltersModule({
               </div>
 
               {/* Competition Filter */}
-              <div className="space-y-2">
+              <div 
+                data-games-filter-category="competition"
+                className={cn(
+                  "space-y-2 transition-all duration-300 rounded-md",
+                  isHighlighted("competition") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                )}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <button
@@ -466,7 +501,13 @@ export function GamesFiltersModule({
 
               {/* Season Filter */}
               {!hideSeasonFilter && (
-                <div className="space-y-2">
+                <div 
+                  data-games-filter-category="season"
+                  className={cn(
+                    "space-y-2 transition-all duration-300 rounded-md",
+                    isHighlighted("season") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                  )}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button
@@ -503,7 +544,13 @@ export function GamesFiltersModule({
 
               {/* Team Filter */}
               {!hideTeamFilter && (
-                <div className="space-y-2">
+                <div 
+                  data-games-filter-category="team"
+                  className={cn(
+                    "space-y-2 transition-all duration-300 rounded-md",
+                    isHighlighted("team") && "ring-2 ring-primary bg-primary/5 p-2 -m-2"
+                  )}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <button

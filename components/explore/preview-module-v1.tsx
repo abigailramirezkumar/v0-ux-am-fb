@@ -47,6 +47,50 @@ interface PreviewModuleV1Props {
 }
 
 // ---------------------------------------------------------------------------
+// Clip label helpers
+// ---------------------------------------------------------------------------
+
+/** Deterministic hash from a string to pick consistent data per play. */
+function hashString(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+/** Generate a game context label for a clip: "OFF vs DEF · Week · Score · Q# MM:SS" */
+function getClipContextLabel(play: PlayData): string {
+  const h = hashString(play.id)
+  
+  // Generate clock time
+  const clockMin = (h % 12) + 1
+  const clockSec = h % 60
+  const clock = `${clockMin}:${clockSec.toString().padStart(2, "0")}`
+  
+  // Generate score (only for games, not practice/scout)
+  const g = play.game.toLowerCase()
+  const isGame = !g.includes("practice") && !g.includes("drill") && !g.includes("scout")
+  
+  let scorePart = ""
+  if (isGame) {
+    const gameParts = play.game.split(" vs ")
+    const team1 = gameParts[0]?.split(" ")[0] || "HOME"
+    const team2 = gameParts[1]?.split(" ")[0] || "AWAY"
+    const score1 = 10 + (h % 28)
+    const score2 = 3 + ((h + 5) % 31)
+    scorePart = `${team1} ${score1} - ${score2} · `
+  }
+  
+  // Extract week/context from game string
+  const gameContext = play.game.split(" ")[0] || "Week"
+  
+  return `${play.offensiveTeam} vs ${play.defensiveTeam} · ${gameContext} · ${scorePart}Q${play.quarter} ${clock}`
+}
+
+// ---------------------------------------------------------------------------
 // Hierarchy helpers
 // ---------------------------------------------------------------------------
 
@@ -77,7 +121,7 @@ export function isValidNavigation(from: PreviewItemType, to: PreviewItemType): b
 function getBreadcrumbLabel(item: BreadcrumbItem): string {
   switch (item.type) {
     case "clip":
-      return `Clip ${(item.data as PlayData).playNumber}`
+      return getClipContextLabel(item.data as PlayData)
     case "game": {
       const game = item.data as Game
       const homeTeam = findTeamById(game.homeTeamId)
@@ -338,7 +382,7 @@ export function PreviewModuleV1({
   }, [navigateTo])
 
   const handleNavigateToClip = useCallback((playData: PlayData) => {
-    navigateTo("clip", playData, `Clip ${playData.playNumber}`)
+    navigateTo("clip", playData, getClipContextLabel(playData))
   }, [navigateTo])
 
   const handleNavigateToPlaylist = useCallback((playlistData: MediaItemData) => {

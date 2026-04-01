@@ -358,6 +358,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToTeam={handleNavigateToTeam}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "team":
@@ -368,6 +369,7 @@ export function PreviewModuleV1({
             onNavigateToAthlete={handleNavigateToAthlete}
             onNavigateToGame={handleNavigateToGame}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "athlete":
@@ -377,6 +379,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToTeam={handleNavigateToTeam}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "clip":
@@ -386,6 +389,7 @@ export function PreviewModuleV1({
             onClose={() => {}} // Handled by our header
             onNavigateToAthlete={handleNavigateToAthlete}
             hideHeader
+            watchBreadcrumb={currentWatchBreadcrumb}
           />
         )
       case "playlist":

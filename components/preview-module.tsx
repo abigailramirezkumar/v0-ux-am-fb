@@ -1829,10 +1829,12 @@ interface GamePreviewProps {
   onNavigateToGame?: (game: Game) => void
   onNavigateToClip?: (play: PlayData) => void
   hideHeader?: boolean
+  watchBreadcrumb?: WatchBreadcrumbItem[]
   }
   
-function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader }: GamePreviewProps) {
+function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavigateToClip, hideHeader, watchBreadcrumb }: GamePreviewProps) {
   const router = useRouter()
+  const { setWatchBreadcrumb } = useLibraryContext()
   const homeTeam = findTeamById(game.homeTeamId)
   const awayTeam = findTeamById(game.awayTeamId)
   
@@ -1878,17 +1880,27 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
 
   // Handle "Open Game" action from video player
   const handleOpenGame = useCallback(() => {
+    // Set breadcrumb with game name appended
+    if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+      const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
+      setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
+    }
     router.push("/watch")
-  }, [router])
+  }, [router, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam, game])
 
   // Handle View Full Game action - uses onNavigateToGame callback if provided
   const handleViewFullGame = useCallback(() => {
     if (onNavigateToGame) {
       onNavigateToGame(game)
     } else {
+      // Set breadcrumb with game name appended
+      if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+        const gameName = `${homeTeam?.name || game.homeTeamId} vs ${awayTeam?.name || game.awayTeamId}`
+        setWatchBreadcrumb([...watchBreadcrumb, { label: gameName }])
+      }
       router.push("/watch")
     }
-  }, [router, onNavigateToGame, game])
+  }, [router, onNavigateToGame, game, watchBreadcrumb, setWatchBreadcrumb, homeTeam, awayTeam])
 
   // Handle Download action
   const handleDownload = useCallback(() => {
@@ -2727,7 +2739,7 @@ export function PreviewModule({
 
 // If game is provided, render GamePreview
   if (game) {
-  return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} onNavigateToGame={onNavigateToGame} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} />
+  return <GamePreview game={game} onClose={onClose} onNavigateToTeam={onNavigateToTeam} onNavigateToGame={onNavigateToGame} onNavigateToClip={onNavigateToClip} hideHeader={hideHeader} watchBreadcrumb={watchBreadcrumb} />
   }
 
   // Otherwise render the clip preview (need a play)
@@ -2744,7 +2756,7 @@ export function PreviewModule({
   const [activeTab, setActiveTab] = useState<"info" | "tags-notes">("info")
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null)
 
-  const { setPendingPreviewClips, setWatchItem } = useLibraryContext()
+  const { setPendingPreviewClips, setWatchItem, setWatchBreadcrumb } = useLibraryContext()
   const router = useRouter()
 
   // Reset athlete view when play changes
@@ -2789,8 +2801,12 @@ export function PreviewModule({
   const handleOpenClip = useCallback(() => {
     const clip = playToClip(play)
     setPendingPreviewClips([clip])
+    // Set breadcrumb if we have one from parent
+    if (watchBreadcrumb && watchBreadcrumb.length > 0) {
+      setWatchBreadcrumb([...watchBreadcrumb, { label: `Clip ${play.playNumber}` }])
+    }
     router.push("/watch")
-  }, [play, setPendingPreviewClips, router])
+  }, [play, setPendingPreviewClips, setWatchBreadcrumb, watchBreadcrumb, router])
 
   // "View Full Game" -- open the Library Item the clip references
   const handleViewFullGame = useCallback(() => {

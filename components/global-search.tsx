@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 export function GlobalSearch() {
   const router = useRouter()
   const { query, setQuery, results } = useGlobalSearch()
-  const { navigateToFolder, setWatchItem } = useLibraryContext()
+  const { navigateToFolder, setWatchItem, setWatchBreadcrumb } = useLibraryContext()
   const { inputRef } = useSearchContext()
   const [open, setOpen] = useState(false)
 
@@ -106,6 +106,11 @@ export function GlobalSearch() {
                     value={item.name}
                     onSelect={() => {
                       if (item.itemData) {
+                        // Set breadcrumb for search navigation
+                        setWatchBreadcrumb([
+                          { label: "Search", icon: "search" },
+                          { label: item.name },
+                        ])
                         setWatchItem(item.id)
                         router.push('/watch')
                       }

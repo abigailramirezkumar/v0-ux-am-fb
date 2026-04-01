@@ -15,11 +15,12 @@ export interface ExploreFilterState {
 
 /** Represents an active filter for display as a chip */
 export interface ActiveFilterChip {
-  id: string // Unique identifier for the chip (e.g., "league:NFL" or "down:3")
+  id: string // Unique identifier for the chip (e.g., "league" or "down")
   category: string // Filter category (e.g., "league", "down")
-  value: string // Filter value (e.g., "NFL", "3")
-  label: string // Display label (e.g., "League > NFL", "Down > 3rd")
+  values: string[] // Filter values (e.g., ["NFL", "College"] or ["1", "2"])
+  label: string // Display label (e.g., "League > NFL, NCAA" or "Down > 1st, 2nd")
   sectionKey: string // Which accordion section this filter belongs to (e.g., "scope", "game-context")
+  isRange?: boolean // Whether this is a range filter (slider)
 }
 
 interface ExploreContextValue {

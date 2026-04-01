@@ -514,6 +514,10 @@ export function FiltersModule({
           if ('category' in filter && filter.category === category) {
             return section.key
           }
+          // Check for range filters
+          if ('rangeCategory' in filter && filter.rangeCategory === category) {
+            return section.key
+          }
           if (filter.type === 'dynamicTeamSelect' && category === 'team') {
             return section.key
           }
@@ -670,8 +674,9 @@ export function FiltersModule({
                       <SubsectionHeader label={sub.subsectionLabel} />
                     )}
                     {sub.filters.map((def) => {
-                      // Get category for data attribute
+                      // Get category for data attribute (including range filters)
                       const category = 'category' in def ? def.category : 
+                        'rangeCategory' in def ? def.rangeCategory :
                         def.type === 'dynamicTeamSelect' ? 'team' :
                         def.type === 'dynamicCompetitionSelect' ? 'competition' :
                         def.type === 'select' && def.label === 'Season' ? 'season' : undefined

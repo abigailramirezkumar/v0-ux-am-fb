@@ -133,6 +133,15 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilters({})
   }, [])
 
+  // Clear a specific range filter
+  const clearRangeFilter = useCallback((category: RangeCategory) => {
+    setRangeFilters((prev) => {
+      if (!prev[category]) return prev
+      const { [category]: _, ...rest } = prev
+      return rest
+    })
+  }, [])
+
   // Delegate to the pure filter engine.  Uses the deferred snapshots so
   // this expensive computation yields to urgent UI updates (filter clicks).
   const filteredPlays = useMemo(
@@ -162,6 +171,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setRangeFilter,
     setFilters,
     clearFilters,
+    clearRangeFilter,
     filteredPlays,
     uniqueGames,
     activeFilterCount,

@@ -16,17 +16,18 @@ export function FilterChips({ chips, onChipClick, onChipRemove }: FilterChipsPro
   return (
     <>
       {/* Vertical separator */}
-      <div className="h-6 w-px bg-border/60" />
+      <div className="h-5 w-px bg-border/60" />
       
       {/* Filter chips */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {chips.map((chip) => (
           <button
             key={chip.id}
             onClick={() => onChipClick(chip)}
             className={cn(
-              "group flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all duration-200",
-              "bg-[#0D2959] text-blue-100 border border-blue-600 hover:bg-[#0D2959]/80"
+              "group flex items-center gap-1 px-2 py-0.5 text-xs rounded transition-all duration-200",
+              "bg-[#96CCF3] text-foreground border border-blue-600 hover:bg-[#96CCF3]/80",
+              "dark:bg-[#0D2959] dark:text-blue-100 dark:hover:bg-[#0D2959]/80"
             )}
           >
             <span className="whitespace-nowrap">{chip.label}</span>
@@ -36,9 +37,9 @@ export function FilterChips({ chips, onChipClick, onChipRemove }: FilterChipsPro
                 e.stopPropagation()
                 onChipRemove(chip)
               }}
-              className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-primary-foreground/20 transition-colors"
+              className="flex items-center justify-center w-3.5 h-3.5 rounded-sm hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
             >
-              <X className="w-3 h-3" />
+              <X className="w-2.5 h-2.5" />
             </span>
           </button>
         ))}

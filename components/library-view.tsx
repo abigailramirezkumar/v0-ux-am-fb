@@ -74,8 +74,6 @@ export function LibraryView() {
     scheduleFolders,
     activeWatchItemId,
     layoutMode,
-    setWatchBreadcrumb,
-    mediaItems,
   } = useLibraryContext()
 
   useEffect(() => {
@@ -526,29 +524,10 @@ export function LibraryView() {
 
   const handleOpenItem = useCallback(
     (itemId: string) => {
-      // Build breadcrumb for library navigation
-      const item = mediaItems.find(m => m.id === itemId)
-      const itemName = item?.name || "Playlist"
-      
-      // Get current folder path for breadcrumb
-      const getFolderPath = (folderId: string | null): { label: string }[] => {
-        if (!folderId) return []
-        const folder = folders.find(f => f.id === folderId)
-        if (!folder) return []
-        return [...getFolderPath(folder.parentId || null), { label: folder.name }]
-      }
-      
-      const folderPath = getFolderPath(currentFolderId)
-      setWatchBreadcrumb([
-        { label: "Library", href: "/library", icon: "library" },
-        ...folderPath,
-        { label: itemName },
-      ])
-      
       setWatchItem(itemId)
       router.push("/watch")
     },
-    [setWatchItem, router, setWatchBreadcrumb, mediaItems, folders, currentFolderId],
+    [setWatchItem, router],
   )
 
   const foldersForReorder = useMemo(() => {

@@ -3,17 +3,23 @@
 import Link from "next/link"
 import { Icon } from "@/components/icon"
 import { useLibraryContext, type WatchBreadcrumbItem } from "@/lib/library-context"
+import { useWatchContext } from "@/components/watch/watch-context"
 
 /**
  * WatchBreadcrumb - Displays navigation breadcrumbs in the watch app
  * 
- * Shows the path taken to reach the watch app, e.g.:
- * - Athletes / Patrick Mahomes / Highlights
- * - Search Results / Game Film
- * - Library / Offense / Red Zone Plays
+ * Only shows breadcrumbs when viewing an unsaved playlist (e.g., clips opened from 
+ * Explore, Search, or athlete/team profiles that haven't been saved to the library).
+ * Saved library items and games don't show breadcrumbs.
  */
 export function WatchBreadcrumb() {
   const { watchBreadcrumb } = useLibraryContext()
+  const { activeDataset } = useWatchContext()
+
+  // Only render breadcrumbs for unsaved playlists
+  if (!activeDataset?.isUnsaved) {
+    return null
+  }
 
   // Don't render if no breadcrumb is set
   if (!watchBreadcrumb || watchBreadcrumb.length === 0) {

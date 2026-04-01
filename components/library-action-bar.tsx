@@ -28,9 +28,6 @@ export function LibraryActionBar() {
     folders,
     openMoveModal,
     openPermissionsModal,
-    setWatchBreadcrumb,
-    mediaItems,
-    currentFolderId,
   } = useLibraryContext()
 
   const router = useRouter()
@@ -116,28 +113,8 @@ export function LibraryActionBar() {
   }
 
   const handlePlay = () => {
-    // Build breadcrumb for library navigation
-    const itemId = Array.from(selectedItems)[0]
-    const item = mediaItems.find(m => m.id === itemId)
-    const itemName = item?.name || "Playlist"
-    
-    // Get current folder path for breadcrumb
-    const getFolderPath = (folderId: string | null): { label: string; href?: string }[] => {
-      if (!folderId) return []
-      const folder = folders.find(f => f.id === folderId)
-      if (!folder) return []
-      return [...getFolderPath(folder.parentId || null), { label: folder.name }]
-    }
-    
-    const folderPath = getFolderPath(currentFolderId)
-    setWatchBreadcrumb([
-      { label: "Library", href: "/library", icon: "library" },
-      ...folderPath,
-      { label: itemName },
-    ])
-    
     if (numItems === 1) {
-      setWatchItem(itemId)
+      setWatchItem(Array.from(selectedItems)[0])
     } else {
       setWatchItems(Array.from(selectedItems))
     }

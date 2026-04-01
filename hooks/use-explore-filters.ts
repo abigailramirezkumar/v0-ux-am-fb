@@ -188,6 +188,7 @@ export function useExploreFilters(initialPlays: PlayData[]) {
     setFilter,
     setRangeFilter,
     setFilters,
+    setRangeFilters,
     clearFilters,
     clearRangeFilter,
     filteredPlays,

@@ -2031,65 +2031,71 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
           </div>
         </div>
 
-        {/* Game Info - Collapsible */}
-        <Collapsible defaultOpen={false} className="px-4 pt-5 pb-3">
-          <CollapsibleTrigger className="flex items-center justify-between w-full group">
-            <h4 className="text-base font-bold text-foreground">Game Details</h4>
-            <Icon name="chevronDown" className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="space-y-0">
-              <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Date</span>
-                <span className="text-sm text-muted-foreground">{formattedDate}</span>
-              </div>
-              {game.kickoffTime && (
-                <div className="flex justify-between py-3 border-b border-dotted border-border">
-                  <span className="text-sm font-medium text-foreground">Kickoff</span>
-                  <span className="text-sm text-muted-foreground">{game.kickoffTime}</span>
+        {/* Game Info - Collapsible Card */}
+        <div className="px-4 pt-5 pb-3">
+          <Collapsible defaultOpen={false}>
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-3 hover:bg-muted/50 transition-colors group">
+                <h4 className="text-sm font-semibold text-foreground">Game Details</h4>
+                <Icon name="chevronDown" className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 pt-1 border-t border-border">
+                  <div className="space-y-0">
+                    <div className="flex justify-between py-3 border-b border-dotted border-border">
+                      <span className="text-sm font-medium text-foreground">Date</span>
+                      <span className="text-sm text-muted-foreground">{formattedDate}</span>
+                    </div>
+                    {game.kickoffTime && (
+                      <div className="flex justify-between py-3 border-b border-dotted border-border">
+                        <span className="text-sm font-medium text-foreground">Kickoff</span>
+                        <span className="text-sm text-muted-foreground">{game.kickoffTime}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-3 border-b border-dotted border-border">
+                      <span className="text-sm font-medium text-foreground">Venue</span>
+                      <span className="text-sm text-muted-foreground">{game.venue}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-dotted border-border">
+                      <span className="text-sm font-medium text-foreground">Location</span>
+                      <span className="text-sm text-muted-foreground">{game.city}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-dotted border-border">
+                      <span className="text-sm font-medium text-foreground">Season</span>
+                      <span className="text-sm text-muted-foreground">{game.season}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b border-dotted border-border">
+                      <span className="text-sm font-medium text-foreground">League</span>
+                      <span className="text-sm text-muted-foreground">
+                        {game.league === "HighSchool" ? "High School" : game.league}
+                      </span>
+                    </div>
+                    {game.broadcast && (
+                      <div className="flex justify-between py-3 border-b border-dotted border-border">
+                        <span className="text-sm font-medium text-foreground">Broadcast</span>
+                        <span className="text-sm text-muted-foreground">{game.broadcast.network}</span>
+                      </div>
+                    )}
+                    {game.attendance && (
+                      <div className="flex justify-between py-3 border-b border-dotted border-border">
+                        <span className="text-sm font-medium text-foreground">Attendance</span>
+                        <span className="text-sm text-muted-foreground">{game.attendance.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {game.weather && game.weather.condition !== "dome" && (
+                      <div className="flex justify-between py-3">
+                        <span className="text-sm font-medium text-foreground">Weather</span>
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {game.weather.temperature}°F, {game.weather.condition}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Venue</span>
-                <span className="text-sm text-muted-foreground">{game.venue}</span>
-              </div>
-              <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Location</span>
-                <span className="text-sm text-muted-foreground">{game.city}</span>
-              </div>
-              <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Season</span>
-                <span className="text-sm text-muted-foreground">{game.season}</span>
-              </div>
-              <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">League</span>
-                <span className="text-sm text-muted-foreground">
-                  {game.league === "HighSchool" ? "High School" : game.league}
-                </span>
-              </div>
-              {game.broadcast && (
-                <div className="flex justify-between py-3 border-b border-dotted border-border">
-                  <span className="text-sm font-medium text-foreground">Broadcast</span>
-                  <span className="text-sm text-muted-foreground">{game.broadcast.network}</span>
-                </div>
-              )}
-              {game.attendance && (
-                <div className="flex justify-between py-3 border-b border-dotted border-border">
-                  <span className="text-sm font-medium text-foreground">Attendance</span>
-                  <span className="text-sm text-muted-foreground">{game.attendance.toLocaleString()}</span>
-                </div>
-              )}
-              {game.weather && game.weather.condition !== "dome" && (
-                <div className="flex justify-between py-3">
-                  <span className="text-sm font-medium text-foreground">Weather</span>
-                  <span className="text-sm text-muted-foreground capitalize">
-                    {game.weather.temperature}°F, {game.weather.condition}
-                  </span>
-                </div>
-              )}
+              </CollapsibleContent>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </Collapsible>
+        </div>
 
         {/* Quarter Scores (if available) */}
         {game.score?.quarters && (

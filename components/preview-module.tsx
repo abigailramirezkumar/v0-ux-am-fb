@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 import { Icon } from "@/components/icon"
 import { TeamLogo } from "@/components/team-logo"
@@ -2030,60 +2031,65 @@ function GamePreview({ game, onClose, onNavigateToTeam, onNavigateToGame, onNavi
           </div>
         </div>
 
-        {/* Game Info */}
-        <div className="px-4 pt-5 pb-3">
-          <h4 className="text-base font-bold text-foreground mb-4">Game Details</h4>
-          <div className="space-y-0">
-            <div className="flex justify-between py-3 border-b border-dotted border-border">
-              <span className="text-sm font-medium text-foreground">Date</span>
-              <span className="text-sm text-muted-foreground">{formattedDate}</span>
-            </div>
-            {game.kickoffTime && (
+        {/* Game Info - Collapsible */}
+        <Collapsible defaultOpen={false} className="px-4 pt-5 pb-3">
+          <CollapsibleTrigger className="flex items-center justify-between w-full group">
+            <h4 className="text-base font-bold text-foreground">Game Details</h4>
+            <Icon name="chevronDown" className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
+            <div className="space-y-0">
               <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Kickoff</span>
-                <span className="text-sm text-muted-foreground">{game.kickoffTime}</span>
+                <span className="text-sm font-medium text-foreground">Date</span>
+                <span className="text-sm text-muted-foreground">{formattedDate}</span>
               </div>
-            )}
-            <div className="flex justify-between py-3 border-b border-dotted border-border">
-              <span className="text-sm font-medium text-foreground">Venue</span>
-              <span className="text-sm text-muted-foreground">{game.venue}</span>
-            </div>
-            <div className="flex justify-between py-3 border-b border-dotted border-border">
-              <span className="text-sm font-medium text-foreground">Location</span>
-              <span className="text-sm text-muted-foreground">{game.city}</span>
-            </div>
-            <div className="flex justify-between py-3 border-b border-dotted border-border">
-              <span className="text-sm font-medium text-foreground">Season</span>
-              <span className="text-sm text-muted-foreground">{game.season}</span>
-            </div>
-            <div className="flex justify-between py-3 border-b border-dotted border-border">
-              <span className="text-sm font-medium text-foreground">League</span>
-              <span className="text-sm text-muted-foreground">
-                {game.league === "HighSchool" ? "High School" : game.league}
-              </span>
-            </div>
-            {game.broadcast && (
+              {game.kickoffTime && (
+                <div className="flex justify-between py-3 border-b border-dotted border-border">
+                  <span className="text-sm font-medium text-foreground">Kickoff</span>
+                  <span className="text-sm text-muted-foreground">{game.kickoffTime}</span>
+                </div>
+              )}
               <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Broadcast</span>
-                <span className="text-sm text-muted-foreground">{game.broadcast.network}</span>
+                <span className="text-sm font-medium text-foreground">Venue</span>
+                <span className="text-sm text-muted-foreground">{game.venue}</span>
               </div>
-            )}
-            {game.attendance && (
               <div className="flex justify-between py-3 border-b border-dotted border-border">
-                <span className="text-sm font-medium text-foreground">Attendance</span>
-                <span className="text-sm text-muted-foreground">{game.attendance.toLocaleString()}</span>
+                <span className="text-sm font-medium text-foreground">Location</span>
+                <span className="text-sm text-muted-foreground">{game.city}</span>
               </div>
-            )}
-            {game.weather && game.weather.condition !== "dome" && (
-              <div className="flex justify-between py-3">
-                <span className="text-sm font-medium text-foreground">Weather</span>
-                <span className="text-sm text-muted-foreground capitalize">
-                  {game.weather.temperature}°F, {game.weather.condition}
+              <div className="flex justify-between py-3 border-b border-dotted border-border">
+                <span className="text-sm font-medium text-foreground">Season</span>
+                <span className="text-sm text-muted-foreground">{game.season}</span>
+              </div>
+              <div className="flex justify-between py-3 border-b border-dotted border-border">
+                <span className="text-sm font-medium text-foreground">League</span>
+                <span className="text-sm text-muted-foreground">
+                  {game.league === "HighSchool" ? "High School" : game.league}
                 </span>
               </div>
-            )}
-          </div>
-        </div>
+              {game.broadcast && (
+                <div className="flex justify-between py-3 border-b border-dotted border-border">
+                  <span className="text-sm font-medium text-foreground">Broadcast</span>
+                  <span className="text-sm text-muted-foreground">{game.broadcast.network}</span>
+                </div>
+              )}
+              {game.attendance && (
+                <div className="flex justify-between py-3 border-b border-dotted border-border">
+                  <span className="text-sm font-medium text-foreground">Attendance</span>
+                  <span className="text-sm text-muted-foreground">{game.attendance.toLocaleString()}</span>
+                </div>
+              )}
+              {game.weather && game.weather.condition !== "dome" && (
+                <div className="flex justify-between py-3">
+                  <span className="text-sm font-medium text-foreground">Weather</span>
+                  <span className="text-sm text-muted-foreground capitalize">
+                    {game.weather.temperature}°F, {game.weather.condition}
+                  </span>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Quarter Scores (if available) */}
         {game.score?.quarters && (

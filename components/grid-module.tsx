@@ -659,44 +659,44 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
         </div>
       )}
 
-      <div className="px-4 py-2 border-b border-border flex items-center bg-background">
-        {selectedPlayIds.size > 0 ? (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={clearPlaySelection}
-              className="w-6 h-6 rounded flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors"
-              aria-label="Clear selection"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground" />
-              </svg>
-            </button>
-            <span className="text-sm font-medium text-[#0273e3]">
-              {selectedPlayIds.size} Selected
-            </span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-muted-foreground/50">
-              <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {selectionActions}
-          </div>
-        ) : (
-          <div className="flex items-center justify-between w-full">
-            <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
-            {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
-              <Button 
-                size="sm" 
-                onClick={isGameTab ? handleSaveToLibrary : handleSaveAsPlaylist} 
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isGameTab ? "Save to Library" : "Save Playlist"}
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-
       {/* --- GRID TABLE or EMPTY STATE --- */}
       <div className="flex-1 overflow-auto bg-background">
+        {/* Module header - sticky at top of scroll area */}
+        <div className="px-4 py-2 border-b border-border flex items-center bg-background sticky top-0 z-20">
+          {selectedPlayIds.size > 0 ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={clearPlaySelection}
+                className="w-6 h-6 rounded flex items-center justify-center bg-muted/50 hover:bg-muted transition-colors"
+                aria-label="Clear selection"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground" />
+                </svg>
+              </button>
+              <span className="text-sm font-medium text-[#0273e3]">
+                {selectedPlayIds.size} Selected
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-muted-foreground/50">
+                <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {selectionActions}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs text-muted-foreground">{activeDataset.plays.length} Events</span>
+              {activeDataset.isUnsaved && activeDataset.plays.length > 0 && (
+                <Button 
+                  size="sm" 
+                  onClick={isGameTab ? handleSaveToLibrary : handleSaveAsPlaylist} 
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {isGameTab ? "Save to Library" : "Save Playlist"}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
         {activeDataset.plays.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
             {onClearFilters ? (
@@ -720,7 +720,7 @@ export function GridModule({ showTabs = true, selectionActions, dataset: dataset
           </div>
         ) : (
         <Table>
-          <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
+          <TableHeader className="sticky top-[37px] bg-background z-10 shadow-sm">
             <TableRow className="hover:bg-transparent border-b border-border/50">
               {variant === "watch" && (
                 <TableHead className="w-[40px] text-center bg-muted/30 border-r border-border/50">
